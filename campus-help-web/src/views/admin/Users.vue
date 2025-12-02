@@ -42,14 +42,12 @@
         <el-form-item>
           <el-button type="primary" @click="handleFilter">筛选</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleAddUser">
+            <el-icon><Plus /></el-icon>
+            新增用户
+          </el-button>
         </el-form-item>
       </el-form>
-      <div class="filter-actions">
-        <el-button type="primary" @click="handleAddUser">
-          <el-icon><Plus /></el-icon>
-          新增用户
-        </el-button>
-      </div>
     </div>
 
     <el-table
@@ -776,6 +774,16 @@ onMounted(() => {
 .text-muted {
   color: var(--color-text-secondary);
   font-size: 14px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-buttons .el-button {
+  border-radius: var(--radius-sm);
 }
 </style>
 

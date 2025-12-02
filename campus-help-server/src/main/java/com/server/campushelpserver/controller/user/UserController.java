@@ -2,6 +2,7 @@ package com.server.campushelpserver.controller.user;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.campushelpserver.common.Result;
+import com.server.campushelpserver.dto.user.ChangePasswordRequest;
 import com.server.campushelpserver.dto.user.VerificationAuditRequest;
 import com.server.campushelpserver.dto.user.VerificationRequest;
 import com.server.campushelpserver.entity.user.User;
@@ -111,6 +112,21 @@ public class UserController {
         );
         String message = request.getAuditResult() == 1 ? "审核通过" : "审核拒绝";
         return Result.success(message, updatedUser);
+    }
+    
+    @Operation(summary = "修改密码", description = "用户修改登录密码，需要验证当前密码")
+    @PostMapping("/change-password")
+    public Result<String> changePassword(@Parameter(description = "修改密码请求") @Validated @RequestBody ChangePasswordRequest request) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return Result.error("未登录");
+        }
+        User currentUser = userService.getUserByEmail(email);
+        if (currentUser == null) {
+            return Result.error("用户不存在");
+        }
+        userService.changePassword(email, request.getCurrentPassword(), request.getNewPassword());
+        return Result.success("密码修改成功，请重新登录");
     }
 }
 

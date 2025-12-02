@@ -307,5 +307,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         return user;
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public User changePassword(String email, String currentPassword, String newPassword) {
+        // 检查用户是否存在
+        User user = getUserByEmail(email);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 验证当前密码
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BusinessException("当前密码错误，请重新输入");
+        }
+        
+        // 验证新密码不能与当前密码相同
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new BusinessException("新密码不能与当前密码相同");
+        }
+        
+        // 验证新密码格式（至少8位，且包含字母和数字）
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new BusinessException("密码至少8位");
+        }
+        if (!newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,}$")) {
+            throw new BusinessException("密码至少8位，且包含字母和数字");
+        }
+        
+        // 加密新密码
+        user.setPassword(passwordEncoder.encode(newPassword));
+        this.updateById(user);
+        
+        return user;
+    }
 }
 

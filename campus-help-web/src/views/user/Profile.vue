@@ -1,11 +1,5 @@
 <template>
   <div class="profile-container">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1 class="page-title">个人中心</h1>
-      <p class="page-subtitle">管理您的个人信息和账户设置</p>
-    </div>
-
     <div class="profile-content">
       <el-row :gutter="24">
         <!-- 左侧：用户信息卡片 -->
@@ -56,9 +50,12 @@
         <!-- 右侧：详细信息 -->
         <el-col :xs="24" :sm="24" :md="16" :lg="16">
           <div class="info-tabs-card">
-            <el-tabs v-model="activeTab" class="profile-tabs">
-              <el-tab-pane label="基本信息" name="basic">
-                <div class="tab-content">
+            <!-- 基本设置和账户信息左右布局 -->
+            <el-row :gutter="24" class="top-sections">
+              <!-- 基本设置 -->
+              <el-col :xs="24" :sm="24" :md="14" :lg="14">
+                <div class="form-section">
+                  <h3 class="section-title">基本设置</h3>
                   <el-form
                     ref="formRef"
                     :model="form"
@@ -66,65 +63,99 @@
                     label-width="100px"
                     class="profile-form"
                   >
+                    <el-form-item label="姓名" prop="realName">
+                      <el-input 
+                        v-model="form.realName" 
+                        placeholder="请输入真实姓名"
+                        :disabled="!isEditing"
+                        clearable
+                      />
+                    </el-form-item>
+
+                    <el-form-item label="性别" prop="gender">
+                      <el-select 
+                        v-model="form.gender" 
+                        placeholder="请选择性别" 
+                        style="width: 100%"
+                        :disabled="!isEditing"
+                      >
+                        <el-option label="男" :value="1" />
+                        <el-option label="女" :value="2" />
+                        <el-option label="保密" :value="0" />
+                      </el-select>
+                    </el-form-item>
+
                     <el-form-item label="昵称" prop="nickname">
                       <el-input 
                         v-model="form.nickname" 
                         placeholder="请输入昵称"
+                        :disabled="!isEditing"
                         clearable
-                      >
-                        <template #prefix>
-                          <el-icon><User /></el-icon>
-                        </template>
-                      </el-input>
+                      />
                     </el-form-item>
 
-                    <el-form-item label="性别" prop="gender">
-                      <el-radio-group v-model="form.gender" class="gender-group">
-                        <el-radio :label="1">男</el-radio>
-                        <el-radio :label="2">女</el-radio>
-                        <el-radio :label="0">保密</el-radio>
-                      </el-radio-group>
-                    </el-form-item>
-
-                    <el-form-item label="年级" prop="grade">
+                    <el-form-item label="邮箱">
                       <el-input 
-                        v-model="form.grade" 
-                        placeholder="请输入年级，如：2021级"
-                        clearable
-                      >
-                        <template #prefix>
-                          <el-icon><Calendar /></el-icon>
-                        </template>
-                      </el-input>
+                        :value="userInfo.email"
+                        disabled
+                      />
                     </el-form-item>
 
-                    <el-form-item label="专业" prop="major">
+                    <el-form-item label="手机" prop="phone">
                       <el-input 
-                        v-model="form.major" 
-                        placeholder="请输入专业"
+                        v-model="form.phone" 
+                        placeholder="请输入手机号"
+                        :disabled="!isEditing"
                         clearable
-                      >
-                        <template #prefix>
-                          <el-icon><Reading /></el-icon>
-                        </template>
-                      </el-input>
+                      />
+                    </el-form-item>
+
+                    <el-form-item label="地址" prop="address">
+                      <el-input 
+                        v-model="form.address" 
+                        placeholder="请输入地址"
+                        :disabled="!isEditing"
+                        clearable
+                      />
+                    </el-form-item>
+
+                    <el-form-item label="个人介绍" prop="bio">
+                      <el-input 
+                        v-model="form.bio" 
+                        type="textarea"
+                        :rows="4"
+                        placeholder="请输入个人介绍"
+                        maxlength="200"
+                        show-word-limit
+                        :disabled="!isEditing"
+                      />
                     </el-form-item>
 
                     <el-form-item class="form-actions">
-                      <el-button type="primary" :loading="loading" @click="handleSubmit">
-                        保存修改
+                      <el-button 
+                        v-if="!isEditing"
+                        type="primary" 
+                        @click="handleStartEdit"
+                      >
+                        编辑
                       </el-button>
-                      <el-button @click="handleReset">
-                        <el-icon><RefreshLeft /></el-icon>
-                        重置
-                      </el-button>
+                      <template v-else>
+                        <el-button type="primary" :loading="loading" @click="handleSubmit">
+                          保存
+                        </el-button>
+                        <el-button @click="handleCancelEdit">
+                          取消
+                        </el-button>
+                      </template>
                     </el-form-item>
                   </el-form>
                 </div>
-              </el-tab-pane>
+              </el-col>
 
-              <el-tab-pane label="账户信息" name="account">
-                <div class="tab-content">
+              <!-- 账户信息 -->
+              <el-col :xs="24" :sm="24" :md="10" :lg="10">
+                <div class="form-section">
+                  <h3 class="section-title">账户信息</h3>
                   <div class="account-info-list">
                     <div class="info-item">
                       <div class="info-label">
@@ -156,67 +187,78 @@
                         <span>账户状态</span>
                       </div>
                       <div class="info-value">
-                        <el-tag :type="userInfo.status === 1 ? 'success' : 'danger'" size="large">
+                        <el-tag :type="userInfo.status === 1 ? 'success' : 'danger'" size="large" effect="plain">
                           {{ userInfo.status === 1 ? '正常' : '已禁用' }}
                         </el-tag>
                       </div>
                     </div>
                   </div>
                 </div>
-              </el-tab-pane>
+              </el-col>
+            </el-row>
 
-              <el-tab-pane label="更改密码" name="password">
-                <div class="tab-content">
-                  <el-form
-                    ref="passwordFormRef"
-                    :model="passwordForm"
-                    :rules="passwordRules"
-                    label-width="120px"
-                    class="profile-form"
+            <!-- 更改密码 -->
+            <div class="form-section">
+              <h3 class="section-title">更改密码</h3>
+              <el-form
+                ref="passwordFormRef"
+                :model="passwordForm"
+                :rules="passwordRules"
+                label-width="120px"
+                class="profile-form"
+              >
+                <el-form-item label="当前密码" prop="currentPassword">
+                  <el-input
+                    v-model="passwordForm.currentPassword"
+                    type="password"
+                    placeholder="请输入当前密码"
+                    show-password
+                    clearable
+                    :disabled="!isEditingPassword"
+                  />
+                </el-form-item>
+
+                <el-form-item label="新密码" prop="newPassword">
+                  <el-input
+                    v-model="passwordForm.newPassword"
+                    type="password"
+                    placeholder="请输入新密码（至少8位，包含字母和数字）"
+                    show-password
+                    clearable
+                    :disabled="!isEditingPassword"
+                  />
+                </el-form-item>
+
+                <el-form-item label="确认新密码" prop="confirmPassword">
+                  <el-input
+                    v-model="passwordForm.confirmPassword"
+                    type="password"
+                    placeholder="请再次输入新密码"
+                    show-password
+                    clearable
+                    :disabled="!isEditingPassword"
+                  />
+                </el-form-item>
+
+                <el-form-item class="form-actions">
+                  <el-button 
+                    v-if="!isEditingPassword"
+                    type="primary" 
+                    @click="handleStartEditPassword"
                   >
-                    <el-form-item label="当前密码" prop="currentPassword">
-                      <el-input
-                        v-model="passwordForm.currentPassword"
-                        type="password"
-                        placeholder="请输入当前密码"
-                        show-password
-                        clearable
-                      />
-                    </el-form-item>
-
-                    <el-form-item label="新密码" prop="newPassword">
-                      <el-input
-                        v-model="passwordForm.newPassword"
-                        type="password"
-                        placeholder="请输入新密码（至少8位，包含字母和数字）"
-                        show-password
-                        clearable
-                      />
-                    </el-form-item>
-
-                    <el-form-item label="确认新密码" prop="confirmPassword">
-                      <el-input
-                        v-model="passwordForm.confirmPassword"
-                        type="password"
-                        placeholder="请再次输入新密码"
-                        show-password
-                        clearable
-                      />
-                    </el-form-item>
-
-                    <el-form-item class="form-actions">
-                      <el-button type="primary" :loading="passwordLoading" @click="handleChangePassword">
-                        保存修改
-                      </el-button>
-                      <el-button @click="handleResetPassword">
-                        <el-icon><RefreshLeft /></el-icon>
-                        重置
-                      </el-button>
-                    </el-form-item>
-                  </el-form>
-                </div>
-              </el-tab-pane>
-            </el-tabs>
+                    修改密码
+                  </el-button>
+                  <template v-else>
+                    <el-button type="primary" :loading="passwordLoading" @click="handleChangePassword">
+                      保存
+                    </el-button>
+                    <el-button @click="handleCancelEditPassword">
+                      取消
+                    </el-button>
+                  </template>
+                </el-form-item>
+              </el-form>
+            </div>
           </div>
         </el-col>
       </el-row>
@@ -241,9 +283,11 @@ const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const passwordFormRef = ref(null)
-const activeTab = ref('basic')
 const loading = ref(false)
 const passwordLoading = ref(false)
+const isEditing = ref(false)
+const isEditingPassword = ref(false)
+const originalForm = ref({})
 // 从 userStore 获取初始用户信息，避免刷新时抖动
 const userInfo = ref(userStore.userInfo || {})
 
@@ -368,6 +412,35 @@ const updateUserInfo = async (data) => {
   }
 }
 
+// 开始编辑
+const handleStartEdit = () => {
+  isEditing.value = true
+  // 保存原始数据
+  originalForm.value = {
+    realName: form.realName,
+    nickname: form.nickname,
+    gender: form.gender,
+    phone: form.phone,
+    address: form.address,
+    bio: form.bio
+  }
+}
+
+// 取消编辑
+const handleCancelEdit = () => {
+  isEditing.value = false
+  // 恢复原始数据
+  form.realName = originalForm.value.realName || ''
+  form.nickname = originalForm.value.nickname || ''
+  form.gender = originalForm.value.gender || 0
+  form.phone = originalForm.value.phone || ''
+  form.address = originalForm.value.address || ''
+  form.bio = originalForm.value.bio || ''
+  if (formRef.value) {
+    formRef.value.clearValidate()
+  }
+}
+
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
@@ -382,6 +455,7 @@ const handleSubmit = async () => {
           email: userInfo.value.email || userStore.userInfo?.email
         }
         await updateUserInfo(formData)
+        isEditing.value = false
       } finally {
         loading.value = false
       }
@@ -411,6 +485,17 @@ const goToVerification = () => {
   router.push('/user/verification')
 }
 
+// 开始编辑密码
+const handleStartEditPassword = () => {
+  isEditingPassword.value = true
+}
+
+// 取消编辑密码
+const handleCancelEditPassword = () => {
+  isEditingPassword.value = false
+  handleResetPassword()
+}
+
 // 修改密码
 const handleChangePassword = async () => {
   if (!passwordFormRef.value) return
@@ -426,6 +511,7 @@ const handleChangePassword = async () => {
         if (response.code === 200) {
           ElMessage.success('密码修改成功，请重新登录')
           handleResetPassword()
+          isEditingPassword.value = false
           // 延迟跳转到登录页
           setTimeout(() => {
             userStore.logout()
@@ -465,36 +551,22 @@ onMounted(() => {
   background-color: var(--color-bg-primary);
 }
 
-/* 页面标题 */
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-title {
-  font-size: 32px;
-  font-weight: bold;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
 /* 内容区域 */
 .profile-content {
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 /* 用户信息卡片 */
 .user-info-card {
   background-color: var(--color-bg-white);
   border-radius: var(--radius-md);
-  padding: var(--spacing-2xl);
+  overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  min-height: 700px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-2xl);
 }
 
 /* 头像区域 */
@@ -544,6 +616,17 @@ onMounted(() => {
 
 /* 信息标签页卡片 */
 .info-tabs-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.top-sections {
+  margin-bottom: 0;
+}
+
+/* 表单区域 */
+.form-section {
   background-color: var(--color-bg-white);
   border-radius: var(--radius-md);
   padding: var(--spacing-2xl);
@@ -551,37 +634,49 @@ onMounted(() => {
   border: 1px solid var(--color-border);
 }
 
-/* 标签页样式 */
-.profile-tabs :deep(.el-tabs__header) {
-  margin-bottom: var(--spacing-2xl);
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xl) 0;
+  padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
 }
 
-.profile-tabs :deep(.el-tabs__item) {
-  font-size: 15px;
-  font-weight: 500;
+/* 账户信息列表 */
+.account-info-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: 14px;
   color: var(--color-text-regular);
-  padding: 0 var(--spacing-2xl);
-  height: 40px;
-  line-height: 40px;
 }
 
-.profile-tabs :deep(.el-tabs__item:hover) {
-  color: var(--color-primary);
+.info-label .el-icon {
+  color: var(--color-text-secondary);
+  font-size: 16px;
 }
 
-.profile-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.profile-tabs :deep(.el-tabs__active-bar) {
-  background-color: var(--color-primary);
-  height: 2px;
-}
-
-.tab-content {
-  padding: 8px 0;
+.info-value {
+  font-size: 14px;
+  color: var(--color-text-primary);
 }
 
 /* 表单样式 */

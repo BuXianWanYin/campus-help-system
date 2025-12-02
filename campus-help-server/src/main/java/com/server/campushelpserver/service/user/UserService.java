@@ -83,5 +83,14 @@ public interface UserService extends IService<User> {
      * @return 更新后的用户信息
      */
     User resetPassword(String email, String newPassword);
+    
+    /**
+     * 修改密码（需要验证当前密码）
+     * @param email 邮箱
+     * @param currentPassword 当前密码
+     * @param newPassword 新密码
+     * @return 更新后的用户信息
+     */
+    User changePassword(String email, String currentPassword, String newPassword);
 }
 
