@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupRouterGuard } from './guard'
+import MainLayout from '../layouts/MainLayout.vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
 
 const routes = [
@@ -32,7 +33,7 @@ const routes = [
   },
   {
     path: '/',
-    component: BasicLayout,
+    component: MainLayout,
     redirect: '/home',
     meta: {
       requiresAuth: true
@@ -41,14 +42,59 @@ const routes = [
       {
         path: 'home',
         name: 'Home',
-        component: () => import('../views/Home.vue'),
+        // 不指定 component，MainLayout 会直接显示首页内容
         meta: {
           title: '首页',
           requiresAuth: true
         }
       },
       {
-        path: 'user/profile',
+        path: 'lost-found/list',
+        name: 'LostFoundList',
+        component: () => import('../views/lost-found/List.vue'),
+        meta: {
+          title: '失物招领',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'goods/list',
+        name: 'GoodsList',
+        component: () => import('../views/goods/List.vue'),
+        meta: {
+          title: '闲置交易',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'task/list',
+        name: 'TaskList',
+        component: () => import('../views/task/List.vue'),
+        meta: {
+          title: '跑腿服务',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'about',
+        name: 'About',
+        component: () => import('../views/About.vue'),
+        meta: {
+          title: '关于我们',
+          requiresAuth: true
+        }
+      }
+    ]
+  },
+  {
+    path: '/user',
+    component: BasicLayout,
+    meta: {
+      requiresAuth: true
+    },
+    children: [
+      {
+        path: 'profile',
         name: 'UserProfile',
         component: () => import('../views/user/Profile.vue'),
         meta: {
@@ -57,7 +103,7 @@ const routes = [
         }
       },
       {
-        path: 'user/verification',
+        path: 'verification',
         name: 'UserVerification',
         component: () => import('../views/user/Verification.vue'),
         meta: {

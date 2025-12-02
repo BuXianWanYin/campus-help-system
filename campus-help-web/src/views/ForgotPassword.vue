@@ -71,7 +71,7 @@
                   :loading="codeSending"
                   @click="sendResetCode"
                 >
-                  {{ codeSending ? '发送中' : (codeCountdown > 0 ? `${codeCountdown}秒` : '获取验证码') }}
+                  {{ codeSending ? '发送中...' : (codeCountdown > 0 ? `${codeCountdown}秒后重试` : '获取验证码') }}
                 </el-button>
               </template>
             </el-input>
