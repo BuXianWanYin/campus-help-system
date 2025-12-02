@@ -165,6 +165,7 @@ const registerLoading = ref(false)
 const codeCountdown = ref(0)
 const registerFormRef = ref(null)
 const agreePrivacy = ref(false)
+let countdownTimer = null
 
 const registerForm = reactive({
   email: '',

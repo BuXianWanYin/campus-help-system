@@ -41,16 +41,22 @@ service.interceptors.response.use(
         duration: 5 * 1000
       })
       
-      // 401: 未授权，清除 token 并跳转到登录页
+      // 401: 未授权，清除 token 并跳转到登录页（但认证接口除外）
       if (res.code === 401) {
-        ElMessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
-          confirmButtonText: '重新登录',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          removeToken()
-          location.reload()
-        })
+        // 检查是否是认证相关接口
+        const isAuthApi = response.config?.url?.includes('/api/auth/')
+        if (!isAuthApi) {
+          // 非认证接口的 401 错误，清除 token 并跳转登录页
+          ElMessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
+            confirmButtonText: '重新登录',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            removeToken()
+            location.reload()
+          })
+        }
+        // 认证接口的 401 错误，只显示错误信息，不跳转
       }
       
       return Promise.reject(new Error(res.message || '请求失败'))
@@ -68,9 +74,17 @@ service.interceptors.response.use(
           message = '请求参数错误'
           break
         case 401:
-          message = '未授权，请重新登录'
-          removeToken()
-          location.reload()
+          // 如果是认证相关接口（登录、注册、发送验证码），不跳转登录页
+          const isAuthApi = error.config?.url?.includes('/api/auth/')
+          if (isAuthApi) {
+            // 认证接口的 401 错误，只显示错误信息，不跳转
+            message = error.response?.data?.message || '认证失败'
+          } else {
+            // 其他接口的 401 错误，清除 token 并跳转登录页
+            message = '未授权，请重新登录'
+            removeToken()
+            location.reload()
+          }
           break
         case 403:
           message = '拒绝访问'
