@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,13 +108,43 @@ public class AuthController {
         return Result.success("登录成功", result);
     }
     
-    @Operation(summary = "发送验证码", description = "发送邮箱验证码，支持注册、登录、重置密码")
+    @Operation(summary = "发送验证码", description = "发送邮箱验证码，支持注册、登录、重置密码，带防刷机制")
     @PostMapping("/send-code")
     public Result<String> sendCode(
             @Parameter(description = "验证码类型：REGISTER-注册，LOGIN-登录，RESET_PASSWORD-重置密码") @RequestParam String type,
-            @Parameter(description = "邮箱") @RequestParam String email) {
-        String code = verificationCodeService.sendVerificationCode(type, email);
+            @Parameter(description = "邮箱") @RequestParam String email,
+            HttpServletRequest request) {
+        // 获取客户端IP
+        String clientIp = getClientIp(request);
+        String code = verificationCodeService.sendVerificationCode(type, email, clientIp);
         return Result.success("验证码已发送，请查收邮件", code);
+    }
+    
+    /**
+     * 获取客户端真实IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 处理多个IP的情况，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }
 

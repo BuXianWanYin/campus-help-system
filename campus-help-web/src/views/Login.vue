@@ -9,29 +9,36 @@
           <div class="shape shape-square"></div>
           <div class="shape shape-rect"></div>
         </div>
-        <!-- 主要插图 -->
+        <!-- 主要功能图标 -->
         <div class="main-illustration">
-          <div class="laptop-icon">
-            <div class="laptop-screen">
-              <div class="folder-icon">
-                <el-icon :size="32"><Folder /></el-icon>
+          <div class="feature-icons">
+            <div class="icon-item icon-search">
+              <div class="icon-bg">
+                <el-icon :size="40"><Search /></el-icon>
               </div>
+              <span class="icon-label">失物招领</span>
+              <p class="icon-desc">发布失物信息<br/>寻找丢失物品</p>
             </div>
-            <div class="laptop-base"></div>
-          </div>
-          <div class="floating-folder">
-            <el-icon :size="40"><FolderChecked /></el-icon>
-          </div>
-          <div class="floating-docs">
-            <div class="doc doc-1"></div>
-            <div class="doc doc-2"></div>
-            <div class="doc doc-3"></div>
+            <div class="icon-item icon-shopping">
+              <div class="icon-bg">
+                <el-icon :size="40"><ShoppingBag /></el-icon>
+              </div>
+              <span class="icon-label">闲置交易</span>
+              <p class="icon-desc">买卖闲置物品<br/>让资源再利用</p>
+            </div>
+            <div class="icon-item icon-truck">
+              <div class="icon-bg">
+                <el-icon :size="40"><Box /></el-icon>
+              </div>
+              <span class="icon-label">跑腿服务</span>
+              <p class="icon-desc">发布或接取任务<br/>互帮互助</p>
+            </div>
           </div>
         </div>
       </div>
       <div class="promotion-text">
-        <h2>一款兼具设计美学与高效开发的后台系统</h2>
-        <p>美观实用的界面，经过视觉优化，确保卓越的用户体验</p>
+        <h2>连接校园，互助共享</h2>
+        <p>失物招领、闲置交易、跑腿服务，一站式解决您的校园互助需求</p>
       </div>
     </div>
     
@@ -134,10 +141,10 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Folder, FolderChecked, Message, Lock, Key } from '@element-plus/icons-vue'
+import { Search, ShoppingBag, Box, Message, Lock, Key } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi } from '@/api'
 import appConfig from '@/config'
@@ -150,6 +157,7 @@ const loginType = ref('password') // password 或 code
 const loginLoading = ref(false)
 const codeCountdown = ref(0)
 const loginFormRef = ref(null)
+let countdownTimer = null
 
 const loginForm = reactive({
   email: '',
@@ -185,25 +193,56 @@ const sendLoginCode = async () => {
     return
   }
   
+  if (codeCountdown.value > 0) {
+    return
+  }
+  
   try {
     await authApi.sendCode('LOGIN', loginForm.email)
     ElMessage.success('验证码已发送，请查收邮件')
-    startCountdown()
+    startCountdown(60)
   } catch (error) {
+    // 如果后端返回了剩余秒数，使用该秒数
+    const remainingSeconds = extractRemainingSeconds(error.message || '')
+    if (remainingSeconds > 0) {
+      startCountdown(remainingSeconds)
+    } else {
+      // 否则使用默认60秒
+      startCountdown(60)
+    }
     ElMessage.error(error.message || '发送验证码失败')
   }
 }
 
+// 从错误信息中提取剩余秒数
+const extractRemainingSeconds = (message) => {
+  const match = message.match(/(\d+)秒后重试/)
+  return match ? parseInt(match[1]) : 0
+}
+
 // 开始倒计时
-const startCountdown = () => {
-  codeCountdown.value = 60
-  const timer = setInterval(() => {
+const startCountdown = (seconds) => {
+  // 清除之前的定时器
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+  codeCountdown.value = seconds
+  countdownTimer = setInterval(() => {
     codeCountdown.value--
     if (codeCountdown.value <= 0) {
-      clearInterval(timer)
+      clearInterval(countdownTimer)
+      countdownTimer = null
     }
   }, 1000)
 }
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+})
 
 // 处理登录
 const handleLogin = async () => {
@@ -259,8 +298,7 @@ const goToRegister = () => {
 .illustration-wrapper {
   position: relative;
   width: 100%;
-  max-width: 500px;
-  height: 400px;
+  max-width: 600px;
   margin-bottom: 60px;
 }
 
@@ -306,96 +344,93 @@ const goToRegister = () => {
 
 @keyframes float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.6;
   }
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-25px) rotate(5deg);
+    opacity: 0.8;
   }
 }
 
 .main-illustration {
   position: relative;
   width: 100%;
-  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 40px 0;
 }
 
-.laptop-icon {
-  position: relative;
+.feature-icons {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 550px;
+  gap: 30px;
   z-index: 2;
 }
 
-.laptop-screen {
-  width: 200px;
-  height: 140px;
-  background-color: #769fcd;
-  border-radius: 8px 8px 0 0;
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 160px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.icon-item:hover {
+  transform: translateY(-8px);
+}
+
+.icon-item:hover .icon-bg {
+  box-shadow: 0 8px 24px rgba(118, 159, 205, 0.4);
+  transform: scale(1.05);
+}
+
+.icon-bg {
+  width: 80px;
+  height: 80px;
+  background-color: #FFFFFF;
+  border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(118, 159, 205, 0.3);
-}
-
-.laptop-screen .folder-icon {
-  color: #FFFFFF;
-}
-
-.laptop-base {
-  width: 240px;
-  height: 12px;
-  background-color: #b9d7ea;
-  border-radius: 0 0 4px 4px;
-  margin: 0 auto;
-  box-shadow: 0 2px 8px rgba(118, 159, 205, 0.2);
-}
-
-.floating-folder {
-  position: absolute;
-  top: 20%;
-  right: 15%;
   color: #769fcd;
-  animation: float 5s ease-in-out infinite;
-  z-index: 1;
+  box-shadow: 0 4px 16px rgba(118, 159, 205, 0.3);
+  transition: all 0.3s ease;
+  margin-bottom: 16px;
 }
 
-.floating-docs {
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  z-index: 1;
+.icon-item .icon-label {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #303133;
+  white-space: nowrap;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
-.doc {
-  width: 40px;
-  height: 50px;
-  background-color: rgba(185, 215, 234, 0.6);
-  border: 2px solid #b9d7ea;
-  border-radius: 4px;
-  position: absolute;
+.icon-item:hover .icon-label {
+  color: #769fcd;
 }
 
-.doc-1 {
-  top: 0;
-  left: 0;
-  transform: rotate(-10deg);
-  animation: float 6s ease-in-out infinite;
+.icon-item .icon-desc {
+  font-size: 13px;
+  color: #606266;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+  transition: color 0.3s ease;
 }
 
-.doc-2 {
-  top: 20px;
-  left: 30px;
-  transform: rotate(5deg);
-  animation: float 7s ease-in-out infinite 0.5s;
+.icon-item:hover .icon-desc {
+  color: #769fcd;
 }
 
-.doc-3 {
-  top: 40px;
-  left: 60px;
-  transform: rotate(-8deg);
-  animation: float 8s ease-in-out infinite 1s;
-}
 
 .promotion-text {
   text-align: center;
@@ -505,7 +540,7 @@ const goToRegister = () => {
   
   .login-left {
     flex: 0 0 auto;
-    min-height: 300px;
+    min-height: 400px;
     padding: 40px 20px;
   }
   
@@ -515,8 +550,17 @@ const goToRegister = () => {
   }
   
   .illustration-wrapper {
-    height: 250px;
     margin-bottom: 30px;
+  }
+  
+  .feature-icons {
+    flex-direction: column;
+    gap: 40px;
+    align-items: center;
+  }
+  
+  .icon-item {
+    max-width: 200px;
   }
   
   .promotion-text h2 {

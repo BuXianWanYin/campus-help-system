@@ -81,6 +81,26 @@ spring:
           # 连接池中的最小空闲连接
           min-idle: 0
 
+# 验证码配置（使用Redis存储）
+verification:
+  code:
+    # 验证码过期时间（分钟）
+    expire-minutes: 5
+    # 验证码长度
+    length: 6
+    # Redis key前缀
+    redis-key-prefix: "verification:code:"
+    # 防频繁请求配置
+    limit:
+      # 限流时间窗口（秒）
+      window-seconds: 60
+      # 同一邮箱同一类型限制次数（60秒内只能发送1次）
+      email-type-limit: 1
+      # 同一IP限制次数（60秒内最多发送3次，所有类型合计）
+      ip-limit: 3
+      # 同一邮箱所有类型限制次数（60秒内最多发送5次）
+      email-total-limit: 5
+
   servlet:
     multipart:
       enabled: true

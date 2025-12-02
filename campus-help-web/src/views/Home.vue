@@ -34,7 +34,7 @@
       <el-col :xs="24" :sm="12" :md="8" :lg="8">
         <el-card class="feature-card" @click="goToTask">
           <div class="feature-content">
-            <el-icon class="feature-icon" :size="48"><Truck /></el-icon>
+            <el-icon class="feature-icon" :size="48"><Box /></el-icon>
             <h3>跑腿服务</h3>
             <p>发布或接取跑腿任务，互帮互助</p>
           </div>
@@ -47,7 +47,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Search, ShoppingBag, Truck } from '@element-plus/icons-vue'
+import { Search, ShoppingBag, Box } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 
 const router = useRouter()
