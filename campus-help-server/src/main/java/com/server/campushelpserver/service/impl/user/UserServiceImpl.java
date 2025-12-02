@@ -7,6 +7,7 @@ import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.user.UserMapper;
 import com.server.campushelpserver.service.user.UserService;
+import com.server.campushelpserver.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -57,11 +58,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user.getCanAcceptTask() == null) {
             user.setCanAcceptTask(0);
         }
-        if (user.getCreditScore() == null) {
-            user.setCreditScore(100);
+        if (user.getVerificationStatus() == null) {
+            user.setVerificationStatus("NOT_VERIFIED");
         }
-        if (user.getCreditLevel() == null) {
-            user.setCreditLevel("一般");
+        if (user.getUserType() == null) {
+            user.setUserType("学生");
         }
         if (user.getGender() == null) {
             user.setGender(0);
@@ -83,8 +84,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException("该邮箱未注册，请先注册");
         }
         
-        // 检查账号状态
-        if (user.getStatus() == 0) {
+        // 检查账号状态（1-正常，2-已封禁）
+        if (user.getStatus() == null || user.getStatus() != 1) {
             throw new BusinessException("账号已被禁用，请联系管理员");
         }
         
@@ -211,6 +212,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setRealName(realName);
         user.setIdCard(idCard);
         user.setStudentId(studentId);
+        user.setVerificationStatus("PENDING");
+        user.setVerificationSubmitTime(LocalDateTime.now());
         // is_verified 保持为 0，等待管理员审核
         
         this.updateById(user);
@@ -230,49 +233,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException("该用户已完成实名认证，无需重复审核");
         }
         
+        // 获取当前管理员ID（从SecurityContext中获取）
+        Long adminId = getCurrentAdminId(); // TODO: 需要实现获取当前管理员ID的方法
+        
         if (auditResult == 1) {
             // 审核通过
             user.setIsVerified(1);
+            user.setVerificationStatus("VERIFIED");
             // 实名认证后自动获得接单权限
             user.setCanAcceptTask(1);
-            // 认证通过，信用积分+10
-            if (user.getCreditScore() == null) {
-                user.setCreditScore(100);
-            }
-            user.setCreditScore(user.getCreditScore() + 10);
-            // 更新信用等级
-            updateCreditLevel(user);
         } else {
             // 审核拒绝
             if (!StringUtils.hasText(auditReason)) {
                 throw new BusinessException("拒绝审核必须填写审核原因");
             }
-            // 拒绝后清空认证信息，用户可以重新提交
-            user.setRealName(null);
-            user.setIdCard(null);
-            user.setStudentId(null);
+            user.setVerificationStatus("REJECTED");
+            user.setVerificationAuditReason(auditReason);
+            // 拒绝后不清空认证信息，用户可以查看拒绝原因后修改重新提交
         }
+        
+        // 设置审核信息
+        user.setVerificationAuditTime(LocalDateTime.now());
+        user.setVerificationAuditAdminId(adminId);
         
         this.updateById(user);
         return user;
     }
     
     /**
-     * 更新信用等级
+     * 获取当前管理员ID（从SecurityContext中获取）
      */
-    private void updateCreditLevel(User user) {
-        int score = user.getCreditScore() != null ? user.getCreditScore() : 100;
-        if (score >= 90) {
-            user.setCreditLevel("优秀");
-        } else if (score >= 80) {
-            user.setCreditLevel("良好");
-        } else if (score >= 70) {
-            user.setCreditLevel("一般");
-        } else if (score >= 60) {
-            user.setCreditLevel("较差");
-        } else {
-            user.setCreditLevel("差");
+    private Long getCurrentAdminId() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return null;
         }
+        User admin = getUserByEmail(email);
+        return admin != null ? admin.getId() : null;
     }
     
     @Override

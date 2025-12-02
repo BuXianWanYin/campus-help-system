@@ -64,6 +64,10 @@ public class User implements Serializable {
     @Schema(description = "专业")
     private String major;
     
+    @TableField("phone")
+    @Schema(description = "手机号")
+    private String phone;
+    
     @TableField("real_name")
     @Schema(description = "真实姓名")
     private String realName;
@@ -76,33 +80,77 @@ public class User implements Serializable {
     @Schema(description = "学号")
     private String studentId;
     
+    @TableField("user_type")
+    @Schema(description = "用户类型：学生、教师")
+    private String userType;
+    
     @TableField("is_verified")
     @Schema(description = "是否实名认证：0-未认证，1-已认证")
     private Integer isVerified;
     
+    @TableField("verification_status")
+    @Schema(description = "认证状态：NOT_VERIFIED、PENDING、VERIFIED、REJECTED")
+    private String verificationStatus;
+    
+    @TableField("verification_proof")
+    @Schema(description = "认证证明文件（JSON数组）")
+    private String verificationProof;
+    
+    @TableField("verification_submit_time")
+    @Schema(description = "认证提交时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime verificationSubmitTime;
+    
+    @TableField("verification_audit_time")
+    @Schema(description = "认证审核时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime verificationAuditTime;
+    
+    @TableField("verification_audit_reason")
+    @Schema(description = "认证拒绝原因")
+    private String verificationAuditReason;
+    
+    @TableField("verification_audit_admin_id")
+    @Schema(description = "审核管理员ID")
+    private Long verificationAuditAdminId;
+    
     @TableField("can_accept_task")
     @Schema(description = "是否可以接单跑腿：0-不可接单，1-可接单")
     private Integer canAcceptTask;
-    
-    @TableField("credit_score")
-    @Schema(description = "信用积分")
-    private Integer creditScore;
-    
-    @TableField("credit_level")
-    @Schema(description = "信用等级")
-    private String creditLevel;
-    
-    @TableField("runner_level")
-    @Schema(description = "跑腿员等级：新手、普通、优秀、金牌")
-    private String runnerLevel;
     
     @TableField("role")
     @Schema(description = "角色：USER-普通用户，ADMIN-管理员")
     private String role;
     
     @TableField("status")
-    @Schema(description = "状态：0-禁用，1-启用")
+    @Schema(description = "账号状态：1-正常，2-已封禁")
     private Integer status;
+    
+    @TableField("ban_type")
+    @Schema(description = "封禁类型：TEMPORARY-临时，PERMANENT-永久")
+    private String banType;
+    
+    @TableField("ban_reason")
+    @Schema(description = "封禁原因")
+    private String banReason;
+    
+    @TableField("ban_days")
+    @Schema(description = "封禁天数")
+    private Integer banDays;
+    
+    @TableField("ban_time")
+    @Schema(description = "封禁时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime banTime;
+    
+    @TableField("unban_time")
+    @Schema(description = "解封时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime unbanTime;
+    
+    @TableField("ban_admin_id")
+    @Schema(description = "封禁操作管理员ID")
+    private Long banAdminId;
     
     @TableField("last_login_time")
     @Schema(description = "最后登录时间")

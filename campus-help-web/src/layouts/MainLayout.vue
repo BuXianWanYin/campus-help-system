@@ -72,6 +72,10 @@
                   <el-icon><Setting /></el-icon>
                   设置
                 </el-dropdown-item>
+                <el-dropdown-item v-if="userStore.isAdmin" divided command="admin">
+                  <el-icon><Tools /></el-icon>
+                  管理后台
+                </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
                   退出登录
@@ -318,45 +322,6 @@
         </div>
       </section>
 
-      <!-- 数据统计分析 -->
-      <section class="stats-section">
-        <div class="section-header">
-          <h2 class="section-title">校园互助数据</h2>
-          <el-select v-model="statsPeriod" style="width: 120px">
-            <el-option label="最近7天" value="7days" />
-            <el-option label="最近30天" value="30days" />
-            <el-option label="本学期" value="semester" />
-            <el-option label="本学年" value="year" />
-          </el-select>
-        </div>
-        <div class="stats-cards">
-          <div v-for="stat in statsData" :key="stat.id" class="stat-card">
-            <div class="stat-card-content">
-              <div>
-                <p class="stat-label">{{ stat.label }}</p>
-                <h3 class="stat-value">{{ stat.value }}</h3>
-                <p class="stat-change" :class="stat.changeType">
-                  <el-icon><component :is="stat.changeIcon" /></el-icon>
-                  {{ stat.change }} 较上周
-                </p>
-              </div>
-              <div class="stat-icon" :class="stat.colorClass">
-                <el-icon :size="24"><component :is="stat.icon" /></el-icon>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="charts-grid">
-          <div class="chart-card">
-            <h3>互助类型分布</h3>
-            <div ref="typeChartRef" class="chart-container"></div>
-          </div>
-          <div class="chart-card">
-            <h3>每日互助趋势</h3>
-            <div ref="trendChartRef" class="chart-container"></div>
-          </div>
-        </div>
-      </section>
 
       </template>
       
@@ -438,7 +403,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Search, ArrowDown, User, Setting, SwitchButton, Menu,
+  Search, ArrowDown, User, Setting, SwitchButton, Menu, Tools,
   HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star,
   Location, Clock, View, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
   Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
@@ -533,19 +498,6 @@ const taskForm = ref({
   deadline: null
 })
 
-// 统计数据
-const statsPeriod = ref('7days')
-const statsData = ref([
-  { id: 1, label: '总互助次数', value: '12,580', change: '12.5%', changeType: 'change-up', changeIcon: ArrowUp, icon: ConnectionIcon, colorClass: 'icon-blue' },
-  { id: 2, label: '活跃用户', value: '3,245', change: '8.3%', changeType: 'change-up', changeIcon: ArrowUp, icon: UsersIcon, colorClass: 'icon-green' },
-  { id: 3, label: '平均响应时间', value: '15分钟', change: '5.2%', changeType: 'change-down', changeIcon: ArrowDownIcon, icon: Clock, colorClass: 'icon-orange' }
-])
-
-// 图表引用
-const typeChartRef = ref(null)
-const trendChartRef = ref(null)
-let typeChartInstance = null
-let trendChartInstance = null
 
 // 检测移动端
 const checkMobile = () => {
@@ -595,6 +547,10 @@ const handleCommand = (command) => {
       break
     case 'settings':
       router.push('/user/settings')
+      break
+    case 'admin':
+      // 在新标签页打开管理后台
+      window.open('/admin/dashboard', '_blank')
       break
     case 'logout':
       ElMessageBox.confirm('确定要退出登录吗？', '提示', {
@@ -713,115 +669,6 @@ const handleSubmitTask = () => {
   }
 }
 
-// 初始化图表
-const initCharts = () => {
-  if (typeChartRef.value) {
-    typeChartInstance = initChart(typeChartRef.value, {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        orient: 'vertical',
-        right: 10,
-        top: 'center'
-      },
-      series: [
-        {
-          name: '互助类型',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: 14,
-              fontWeight: 'bold'
-            }
-          },
-          labelLine: {
-            show: false
-          },
-          data: [
-            { value: 30, name: '失物招领', itemStyle: { color: '#1E88E5' } },
-            { value: 40, name: '闲置交易', itemStyle: { color: '#4CAF50' } },
-            { value: 20, name: '跑腿服务', itemStyle: { color: '#FF9800' } },
-            { value: 5, name: '校园活动', itemStyle: { color: '#9C27B0' } },
-            { value: 5, name: '志愿互助', itemStyle: { color: '#F44336' } }
-          ]
-        }
-      ]
-    })
-  }
-
-  if (trendChartRef.value) {
-    trendChartInstance = initChart(trendChartRef.value, {
-      tooltip: {
-        trigger: 'axis'
-      },
-      legend: {
-        data: ['失物招领', '闲置交易', '跑腿服务'],
-        top: 10
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-      },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [
-        {
-          name: '失物招领',
-          type: 'line',
-          stack: 'Total',
-          smooth: true,
-          data: [45, 52, 48, 61, 55, 42, 38],
-          itemStyle: { color: '#1E88E5' },
-          areaStyle: { opacity: 0.3 }
-        },
-        {
-          name: '闲置交易',
-          type: 'line',
-          stack: 'Total',
-          smooth: true,
-          data: [78, 82, 75, 90, 85, 70, 65],
-          itemStyle: { color: '#4CAF50' },
-          areaStyle: { opacity: 0.3 }
-        },
-        {
-          name: '跑腿服务',
-          type: 'line',
-          stack: 'Total',
-          smooth: true,
-          data: [35, 40, 38, 45, 42, 30, 28],
-          itemStyle: { color: '#FF9800' },
-          areaStyle: { opacity: 0.3 }
-        }
-      ]
-    })
-  }
-}
-
-const handleResize = () => {
-  resizeChart(typeChartInstance)
-  resizeChart(trendChartInstance)
-}
 
 // 禁用菜单自动折叠功能
 const disableMenuCollapse = () => {

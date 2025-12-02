@@ -26,16 +26,23 @@ export function setupRouterGuard(router) {
           if (!userStore.userInfo) {
             try {
               await userStore.fetchCurrentUser()
-              next()
             } catch (error) {
               // 获取用户信息失败，清除token，跳转到登录页
               userStore.logout()
               ElMessage.error('登录已过期，请重新登录')
               next({ path: '/login', query: { redirect: to.fullPath } })
+              return
             }
-          } else {
-            next()
           }
+          
+          // 检查是否需要管理员权限
+          if (to.meta.requiresAdmin && !userStore.isAdmin) {
+            ElMessage.error('您没有权限访问该页面')
+            next({ path: '/home' })
+            return
+          }
+          
+          next()
         } else {
           next()
         }

@@ -96,5 +96,30 @@ export const fileApi = {
   }
 }
 
+/**
+ * 管理员相关 API
+ */
+export const adminApi = {
+  // 获取待审核的实名认证列表
+  getPendingVerifications(params) {
+    return request.get('/admin/verification/pending', { params })
+  },
+  
+  // 审核实名认证（使用userApi中的接口）
+  auditVerification(data) {
+    return request.post('/user/verification/audit', data)
+  },
+  
+  // 封禁用户
+  banUser(data) {
+    return request.post('/admin/user/ban', data)
+  },
+  
+  // 解封用户
+  unbanUser(userId) {
+    return request.post(`/admin/user/unban/${userId}`)
+  }
+}
+
 // 可以继续添加其他模块的 API
 

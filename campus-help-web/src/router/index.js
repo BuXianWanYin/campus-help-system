@@ -20,7 +20,7 @@ const routes = [
       title: '注册',
       requiresAuth: false
     }
-  },
+    },
   {
     path: '/forgot-password',
     name: 'ForgotPassword',
@@ -41,7 +41,6 @@ const routes = [
       {
         path: 'home',
         name: 'Home',
-        // 不指定 component，MainLayout 会直接显示首页内容
         meta: {
           title: '首页',
           requiresAuth: true
@@ -91,6 +90,47 @@ const routes = [
           title: '实名认证',
           requiresAuth: true
         }
+      },
+      {
+        path: 'admin',
+        component: () => import('../layouts/AdminLayout.vue'),
+        meta: {
+          title: '管理后台',
+          requiresAuth: true,
+          requiresAdmin: true
+        },
+        children: [
+          {
+            path: 'dashboard',
+            name: 'AdminDashboard',
+            component: () => import('../views/admin/Dashboard.vue'),
+            meta: {
+              title: '数据概览',
+              requiresAuth: true,
+              requiresAdmin: true
+            }
+          },
+          {
+            path: 'verification',
+            name: 'AdminVerification',
+            component: () => import('../views/admin/Verification.vue'),
+            meta: {
+              title: '实名认证审核',
+              requiresAuth: true,
+              requiresAdmin: true
+            }
+          },
+          {
+            path: 'users',
+            name: 'AdminUsers',
+            component: () => import('../views/admin/Users.vue'),
+            meta: {
+              title: '用户管理',
+              requiresAuth: true,
+              requiresAdmin: true
+            }
+          }
+        ]
       }
     ]
   }
