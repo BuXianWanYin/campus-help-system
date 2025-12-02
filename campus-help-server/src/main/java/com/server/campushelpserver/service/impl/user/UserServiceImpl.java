@@ -3,6 +3,8 @@ package com.server.campushelpserver.service.impl.user;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.user.UserMapper;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户Service实现类
@@ -24,6 +27,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
     
     @Override
     public User getUserByEmail(String email) {
@@ -184,7 +190,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public User submitVerification(Long userId, String realName, String idCard, String studentId) {
+    public User submitVerification(Long userId, String realName, String idCard, String studentId, String userType, List<String> proofImages) {
         User user = this.getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
@@ -198,6 +204,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 检查是否已经认证
         if (user.getIsVerified() != null && user.getIsVerified() == 1) {
             throw new BusinessException("您已完成实名认证，无需重复提交");
+        }
+        
+        // 检查是否有待审核的认证
+        if ("PENDING".equals(user.getVerificationStatus())) {
+            throw new BusinessException("您的认证正在审核中，请勿重复提交");
         }
         
         // 检查身份证号是否已被使用
@@ -220,10 +231,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException("该学号已被其他用户使用");
         }
         
+        // 验证证明文件
+        if (proofImages == null || proofImages.isEmpty()) {
+            throw new BusinessException("请至少上传1张证明文件");
+        }
+        if (proofImages.size() > 3) {
+            throw new BusinessException("证明文件最多上传3张");
+        }
+        
+        // 将证明文件列表转换为JSON字符串
+        String proofJson;
+        try {
+            proofJson = objectMapper.writeValueAsString(proofImages);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException("证明文件处理失败：" + e.getMessage());
+        }
+        
         // 更新用户信息（提交认证信息，等待审核）
         user.setRealName(realName);
         user.setIdCard(idCard);
         user.setStudentId(studentId);
+        user.setUserType(userType);
+        user.setVerificationProof(proofJson);
         user.setVerificationStatus("PENDING");
         user.setVerificationSubmitTime(LocalDateTime.now());
         // is_verified 保持为 0，等待管理员审核

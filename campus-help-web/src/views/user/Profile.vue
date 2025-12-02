@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-container">
+  <div class="profile-container" :class="{ 'admin-full-width': userStore.isAdmin }">
     <div class="profile-content">
       <el-row :gutter="24">
         <!-- 左侧：用户信息卡片 -->
@@ -110,24 +110,21 @@
                       />
                     </el-form-item>
 
-                    <el-form-item label="地址" prop="address">
+                    <el-form-item label="年级" prop="grade">
                       <el-input 
-                        v-model="form.address" 
-                        placeholder="请输入地址"
+                        v-model="form.grade" 
+                        placeholder="请输入年级，如：2021级"
                         :disabled="!isEditing"
                         clearable
                       />
                     </el-form-item>
 
-                    <el-form-item label="个人介绍" prop="bio">
+                    <el-form-item label="专业" prop="major">
                       <el-input 
-                        v-model="form.bio" 
-                        type="textarea"
-                        :rows="4"
-                        placeholder="请输入个人介绍"
-                        maxlength="200"
-                        show-word-limit
+                        v-model="form.major" 
+                        placeholder="请输入专业"
                         :disabled="!isEditing"
+                        clearable
                       />
                     </el-form-item>
 
@@ -154,9 +151,34 @@
 
               <!-- 账户信息 -->
               <el-col :xs="24" :sm="24" :md="10" :lg="10">
-                <div class="form-section">
+                <div class="form-section account-info-section">
                   <h3 class="section-title">账户信息</h3>
                   <div class="account-info-list">
+                    <!-- 实名认证信息 -->
+                    <template v-if="userInfo.isVerified === 1 && userInfo.role !== 'ADMIN'">
+                      <div class="info-item">
+                        <div class="info-label">
+                          <el-icon><UserFilled /></el-icon>
+                          <span>真实姓名</span>
+                        </div>
+                        <div class="info-value">{{ userInfo.realName || '-' }}</div>
+                      </div>
+                      <div class="info-item" v-if="userInfo.studentId">
+                        <div class="info-label">
+                          <el-icon><Document /></el-icon>
+                          <span>学号</span>
+                        </div>
+                        <div class="info-value">{{ userInfo.studentId }}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">
+                          <el-icon><Briefcase /></el-icon>
+                          <span>用户类型</span>
+                        </div>
+                        <div class="info-value">{{ userInfo.userType || '学生' }}</div>
+                      </div>
+                    </template>
+
                     <div class="info-item">
                       <div class="info-label">
                         <el-icon><Message /></el-icon>
@@ -272,7 +294,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
   Camera, User, Check, Warning, Star, Document, 
-  Message, Clock, Timer, CircleCheck, Calendar, Reading, RefreshLeft, Lock
+  Message, Clock, Timer, CircleCheck, Calendar, Reading, RefreshLeft, Lock, UserFilled, Briefcase
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api'
@@ -292,10 +314,12 @@ const originalForm = ref({})
 const userInfo = ref(userStore.userInfo || {})
 
 const form = reactive({
+  realName: '',
   nickname: '',
   gender: 0,
   grade: '',
-  major: ''
+  major: '',
+  phone: ''
 })
 
 const passwordForm = reactive({
@@ -345,20 +369,24 @@ const fetchUserInfo = async () => {
     if (userStore.userInfo && (!userInfo.value || Object.keys(userInfo.value).length === 0)) {
       userInfo.value = { ...userStore.userInfo }
       // 填充表单
+      form.realName = userInfo.value.realName || ''
       form.nickname = userInfo.value.nickname || ''
       form.gender = userInfo.value.gender || 0
       form.grade = userInfo.value.grade || ''
       form.major = userInfo.value.major || ''
+      form.phone = userInfo.value.phone || ''
     }
     
     const response = await userApi.getCurrentUser()
     if (response.code === 200) {
       userInfo.value = response.data
       // 填充表单
+      form.realName = userInfo.value.realName || ''
       form.nickname = userInfo.value.nickname || ''
       form.gender = userInfo.value.gender || 0
       form.grade = userInfo.value.grade || ''
       form.major = userInfo.value.major || ''
+      form.phone = userInfo.value.phone || ''
     }
   } catch (error) {
     ElMessage.error(error.message || '获取用户信息失败')
@@ -420,9 +448,9 @@ const handleStartEdit = () => {
     realName: form.realName,
     nickname: form.nickname,
     gender: form.gender,
-    phone: form.phone,
-    address: form.address,
-    bio: form.bio
+    grade: form.grade,
+    major: form.major,
+    phone: form.phone
   }
 }
 
@@ -433,9 +461,9 @@ const handleCancelEdit = () => {
   form.realName = originalForm.value.realName || ''
   form.nickname = originalForm.value.nickname || ''
   form.gender = originalForm.value.gender || 0
+  form.grade = originalForm.value.grade || ''
+  form.major = originalForm.value.major || ''
   form.phone = originalForm.value.phone || ''
-  form.address = originalForm.value.address || ''
-  form.bio = originalForm.value.bio || ''
   if (formRef.value) {
     formRef.value.clearValidate()
   }
@@ -551,6 +579,11 @@ onMounted(() => {
   background-color: var(--color-bg-primary);
 }
 
+.profile-container.admin-full-width {
+  max-width: 100%;
+  padding: var(--spacing-xl);
+}
+
 /* 内容区域 */
 .profile-content {
   margin-top: 0;
@@ -632,6 +665,13 @@ onMounted(() => {
   padding: var(--spacing-2xl);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.account-info-section {
+  height: 100%;
+  min-height: 0;
 }
 
 .section-title {
@@ -647,6 +687,7 @@ onMounted(() => {
 .account-info-list {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .info-item {

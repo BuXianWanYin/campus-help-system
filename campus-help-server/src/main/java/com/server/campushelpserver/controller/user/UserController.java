@@ -68,19 +68,6 @@ public class UserController {
         return Result.success("查询成功", result);
     }
     
-    @Operation(summary = "根据ID获取用户信息", description = "管理员根据用户ID获取用户详细信息")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/{id}")
-    public Result<User> getUserById(@Parameter(description = "用户ID") @PathVariable Long id) {
-        User user = userService.getById(id);
-        if (user == null) {
-            return Result.error("用户不存在");
-        }
-        // 清除敏感信息
-        user.setPassword(null);
-        return Result.success("查询成功", user);
-    }
-    
     @Operation(summary = "提交实名认证", description = "用户提交实名认证信息")
     @PostMapping("/verification/submit")
     public Result<User> submitVerification(@Parameter(description = "认证信息") @Validated @RequestBody VerificationRequest request) {
@@ -96,7 +83,9 @@ public class UserController {
             currentUser.getId(),
             request.getRealName(),
             request.getIdCard(),
-            request.getStudentId()
+            request.getStudentId(),
+            request.getUserType(),
+            request.getProofImages()
         );
         return Result.success("认证信息提交成功，请等待管理员审核", updatedUser);
     }
@@ -127,6 +116,19 @@ public class UserController {
         }
         userService.changePassword(email, request.getCurrentPassword(), request.getNewPassword());
         return Result.success("密码修改成功，请重新登录");
+    }
+    
+    @Operation(summary = "根据ID获取用户信息", description = "管理员根据用户ID获取用户详细信息")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("/{id}")
+    public Result<User> getUserById(@Parameter(description = "用户ID") @PathVariable Long id) {
+        User user = userService.getById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        // 清除敏感信息
+        user.setPassword(null);
+        return Result.success("查询成功", user);
     }
 }
 

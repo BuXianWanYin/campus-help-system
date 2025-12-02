@@ -9,9 +9,13 @@
           <template #extra>
             <el-descriptions :column="1" border>
               <el-descriptions-item label="真实姓名">{{ userInfo.realName }}</el-descriptions-item>
-              <el-descriptions-item label="学号">{{ userInfo.studentId }}</el-descriptions-item>
+              <el-descriptions-item label="学号/工号">{{ userInfo.studentId }}</el-descriptions-item>
+              <el-descriptions-item label="用户类型">{{ userInfo.userType || '学生' }}</el-descriptions-item>
               <el-descriptions-item label="身份证号">
                 {{ maskIdCard(userInfo.idCard) }}
+              </el-descriptions-item>
+              <el-descriptions-item label="认证时间">
+                {{ formatDate(userInfo.verificationAuditTime) }}
               </el-descriptions-item>
               <el-descriptions-item label="认证状态">
                 <el-tag type="success">已认证</el-tag>
@@ -21,6 +25,12 @@
                 <el-tag v-else type="info">不可接单</el-tag>
               </el-descriptions-item>
             </el-descriptions>
+            <div style="margin-top: 20px;">
+              <p style="color: var(--color-text-regular); font-size: 14px;">
+                ✅ 您现在可以发布闲置商品和跑腿任务<br>
+                ✅ 您现在可以参与商品交易和接单跑腿
+              </p>
+            </div>
           </template>
         </el-result>
       </div>
@@ -31,7 +41,71 @@
         </el-result>
       </div>
       
-      <!-- 未认证状态 -->
+      <!-- 认证中状态 -->
+      <div v-else-if="userInfo.verificationStatus === 'PENDING'" class="pending-status">
+        <el-result icon="warning" title="认证审核中" sub-title="您的实名认证正在审核中">
+          <template #extra>
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="真实姓名">{{ userInfo.realName }}</el-descriptions-item>
+              <el-descriptions-item label="学号/工号">{{ userInfo.studentId }}</el-descriptions-item>
+              <el-descriptions-item label="用户类型">{{ userInfo.userType || '学生' }}</el-descriptions-item>
+              <el-descriptions-item label="提交时间">
+                {{ formatDate(userInfo.verificationSubmitTime) }}
+              </el-descriptions-item>
+              <el-descriptions-item label="审核状态">
+                <el-tag type="warning">待审核</el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+            <div style="margin-top: 20px; padding: 16px; background-color: #f0f9ff; border-radius: 8px;">
+              <p style="color: var(--color-text-regular); font-size: 14px; margin: 0;">
+                ⏳ 预计审核时间：1-3个工作日<br>
+                📧 审核结果将通过站内消息和邮件通知您<br>
+                💡 请耐心等待管理员审核
+              </p>
+            </div>
+          </template>
+        </el-result>
+      </div>
+      
+      <!-- 已拒绝状态 -->
+      <div v-else-if="userInfo.verificationStatus === 'REJECTED'" class="rejected-status">
+        <el-result icon="error" title="认证未通过" sub-title="您的实名认证未通过审核">
+          <template #extra>
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="真实姓名">{{ userInfo.realName }}</el-descriptions-item>
+              <el-descriptions-item label="学号/工号">{{ userInfo.studentId }}</el-descriptions-item>
+              <el-descriptions-item label="用户类型">{{ userInfo.userType || '学生' }}</el-descriptions-item>
+              <el-descriptions-item label="审核时间">
+                {{ formatDate(userInfo.verificationAuditTime) }}
+              </el-descriptions-item>
+              <el-descriptions-item label="拒绝原因">
+                <el-alert
+                  :title="userInfo.verificationAuditReason || '未提供拒绝原因'"
+                  type="error"
+                  :closable="false"
+                  show-icon
+                />
+              </el-descriptions-item>
+            </el-descriptions>
+            <div style="margin-top: 20px;">
+              <el-button type="primary" @click="showForm = true">
+                修改信息后重新提交
+              </el-button>
+            </div>
+          </template>
+        </el-result>
+        
+        <!-- 重新提交表单 -->
+        <div v-if="showForm" style="margin-top: 30px;">
+          <verification-form
+            :user-info="userInfo"
+            @submit-success="handleSubmitSuccess"
+            @cancel="showForm = false"
+          />
+        </div>
+      </div>
+      
+      <!-- 未认证状态（显示认证表单） -->
       <div v-else>
         <el-alert
           type="info"
@@ -41,107 +115,37 @@
         >
           <template #title>
             <div>
-              <p>实名认证说明：</p>
-              <ul style="margin: 8px 0 0 20px; padding: 0;">
-                <li>提交认证信息后，管理员将在1-3个工作日内完成审核</li>
-                <li>认证通过后，您将自动获得接单权限，可以接取跑腿任务</li>
-                <li>认证通过后，您可以发布闲置商品和跑腿任务</li>
-                <li>请确保填写的信息真实有效，虚假信息将导致认证失败</li>
+              <p style="font-weight: 500; margin-bottom: 8px;">📌 实名认证说明</p>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li>实名认证后可以发布闲置商品和跑腿任务</li>
+                <li>实名认证后可以参与商品交易和接单跑腿</li>
+                <li>未认证用户只能使用失物招领功能</li>
+                <li>认证信息仅用于平台安全管理，不会泄露给其他用户</li>
+                <li>提交后，管理员将在1-3个工作日内完成审核</li>
               </ul>
             </div>
           </template>
         </el-alert>
         
-        <el-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          label-width="120px"
-          style="max-width: 600px;"
-        >
-          <el-form-item label="真实姓名" prop="realName">
-            <el-input
-              v-model="form.realName"
-              placeholder="请输入真实姓名"
-              maxlength="50"
-              show-word-limit
-            />
-          </el-form-item>
-          
-          <el-form-item label="身份证号" prop="idCard">
-            <el-input
-              v-model="form.idCard"
-              placeholder="请输入18位身份证号"
-              maxlength="18"
-              show-word-limit
-            />
-            <div class="form-tip">请输入18位身份证号码</div>
-          </el-form-item>
-          
-          <el-form-item label="学号" prop="studentId">
-            <el-input
-              v-model="form.studentId"
-              placeholder="请输入学号"
-              maxlength="50"
-              show-word-limit
-            />
-          </el-form-item>
-          
-          <el-form-item>
-            <el-button type="primary" :loading="loading" @click="handleSubmit">
-              提交认证
-            </el-button>
-            <el-button @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-form>
+        <verification-form
+          :user-info="userInfo"
+          @submit-success="handleSubmitSuccess"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api'
+import VerificationForm from './components/VerificationForm.vue'
 
-const router = useRouter()
 const userStore = useUserStore()
-const formRef = ref(null)
-const loading = ref(false)
 const userInfo = ref({})
-
-const form = reactive({
-  realName: '',
-  idCard: '',
-  studentId: ''
-})
-
-// 身份证号验证规则
-const validateIdCard = (rule, value, callback) => {
-  if (!value) {
-    callback(new Error('请输入身份证号'))
-  } else if (!/^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[0-9Xx]$/.test(value)) {
-    callback(new Error('身份证号格式不正确'))
-  } else {
-    callback()
-  }
-}
-
-const rules = {
-  realName: [
-    { required: true, message: '请输入真实姓名', trigger: 'blur' },
-    { max: 50, message: '真实姓名长度不能超过50个字符', trigger: 'blur' }
-  ],
-  idCard: [
-    { required: true, validator: validateIdCard, trigger: 'blur' }
-  ],
-  studentId: [
-    { required: true, message: '请输入学号', trigger: 'blur' },
-    { max: 50, message: '学号长度不能超过50个字符', trigger: 'blur' }
-  ]
-}
+const showForm = ref(false)
 
 // 获取用户信息
 const fetchUserInfo = async () => {
@@ -149,52 +153,18 @@ const fetchUserInfo = async () => {
     const response = await userApi.getCurrentUser()
     if (response.code === 200) {
       userInfo.value = response.data
-      // 如果已填写认证信息但未认证，填充表单
-      if (userInfo.value.realName && userInfo.value.isVerified !== 1) {
-        form.realName = userInfo.value.realName || ''
-        form.idCard = userInfo.value.idCard || ''
-        form.studentId = userInfo.value.studentId || ''
-      }
     }
   } catch (error) {
     ElMessage.error(error.message || '获取用户信息失败')
   }
 }
 
-// 提交认证
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        const response = await userApi.submitVerification(form)
-        if (response.code === 200) {
-          ElMessage.success('认证信息提交成功，请等待管理员审核')
-          // 更新用户信息
-          userStore.setUserInfo(response.data)
-          userInfo.value = response.data
-          // 重置表单
-          handleReset()
-        }
-      } catch (error) {
-        ElMessage.error(error.message || '提交失败')
-      } finally {
-        loading.value = false
-      }
-    }
-  })
-}
-
-// 重置表单
-const handleReset = () => {
-  form.realName = ''
-  form.idCard = ''
-  form.studentId = ''
-  if (formRef.value) {
-    formRef.value.clearValidate()
-  }
+// 提交成功后的处理
+const handleSubmitSuccess = async (updatedUser) => {
+  userStore.setUserInfo(updatedUser)
+  userInfo.value = updatedUser
+  showForm.value = false
+  await fetchUserInfo() // 重新获取最新信息
 }
 
 // 身份证号脱敏显示
@@ -204,6 +174,20 @@ const maskIdCard = (idCard) => {
   return idCard.substring(0, 6) + '********' + idCard.substring(14)
 }
 
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
 onMounted(() => {
   fetchUserInfo()
 })
@@ -211,9 +195,11 @@ onMounted(() => {
 
 <style scoped>
 .verification-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: var(--content-padding);
+  padding: var(--spacing-2xl);
+  min-height: calc(100vh - var(--header-height));
+  background-color: var(--color-bg-primary);
 }
 
 .verification-card {
@@ -231,37 +217,11 @@ onMounted(() => {
   margin: 0 0 var(--spacing-3xl) 0;
 }
 
-.verified-status {
+.verified-status,
+.pending-status,
+.rejected-status,
+.admin-status {
   padding: 20px 0;
-}
-
-.form-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 8px;
-  line-height: 1.5;
-}
-
-/* 优化表单样式 */
-:deep(.el-form) {
-  padding: 20px 0;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 24px;
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 1px var(--color-border) inset;
-}
-
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--color-primary) inset;
-}
-
-:deep(.el-input.is-focus .el-input__wrapper) {
-  box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
 :deep(.el-alert) {
@@ -299,4 +259,3 @@ onMounted(() => {
   }
 }
 </style>
-

@@ -3,6 +3,8 @@ package com.server.campushelpserver.service.user;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.server.campushelpserver.entity.user.User;
 
+import java.util.List;
+
 /**
  * 用户Service接口
  */
@@ -62,10 +64,12 @@ public interface UserService extends IService<User> {
      * @param userId 用户ID
      * @param realName 真实姓名
      * @param idCard 身份证号
-     * @param studentId 学号
+     * @param studentId 学号/工号
+     * @param userType 用户类型（学生/教师）
+     * @param proofImages 证明文件URL列表
      * @return 更新后的用户信息
      */
-    User submitVerification(Long userId, String realName, String idCard, String studentId);
+    User submitVerification(Long userId, String realName, String idCard, String studentId, String userType, List<String> proofImages);
     
     /**
      * 审核实名认证（管理员）
