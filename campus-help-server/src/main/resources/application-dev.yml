@@ -1,0 +1,19 @@
+# 开发环境配置
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/campus_help_dev?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+  
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+
+logging:
+  level:
+    root: INFO
+    com.server.campushelpserver: DEBUG
+
