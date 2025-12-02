@@ -2,6 +2,7 @@
   <div class="forgot-password-container">
     <div class="forgot-password-left">
       <div class="illustration-wrapper">
+        <div class="system-title">{{ appConfig.title }}</div>
         <div class="feature-cards">
           <div class="feature-card">
             <div class="feature-icon">
@@ -316,6 +317,15 @@ onUnmounted(() => {
   width: 100%;
   max-width: 600px;
   z-index: 1;
+}
+
+.system-title {
+  font-size: 42px;
+  font-weight: bold;
+  color: #303133;
+  text-align: center;
+  margin-bottom: 50px;
+  letter-spacing: 2px;
 }
 
 .feature-cards {

@@ -3,42 +3,34 @@
     <!-- 左侧：插图和宣传文字 -->
     <div class="register-left">
       <div class="illustration-wrapper">
-        <!-- 装饰性几何图形 -->
-        <div class="decoration-shapes">
-          <div class="shape shape-circle"></div>
-          <div class="shape shape-square"></div>
-          <div class="shape shape-rect"></div>
-        </div>
-        <!-- 主要功能图标 -->
-        <div class="main-illustration">
-          <div class="feature-icons">
-            <div class="icon-item icon-search">
-              <div class="icon-bg">
-                <el-icon :size="40"><Search /></el-icon>
-              </div>
-              <span class="icon-label">失物招领</span>
-              <p class="icon-desc">发布失物信息<br/>寻找丢失物品</p>
+        <div class="system-title">{{ appConfig.title }}</div>
+        <div class="feature-cards">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon :size="40"><Search /></el-icon>
             </div>
-            <div class="icon-item icon-shopping">
-              <div class="icon-bg">
-                <el-icon :size="40"><ShoppingBag /></el-icon>
-              </div>
-              <span class="icon-label">闲置交易</span>
-              <p class="icon-desc">买卖闲置物品<br/>让资源再利用</p>
+            <div class="feature-title">失物招领</div>
+            <div class="feature-desc">发布失物信息<br/>寻找丢失物品</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon :size="40"><ShoppingBag /></el-icon>
             </div>
-            <div class="icon-item icon-truck">
-              <div class="icon-bg">
-                <el-icon :size="40"><Box /></el-icon>
-              </div>
-              <span class="icon-label">跑腿服务</span>
-              <p class="icon-desc">发布或接取任务<br/>互帮互助</p>
+            <div class="feature-title">闲置交易</div>
+            <div class="feature-desc">买卖闲置物品<br/>让资源再利用</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon :size="40"><Box /></el-icon>
             </div>
+            <div class="feature-title">跑腿服务</div>
+            <div class="feature-desc">发布或接取任务<br/>互帮互助</div>
           </div>
         </div>
-      </div>
-      <div class="promotion-text">
-        <h2>连接校园，互助共享</h2>
-        <p>失物招领、闲置交易、跑腿服务，一站式解决您的校园互助需求</p>
+        <div class="promo-text">
+          <h1>连接校园，互助共享</h1>
+          <p>失物招领、闲置交易、跑腿服务，一站式解决您的校园互助需求</p>
+        </div>
       </div>
     </div>
     
@@ -115,11 +107,12 @@
             </el-input>
           </el-form-item>
           
-          <el-form-item>
-            <el-checkbox v-model="agreePrivacy">
-              我同意<el-link type="primary" :underline="false" style="margin: 0 4px;">《隐私政策》</el-link>
-            </el-checkbox>
-          </el-form-item>
+            <el-form-item>
+             <el-checkbox v-model="agreePrivacy">
+               <span style="vertical-align: middle;">我同意</span>
+               <el-link type="primary" :underline="false" style="vertical-align: middle; margin: 0 4px;">《隐私政策》</el-link>
+             </el-checkbox>
+            </el-form-item>
           
           <el-form-item>
             <el-button
@@ -351,157 +344,80 @@ const goToLogin = () => {
   position: relative;
   width: 100%;
   max-width: 600px;
+  z-index: 1;
+}
+
+.system-title {
+  font-size: 42px;
+  font-weight: bold;
+  color: #303133;
+  text-align: center;
+  margin-bottom: 50px;
+  letter-spacing: 2px;
+}
+
+.feature-cards {
+  display: flex;
+  justify-content: space-around;
+  gap: 30px;
   margin-bottom: 60px;
 }
 
-.decoration-shapes {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-}
-
-.shape {
-  position: absolute;
-  background-color: rgba(118, 159, 205, 0.1);
-  border-radius: 8px;
-}
-
-.shape-circle {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  top: 10%;
-  right: 15%;
-  animation: float 6s ease-in-out infinite;
-}
-
-.shape-square {
-  width: 60px;
-  height: 60px;
-  top: 60%;
-  left: 10%;
-  animation: float 8s ease-in-out infinite;
-}
-
-.shape-rect {
-  width: 100px;
-  height: 40px;
-  border-radius: 20px;
-  top: 30%;
-  left: 5%;
-  animation: float 7s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-    opacity: 0.6;
-  }
-  50% {
-    transform: translateY(-25px) rotate(5deg);
-    opacity: 0.8;
-  }
-}
-
-.main-illustration {
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 0;
-}
-
-.feature-icons {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
-  width: 100%;
-  max-width: 550px;
-  gap: 30px;
-  z-index: 2;
-}
-
-.icon-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.feature-card {
   flex: 1;
-  max-width: 160px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 30px 20px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.icon-item:hover {
-  transform: translateY(-8px);
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
 }
 
-.icon-item:hover .icon-bg {
-  box-shadow: 0 8px 24px rgba(118, 159, 205, 0.4);
-  transform: scale(1.05);
-}
-
-.icon-bg {
+.feature-icon {
   width: 80px;
   height: 80px;
-  background-color: #FFFFFF;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
   border-radius: 50%;
   display: flex;
-  justify-content: center;
   align-items: center;
-  color: #769fcd;
-  box-shadow: 0 4px 16px rgba(118, 159, 205, 0.3);
-  transition: all 0.3s ease;
-  margin-bottom: 16px;
+  justify-content: center;
+  color: white;
 }
 
-.icon-item .icon-label {
-  font-size: 16px;
-  margin-bottom: 8px;
-  color: #303133;
-  white-space: nowrap;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.icon-item:hover .icon-label {
-  color: #769fcd;
-}
-
-.icon-item .icon-desc {
-  font-size: 13px;
-  color: #606266;
-  text-align: center;
-  line-height: 1.6;
-  margin: 0;
-  transition: color 0.3s ease;
-}
-
-.icon-item:hover .icon-desc {
-  color: #769fcd;
-}
-
-
-.promotion-text {
-  text-align: center;
-  color: #303133;
-  max-width: 500px;
-}
-
-.promotion-text h2 {
-  font-size: 24px;
+.feature-title {
+  font-size: 18px;
   font-weight: bold;
-  margin: 0 0 16px 0;
   color: #303133;
+  margin-bottom: 10px;
 }
 
-.promotion-text p {
+.feature-desc {
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.promo-text {
+  text-align: center;
+}
+
+.promo-text h1 {
+  font-size: 36px;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 20px;
+}
+
+.promo-text p {
   font-size: 16px;
   color: #606266;
-  margin: 0;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 /* 右侧区域 */
@@ -559,6 +475,15 @@ const goToLogin = () => {
 
 .register-form :deep(.el-checkbox__label) {
   font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.register-form :deep(.el-checkbox__label span),
+.register-form :deep(.el-checkbox__label .el-link) {
+  vertical-align: middle;
+  line-height: 1.5;
 }
 
 .form-footer {
@@ -585,35 +510,25 @@ const goToLogin = () => {
   
   .register-left {
     flex: 0 0 auto;
-    min-height: 400px;
     padding: 40px 20px;
   }
   
-  .register-right {
-    flex: 0 0 auto;
-    width: 100%;
+  .feature-cards {
+    flex-direction: column;
+    gap: 20px;
   }
   
-  .illustration-wrapper {
+  .system-title {
+    font-size: 32px;
     margin-bottom: 30px;
   }
   
-  .feature-icons {
-    flex-direction: column;
-    gap: 40px;
-    align-items: center;
+  .promo-text h1 {
+    font-size: 28px;
   }
   
-  .icon-item {
-    max-width: 200px;
-  }
-  
-  .promotion-text h2 {
-    font-size: 20px;
-  }
-  
-  .promotion-text p {
-    font-size: 14px;
+  .register-right {
+    padding: 20px;
   }
 }
 </style>
