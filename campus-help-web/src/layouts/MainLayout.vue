@@ -198,6 +198,14 @@
                   <el-icon><Clock /></el-icon>
                   {{ formatTime(item.createTime) }}
                 </span>
+                <span class="meta-item">
+                  <el-icon><Folder /></el-icon>
+                  {{ item.category }}
+                </span>
+                <span class="meta-item">
+                  <el-icon><View /></el-icon>
+                  {{ item.viewCount || 0 }}
+                </span>
               </div>
               <div class="card-footer">
                 <div class="card-user">
@@ -416,7 +424,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, ArrowDown, User, Setting, SwitchButton, Menu, Tools,
   HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star,
-  Location, Clock, View, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
+  Location, Clock, View, Folder, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
   Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
   Close, ArrowUp, ArrowDown as ArrowDownIcon, Box, InfoFilled
 } from '@element-plus/icons-vue'
@@ -1491,13 +1499,14 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   margin: 0 0 6px 0;
   line-height: 1.4;
-  min-height: 42px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 42px;
+  max-height: 42px;
 }
 
 .card-desc {
@@ -1505,14 +1514,23 @@ onUnmounted(() => {
   color: var(--color-text-regular);
   margin: 0 0 8px 0;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 36px;
 }
 
 .card-meta {
   display: flex;
-  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 12px;
   color: var(--color-text-secondary);
   margin-bottom: 8px;
+  align-items: center;
 }
 
 .meta-item {
@@ -1528,6 +1546,7 @@ onUnmounted(() => {
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border-light);
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 .card-user {

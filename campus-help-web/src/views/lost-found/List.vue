@@ -69,6 +69,14 @@
               <el-icon><Clock /></el-icon>
               {{ formatTime(item.createTime) }}
             </span>
+            <span class="meta-item">
+              <el-icon><Folder /></el-icon>
+              {{ item.category }}
+            </span>
+            <span class="meta-item">
+              <el-icon><View /></el-icon>
+              {{ item.viewCount || 0 }}
+            </span>
           </div>
           <div class="card-footer">
             <div class="card-user">
@@ -113,7 +121,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Location, Clock } from '@element-plus/icons-vue'
+import { Location, Clock, Folder, View } from '@element-plus/icons-vue'
 import { lostFoundApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
@@ -395,13 +403,14 @@ onMounted(() => {
   color: #303133;
   margin: 0 0 8px 0;
   line-height: 1.5;
-  min-height: 48px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 48px;
+  max-height: 48px;
 }
 
 .card-desc {
@@ -415,14 +424,18 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 42px;
+  max-height: 42px;
 }
 
 .card-meta {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 12px;
   color: #909399;
   margin-bottom: 12px;
+  align-items: center;
 }
 
 .meta-item {
@@ -438,6 +451,7 @@ onMounted(() => {
   padding-top: 12px;
   border-top: 1px solid #F0F0F0;
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 .card-user {

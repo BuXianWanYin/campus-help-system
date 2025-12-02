@@ -193,26 +193,26 @@
     <!-- 认领对话框 -->
     <el-dialog
       v-model="showClaimDialog"
-      title="申请认领"
+      :title="lostFound?.type === 'LOST' ? '我捡到了' : '申请认领'"
       width="600px"
       @close="resetClaimForm"
     >
       <el-form :model="claimForm" label-width="100px">
-        <el-form-item label="物品特征" required>
+        <el-form-item :label="lostFound?.type === 'LOST' ? '拾取信息' : '物品特征'" required>
           <el-input
             v-model="claimForm.description"
             type="textarea"
             :rows="4"
-            placeholder="请详细描述物品的特征，以便发布者确认"
+            :placeholder="lostFound?.type === 'LOST' ? '请详细描述您在哪里捡到的、物品的状况等信息，以便发布者确认' : '请详细描述物品的特征，以便发布者确认'"
             maxlength="500"
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="丢失时间">
+        <el-form-item :label="lostFound?.type === 'LOST' ? '拾取时间' : '丢失时间'">
           <el-date-picker
             v-model="claimForm.lostTime"
             type="datetime"
-            placeholder="选择丢失时间"
+            :placeholder="lostFound?.type === 'LOST' ? '选择拾取时间' : '选择丢失时间'"
             style="width: 100%"
           />
         </el-form-item>
@@ -221,12 +221,12 @@
             v-model="claimForm.otherInfo"
             type="textarea"
             :rows="3"
-            placeholder="其他能够证明物品归属的信息"
+            :placeholder="lostFound?.type === 'LOST' ? '其他相关信息，如联系方式、可以归还的时间和地点等' : '其他能够证明物品归属的信息'"
             maxlength="300"
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="证明文件">
+        <el-form-item :label="lostFound?.type === 'LOST' ? '物品照片' : '证明文件'">
           <el-upload
             v-model:file-list="claimForm.proofImages"
             action="#"
@@ -237,6 +237,12 @@
           >
             <el-icon><Plus /></el-icon>
           </el-upload>
+          <div class="form-tip" v-if="lostFound?.type === 'LOST'">
+            请上传您捡到的物品照片，以便发布者确认
+          </div>
+          <div class="form-tip" v-else>
+            请上传能够证明物品归属的文件（可选）
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -392,7 +398,10 @@ const handleContact = () => {
  */
 const handleSubmitClaim = async () => {
   if (!claimForm.value.description.trim()) {
-    ElMessage.warning('请填写物品特征描述')
+    const warningText = lostFound.value?.type === 'LOST' 
+      ? '请填写拾取信息' 
+      : '请填写物品特征描述'
+    ElMessage.warning(warningText)
     return
   }
   
@@ -408,7 +417,10 @@ const handleSubmitClaim = async () => {
     
     const response = await lostFoundApi.applyClaim(data)
     if (response.code === 200) {
-      ElMessage.success('认领申请已提交')
+      const successText = lostFound.value?.type === 'LOST' 
+        ? '申请已提交，发布者会尽快与您联系' 
+        : '认领申请已提交'
+      ElMessage.success(successText)
       showClaimDialog.value = false
       resetClaimForm()
     }
@@ -707,6 +719,20 @@ onMounted(() => {
 
 .action-section {
   margin-bottom: 24px;
+}
+
+.action-tip {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.5;
 }
 
 .status-tip {
