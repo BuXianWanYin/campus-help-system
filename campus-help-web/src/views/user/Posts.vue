@@ -1,7 +1,7 @@
 <template>
-  <div class="list-container">
+  <div class="posts-container">
     <div class="page-header">
-      <h1 class="page-title">失物招领</h1>
+      <h1 class="page-title">我的发布</h1>
       <el-button type="primary" @click="handlePublish">发布失物</el-button>
     </div>
 
@@ -9,10 +9,11 @@
     <div class="filter-bar">
       <el-form :inline="true" class="filter-form">
         <el-form-item label="类型：">
-          <div class="tab-buttons">
-            <el-button :type="filters.type === 'LOST' || !filters.type ? 'primary' : ''" size="small" @click="handleTypeChange('LOST')">失物</el-button>
-            <el-button :type="filters.type === 'FOUND' ? 'primary' : ''" size="small" @click="handleTypeChange('FOUND')">招领</el-button>
-          </div>
+          <el-select v-model="filters.type" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
+            <el-option label="全部" value="" />
+            <el-option label="失物" value="LOST" />
+            <el-option label="招领" value="FOUND" />
+          </el-select>
         </el-form-item>
         <el-form-item label="分类：">
           <el-select v-model="filters.category" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
@@ -27,13 +28,13 @@
         <el-form-item label="状态：">
           <el-select v-model="filters.status" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
             <el-option label="全部" value="" />
+            <el-option label="待审核" value="PENDING_REVIEW" />
             <el-option label="待认领" value="PENDING_CLAIM" />
             <el-option label="认领中" value="CLAIMING" />
             <el-option label="已认领" value="CLAIMED" />
+            <el-option label="已关闭" value="CLOSED" />
+            <el-option label="已拒绝" value="REJECTED" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="地点：">
-          <el-input v-model="filters.location" placeholder="输入地点" style="width: 150px" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="排序：">
           <el-select v-model="filters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
@@ -42,23 +43,23 @@
             <el-option label="悬赏最高" value="reward" />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">筛选</el-button>
-        </el-form-item>
       </el-form>
     </div>
 
     <!-- 失物列表 -->
     <div class="card-grid" v-loading="loading">
-      <div v-for="item in lostFoundList" :key="item.id" class="lost-found-card" @click="goToDetail(item.id)">
-        <div class="card-image-wrapper">
+      <div v-for="item in lostFoundList" :key="item.id" class="lost-found-card">
+        <div class="card-image-wrapper" @click="goToDetail(item.id)">
           <img :src="getFirstImage(item.images)" :alt="item.title" class="card-image" />
           <span class="card-badge" :class="item.type === 'LOST' ? 'badge-red' : 'badge-green'">
             {{ item.type === 'LOST' ? '失物' : '招领' }}
           </span>
+          <span class="status-badge" :class="getStatusClass(item.status)">
+            {{ getStatusText(item.status, item.type) }}
+          </span>
         </div>
         <div class="card-content">
-          <h3 class="card-title">{{ item.title }}</h3>
+          <h3 class="card-title" @click="goToDetail(item.id)">{{ item.title }}</h3>
           <p class="card-desc">{{ item.description }}</p>
           <div class="card-meta">
             <span class="meta-item">
@@ -69,21 +70,40 @@
               <el-icon><Clock /></el-icon>
               {{ formatTime(item.createTime) }}
             </span>
+            <span class="meta-item">
+              <el-icon><View /></el-icon>
+              {{ item.viewCount || 0 }}次浏览
+            </span>
           </div>
           <div class="card-footer">
-            <div class="card-user">
-              <el-avatar :size="24" :src="getAvatarUrl(item.userAvatar)">{{ item.userName?.charAt(0) || 'U' }}</el-avatar>
-              <span>{{ item.userName || '未知用户' }}</span>
+            <div class="card-info">
+              <span v-if="item.reward > 0" class="reward-text">悬赏 ¥{{ item.reward }}</span>
             </div>
             <div class="card-actions">
-              <span v-if="item.reward > 0" class="reward-text">悬赏 ¥{{ item.reward }}</span>
+              <el-button size="small" @click.stop="goToDetail(item.id)">查看详情</el-button>
               <el-button 
-                v-if="item.userId && item.userId !== userStore.userInfo?.id" 
-                type="primary" 
+                v-if="canEdit(item.status)" 
                 size="small" 
+                type="primary" 
                 text 
-                @click.stop="handleContact(item)">
-                联系TA
+                @click.stop="handleEdit(item)">
+                编辑
+              </el-button>
+              <el-button 
+                v-if="canClose(item.status)" 
+                size="small" 
+                type="warning" 
+                text 
+                @click.stop="handleClose(item)">
+                关闭
+              </el-button>
+              <el-button 
+                v-if="canDelete(item.status)" 
+                size="small" 
+                type="danger" 
+                text 
+                @click.stop="handleDelete(item)">
+                删除
               </el-button>
             </div>
           </div>
@@ -92,7 +112,7 @@
     </div>
 
     <!-- 空状态 -->
-    <el-empty v-if="!loading && lostFoundList.length === 0" description="暂无失物信息" />
+    <el-empty v-if="!loading && lostFoundList.length === 0" description="您还没有发布任何失物信息" />
 
     <!-- 分页器 -->
     <div class="pagination-wrapper" v-if="total > 0">
@@ -112,14 +132,12 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Location, Clock } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Location, Clock, View } from '@element-plus/icons-vue'
 import { lostFoundApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
-import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
-const userStore = useUserStore()
 
 const loading = ref(false)
 const lostFoundList = ref([])
@@ -129,7 +147,6 @@ const filters = reactive({
   type: '',
   category: '',
   status: '',
-  location: '',
   sortBy: 'latest'
 })
 
@@ -139,9 +156,9 @@ const pagination = reactive({
 })
 
 /**
- * 获取失物列表
+ * 获取我的发布列表
  */
-const fetchLostFoundList = async () => {
+const fetchMyPosts = async () => {
   loading.value = true
   try {
     const params = {
@@ -150,25 +167,21 @@ const fetchLostFoundList = async () => {
       type: filters.type || undefined,
       category: filters.category || undefined,
       status: filters.status || undefined,
-      location: filters.location || undefined,
       sortBy: filters.sortBy || 'latest'
     }
     
-    const response = await lostFoundApi.getList(params)
+    const response = await lostFoundApi.getMyPosts(params)
     if (response.code === 200) {
       const pageData = response.data
       lostFoundList.value = (pageData.records || []).map(item => ({
         ...item,
-        images: parseImages(item.images),
-        userAvatar: item.user?.avatar,
-        userName: item.user?.nickname || '未知用户',
-        userId: item.userId // 保存userId用于判断是否为发布者
+        images: parseImages(item.images)
       }))
       total.value = pageData.total || 0
     }
   } catch (error) {
-    console.error('获取失物列表失败:', error)
-    ElMessage.error('获取失物列表失败')
+    console.error('获取我的发布列表失败:', error)
+    ElMessage.error('获取我的发布列表失败')
   } finally {
     loading.value = false
   }
@@ -220,12 +233,33 @@ const formatTime = (time) => {
 }
 
 /**
- * 处理类型切换
+ * 获取状态文本
  */
-const handleTypeChange = (type) => {
-  filters.type = filters.type === type ? '' : type
-  pagination.pageNum = 1
-  handleSearch()
+const getStatusText = (status, type) => {
+  const statusMap = {
+    'PENDING_REVIEW': '待审核',
+    'PENDING_CLAIM': type === 'LOST' ? '寻找中' : '等待失主',
+    'CLAIMING': '认领中',
+    'CLAIMED': '已认领',
+    'CLOSED': '已关闭',
+    'REJECTED': '已拒绝'
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * 获取状态样式类
+ */
+const getStatusClass = (status) => {
+  const classMap = {
+    'PENDING_REVIEW': 'status-warning',
+    'PENDING_CLAIM': 'status-info',
+    'CLAIMING': 'status-primary',
+    'CLAIMED': 'status-success',
+    'CLOSED': 'status-default',
+    'REJECTED': 'status-danger'
+  }
+  return classMap[status] || 'status-default'
 }
 
 /**
@@ -233,7 +267,28 @@ const handleTypeChange = (type) => {
  */
 const handleSearch = () => {
   pagination.pageNum = 1
-  fetchLostFoundList()
+  fetchMyPosts()
+}
+
+/**
+ * 判断是否可以编辑
+ */
+const canEdit = (status) => {
+  return status !== 'CLAIMED' && status !== 'CLOSED'
+}
+
+/**
+ * 判断是否可以关闭
+ */
+const canClose = (status) => {
+  return status !== 'CLOSED' && status !== 'CLAIMED'
+}
+
+/**
+ * 判断是否可以删除
+ */
+const canDelete = (status) => {
+  return status !== 'CLAIMING' && status !== 'CLAIMED'
 }
 
 /**
@@ -244,17 +299,75 @@ const handlePublish = () => {
 }
 
 /**
- * 处理联系
- */
-const handleContact = (item) => {
-  ElMessage.info(`联系 ${item.userName}`)
-}
-
-/**
  * 跳转详情
  */
 const goToDetail = (id) => {
   router.push(`/lost-found/detail/${id}`)
+}
+
+/**
+ * 处理编辑
+ */
+const handleEdit = (item) => {
+  router.push(`/lost-found/edit/${item.id}`)
+}
+
+/**
+ * 处理关闭
+ */
+const handleClose = async (item) => {
+  try {
+    const typeText = item.type === 'LOST' ? '失物' : '招领'
+    const closeTip = item.type === 'LOST' 
+      ? '关闭后将不再显示，其他用户将无法看到此失物信息。' 
+      : '关闭后将不可被认领，失主将无法申请认领该物品。'
+    
+    await ElMessageBox.confirm(
+      `确定要关闭${typeText}《${item.title}》吗？${closeTip}`,
+      `关闭${typeText}`,
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await lostFoundApi.close(item.id)
+    ElMessage.success('关闭成功')
+    fetchMyPosts()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('关闭失败:', error)
+      ElMessage.error(error.response?.data?.message || '关闭失败')
+    }
+  }
+}
+
+/**
+ * 处理删除
+ */
+const handleDelete = async (item) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除失物《${item.title}》吗？删除后无法恢复。`,
+      '删除失物',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    await lostFoundApi.delete(item.id)
+    ElMessage.success('删除成功')
+    fetchMyPosts()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失物失败:', error)
+      ElMessage.error(error.response?.data?.message || '删除失败')
+    }
+  }
 }
 
 /**
@@ -263,7 +376,7 @@ const goToDetail = (id) => {
 const handleSizeChange = (size) => {
   pagination.pageSize = size
   pagination.pageNum = 1
-  fetchLostFoundList()
+  fetchMyPosts()
 }
 
 /**
@@ -271,16 +384,16 @@ const handleSizeChange = (size) => {
  */
 const handlePageChange = (page) => {
   pagination.pageNum = page
-  fetchLostFoundList()
+  fetchMyPosts()
 }
 
 onMounted(() => {
-  fetchLostFoundList()
+  fetchMyPosts()
 })
 </script>
 
 <style scoped>
-.list-container {
+.posts-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -316,13 +429,6 @@ onMounted(() => {
   align-items: flex-end;
 }
 
-.tab-buttons {
-  display: flex;
-  border: 1px solid #E0E0E0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -336,7 +442,6 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid #E0E0E0;
-  cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -355,6 +460,7 @@ onMounted(() => {
   height: 200px;
   overflow: hidden;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .card-image {
@@ -372,6 +478,7 @@ onMounted(() => {
   font-size: 12px;
   color: #FFFFFF;
   font-weight: 500;
+  z-index: 1;
 }
 
 .badge-red {
@@ -380,6 +487,42 @@ onMounted(() => {
 
 .badge-green {
   background-color: #67C23A;
+}
+
+.status-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #FFFFFF;
+  font-weight: 500;
+  z-index: 1;
+}
+
+.status-warning {
+  background-color: #E6A23C;
+}
+
+.status-info {
+  background-color: #909399;
+}
+
+.status-primary {
+  background-color: #409EFF;
+}
+
+.status-success {
+  background-color: #67C23A;
+}
+
+.status-default {
+  background-color: #C0C4CC;
+}
+
+.status-danger {
+  background-color: #F56C6C;
 }
 
 .card-content {
@@ -395,13 +538,17 @@ onMounted(() => {
   color: #303133;
   margin: 0 0 8px 0;
   line-height: 1.5;
-  min-height: 48px;
+  cursor: pointer;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.card-title:hover {
+  color: #409EFF;
 }
 
 .card-desc {
@@ -419,7 +566,8 @@ onMounted(() => {
 
 .card-meta {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 12px;
   color: #909399;
   margin-bottom: 12px;
@@ -440,15 +588,7 @@ onMounted(() => {
   margin-top: auto;
 }
 
-.card-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #606266;
-}
-
-.card-actions {
+.card-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -460,9 +600,16 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .pagination-wrapper {
   display: flex;
   justify-content: center;
   margin-top: 24px;
 }
 </style>
+

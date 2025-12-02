@@ -42,7 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 构建权限列表
                     List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                     if (role != null) {
-                        authorities.add(new SimpleGrantedAuthority(role));
+                        // 统一使用 ROLE_ 前缀的权限名称，用于 hasAuthority() 检查
+                        // 例如：USER -> ROLE_USER, ADMIN -> ROLE_ADMIN
+                        String roleWithPrefix = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                        authorities.add(new SimpleGrantedAuthority(roleWithPrefix));
                     }
                     
                     UsernamePasswordAuthenticationToken authentication = 

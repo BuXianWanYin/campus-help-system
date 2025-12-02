@@ -3,6 +3,7 @@ package com.server.campushelpserver.service.lostfound;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.server.campushelpserver.entity.lostfound.LostFound;
+import com.server.campushelpserver.entity.lostfound.ClaimRecord;
 import com.server.campushelpserver.entity.lostfound.dto.ClaimDTO;
 import com.server.campushelpserver.entity.lostfound.dto.LostFoundDTO;
 import com.server.campushelpserver.entity.lostfound.dto.LostFoundSearchDTO;
@@ -55,5 +56,42 @@ public interface LostFoundService extends IService<LostFound> {
      * @param userId 用户ID
      */
     void rejectClaim(Long claimRecordId, String reason, Long userId);
+    
+    /**
+     * 获取当前用户发布的失物列表
+     * @param searchDTO 搜索条件
+     * @param userId 用户ID
+     * @return 分页结果
+     */
+    Page<LostFound> getMyPosts(LostFoundSearchDTO searchDTO, Long userId);
+    
+    /**
+     * 获取认领记录列表
+     * @param lostFoundId 失物ID
+     * @return 认领记录列表
+     */
+    java.util.List<ClaimRecord> getClaimRecords(Long lostFoundId);
+    
+    /**
+     * 编辑失物信息
+     * @param id 失物ID
+     * @param dto 失物信息
+     * @param userId 用户ID
+     */
+    void updateLostFound(Long id, LostFoundDTO dto, Long userId);
+    
+    /**
+     * 删除失物（逻辑删除）
+     * @param id 失物ID
+     * @param userId 用户ID
+     */
+    void deleteLostFound(Long id, Long userId);
+    
+    /**
+     * 关闭失物（用户自行下架）
+     * @param id 失物ID
+     * @param userId 用户ID
+     */
+    void closeLostFound(Long id, Long userId);
 }
 

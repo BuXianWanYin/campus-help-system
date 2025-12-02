@@ -12,6 +12,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.server.campushelpserver.entity.user.User;
+
 /**
  * 失物招领实体类
  */
@@ -138,5 +140,9 @@ public class LostFound implements Serializable {
     @Schema(description = "更新时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
+    
+    @TableField(exist = false)
+    @Schema(description = "发布者用户信息（非数据库字段）")
+    private User user;
 }
 

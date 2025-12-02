@@ -11,6 +11,8 @@ import lombok.Data;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import com.server.campushelpserver.entity.user.User;
+
 /**
  * 认领记录实体类
  */
@@ -81,5 +83,9 @@ public class ClaimRecord implements Serializable {
     @Schema(description = "更新时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
+    
+    @TableField(exist = false)
+    @Schema(description = "认领者用户信息（非数据库字段）")
+    private User user;
 }
 

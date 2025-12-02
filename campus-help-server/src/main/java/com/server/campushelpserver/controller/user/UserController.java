@@ -56,7 +56,7 @@ public class UserController {
     }
     
     @Operation(summary = "分页查询用户列表", description = "管理员分页查询用户列表，支持条件筛选")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/page")
     public Result<Page<User>> getUserPage(
             @Parameter(description = "分页参数") Page<User> page,
@@ -91,7 +91,7 @@ public class UserController {
     }
     
     @Operation(summary = "审核实名认证", description = "管理员审核用户实名认证")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping("/verification/audit")
     public Result<User> auditVerification(@Parameter(description = "审核信息") @Validated @RequestBody VerificationAuditRequest request) {
         User updatedUser = userService.auditVerification(
@@ -119,7 +119,7 @@ public class UserController {
     }
     
     @Operation(summary = "根据ID获取用户信息", description = "管理员根据用户ID获取用户详细信息")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/{id}")
     public Result<User> getUserById(@Parameter(description = "用户ID") @PathVariable Long id) {
         User user = userService.getById(id);

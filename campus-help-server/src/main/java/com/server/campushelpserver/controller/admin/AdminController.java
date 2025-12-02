@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/admin")
 @Tag(name = "管理员后台", description = "管理员后台管理相关接口")
-@PreAuthorize("hasAuthority('ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AdminController {
     
     @Autowired

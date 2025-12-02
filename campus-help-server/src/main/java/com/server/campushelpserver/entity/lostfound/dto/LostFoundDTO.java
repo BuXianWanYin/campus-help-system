@@ -1,5 +1,6 @@
 package com.server.campushelpserver.entity.lostfound.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -36,6 +37,7 @@ public class LostFoundDTO {
     private String type;
     
     @NotNull(message = "丢失时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "丢失/拾取时间", required = true)
     private LocalDateTime lostTime;
     

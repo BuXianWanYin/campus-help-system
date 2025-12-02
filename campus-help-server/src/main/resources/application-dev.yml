@@ -204,11 +204,11 @@ springdoc:
 logging:
   level:
     root: INFO
-    com.server.campushelpserver: DEBUG
+    com.server.campushelpserver: INFO
     org.springframework.web: INFO
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
     com.alibaba.druid: INFO
-    org.apache.ibatis: DEBUG
+    org.apache.ibatis: INFO
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
     file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'

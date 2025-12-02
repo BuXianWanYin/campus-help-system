@@ -56,7 +56,7 @@
               <span>时间：{{ formatDateTime(lostFound.lostTime) }}</span>
             </div>
             <div class="meta-item">
-              <el-icon><Category /></el-icon>
+              <el-icon><Folder /></el-icon>
               <span>分类：{{ lostFound.category }}</span>
             </div>
             <div class="meta-item">
@@ -86,14 +86,97 @@
                 <div class="publish-time">发布于 {{ formatDateTime(lostFound.createTime) }}</div>
               </div>
             </div>
-            <el-button type="primary" @click="handleContact">联系TA</el-button>
+            <el-button v-if="!isPublisher" type="primary" @click="handleContact">联系TA</el-button>
           </div>
           
-          <!-- 认领按钮 -->
-          <div v-if="lostFound.status === 'PENDING_CLAIM' || lostFound.status === 'CLAIMING'" class="action-section">
+          <!-- 认领按钮（仅非发布者可见） -->
+          <div v-if="!isPublisher && (lostFound.status === 'PENDING_CLAIM' || lostFound.status === 'CLAIMING')" class="action-section">
             <el-button type="primary" size="large" @click="showClaimDialog = true">
-              {{ lostFound.type === 'LOST' ? '我要认领' : '这是我的' }}
+              {{ lostFound.type === 'LOST' ? '我捡到了' : '这是我的' }}
             </el-button>
+            <div class="action-tip" v-if="lostFound.type === 'LOST'">
+              如果您捡到了这个物品或能提供相关线索，请点击按钮提交申请
+            </div>
+          </div>
+          
+          <!-- 认领记录列表（仅发布者可见） -->
+          <div v-if="isPublisher" class="claim-records-section">
+            <h3 class="section-title">
+              {{ lostFound.type === 'LOST' ? '其他申请' : '失主认领申请' }}
+            </h3>
+            <div class="section-tip">
+              <template v-if="lostFound.type === 'LOST'">
+                您丢失了物品，以下是其他用户提交的申请（声称他们也丢失了同样的物品或找到了您的物品），请仔细核对信息后处理。
+              </template>
+              <template v-else>
+                您拾到了物品，以下是失主申请认领该物品，请仔细核对信息后确认认领。
+              </template>
+            </div>
+            <div v-loading="claimRecordsLoading">
+              <div v-if="claimRecords.length === 0" class="empty-claims">
+                <el-empty 
+                  :description="lostFound.type === 'LOST' ? '暂无相关申请记录' : '暂无失主认领申请'" 
+                  :image-size="100" 
+                />
+              </div>
+              <div v-else class="claim-records-list">
+                <div v-for="record in claimRecords" :key="record.id" class="claim-record-item">
+                  <div class="claim-header">
+                    <div class="claim-user-info">
+                      <el-avatar :size="32" :src="getAvatarUrl(record.user?.avatar)">
+                        {{ record.user?.nickname?.charAt(0) || 'U' }}
+                      </el-avatar>
+                      <div class="claim-user-details">
+                        <div class="claim-user-name">{{ record.user?.nickname || '未知用户' }}</div>
+                        <div class="claim-time">{{ formatDateTime(record.createTime) }}</div>
+                      </div>
+                    </div>
+                    <div class="claim-status">
+                      <el-tag v-if="record.status === 'PENDING'" type="warning">待处理</el-tag>
+                      <el-tag v-else-if="record.status === 'CONFIRMED'" type="success">已确认</el-tag>
+                      <el-tag v-else-if="record.status === 'REJECTED'" type="danger">已拒绝</el-tag>
+                    </div>
+                  </div>
+                  <div class="claim-content">
+                    <div class="claim-desc">
+                      <strong>物品特征：</strong>{{ record.description }}
+                    </div>
+                    <div v-if="record.lostTime" class="claim-meta">
+                      <el-icon><Clock /></el-icon>
+                      <span>丢失时间：{{ formatDateTime(record.lostTime) }}</span>
+                    </div>
+                    <div v-if="record.otherInfo" class="claim-meta">
+                      <span>其他信息：{{ record.otherInfo }}</span>
+                    </div>
+                    <div v-if="record.proofImages && parseImages(record.proofImages).length > 0" class="claim-proof">
+                      <strong>证明文件：</strong>
+                      <div class="proof-images">
+                        <el-image
+                          v-for="(img, index) in parseImages(record.proofImages)"
+                          :key="index"
+                          :src="getAvatarUrl(img)"
+                          :preview-src-list="parseImages(record.proofImages).map(i => getAvatarUrl(i))"
+                          fit="cover"
+                          class="proof-image"
+                          preview-teleported
+                        />
+                      </div>
+                    </div>
+                    <div v-if="record.status === 'REJECTED' && record.rejectReason" class="claim-reject-reason">
+                      <strong>拒绝原因：</strong>{{ record.rejectReason }}
+                    </div>
+                  </div>
+                  <div v-if="record.status === 'PENDING'" class="claim-actions">
+                    <el-button type="success" size="small" @click="handleConfirmClaim(record.id)">
+                      确认认领
+                    </el-button>
+                    <el-button type="danger" size="small" @click="handleRejectClaim(record.id)">
+                      拒绝
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- 状态提示 -->
@@ -168,17 +251,27 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Location, Clock, Category, View, Plus } from '@element-plus/icons-vue'
+import { ArrowLeft, Location, Clock, Folder, View, Plus } from '@element-plus/icons-vue'
 import { lostFoundApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const lostFound = ref(null)
 const showClaimDialog = ref(false)
 const claimLoading = ref(false)
+const claimRecords = ref([])
+const claimRecordsLoading = ref(false)
+
+// 判断是否为发布者
+const isPublisher = computed(() => {
+  if (!lostFound.value || !userStore.userInfo) return false
+  return lostFound.value.userId === userStore.userInfo.id
+})
 
 const claimForm = ref({
   description: '',
@@ -223,12 +316,53 @@ const fetchDetail = async () => {
       if (images.length > 0) {
         mainImage.value = getAvatarUrl(images[0])
       }
+      
+      // 如果是发布者，获取认领记录列表
+      // 需要等待lostFound设置后再判断
+      if (lostFound.value && userStore.userInfo && lostFound.value.userId === userStore.userInfo.id) {
+        fetchClaimRecords()
+      }
     }
   } catch (error) {
     console.error('获取失物详情失败:', error)
     ElMessage.error('获取失物详情失败')
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 获取认领记录列表
+ */
+const fetchClaimRecords = async () => {
+  if (!lostFound.value?.id) return
+  
+  claimRecordsLoading.value = true
+  try {
+    const response = await lostFoundApi.getClaimRecords(lostFound.value.id)
+    if (response.code === 200) {
+      claimRecords.value = response.data || []
+    }
+  } catch (error) {
+    console.error('获取认领记录失败:', error)
+    ElMessage.error('获取认领记录失败')
+  } finally {
+    claimRecordsLoading.value = false
+  }
+}
+
+/**
+ * 解析图片JSON
+ */
+const parseImages = (imagesJson) => {
+  if (!imagesJson) return []
+  try {
+    if (typeof imagesJson === 'string') {
+      return JSON.parse(imagesJson)
+    }
+    return imagesJson
+  } catch {
+    return []
   }
 }
 
@@ -295,6 +429,72 @@ const resetClaimForm = () => {
     lostTime: null,
     otherInfo: '',
     proofImages: []
+  }
+}
+
+/**
+ * 确认认领
+ */
+const handleConfirmClaim = async (claimRecordId) => {
+  try {
+    const confirmMessage = lostFound.value.type === 'LOST' 
+      ? '确认要同意该申请吗？' 
+      : '确认要同意该失主认领申请吗？'
+    await ElMessageBox.confirm(confirmMessage, '确认认领', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const response = await lostFoundApi.confirmClaim(claimRecordId)
+    if (response.code === 200) {
+      ElMessage.success('认领已确认')
+      // 重新获取详情和认领记录
+      await fetchDetail()
+      await fetchClaimRecords()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('确认认领失败:', error)
+      ElMessage.error(error.message || '确认认领失败')
+    }
+  }
+}
+
+/**
+ * 拒绝认领
+ */
+const handleRejectClaim = async (claimRecordId) => {
+  try {
+    const { value: reason } = await ElMessageBox.prompt('请输入拒绝原因', '拒绝认领', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPlaceholder: '请输入拒绝原因',
+      inputValidator: (value) => {
+        if (!value || value.trim().length === 0) {
+          return '请输入拒绝原因'
+        }
+        if (value.length > 200) {
+          return '拒绝原因不能超过200个字符'
+        }
+        return true
+      }
+    })
+    
+    const response = await lostFoundApi.rejectClaim(claimRecordId, reason.trim())
+    if (response.code === 200) {
+      ElMessage.success('认领已拒绝')
+      // 重新获取认领记录
+      await fetchClaimRecords()
+      // 如果失物状态需要更新，重新获取详情
+      await fetchDetail()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('拒绝认领失败:', error)
+      ElMessage.error(error.message || '拒绝认领失败')
+    }
   }
 }
 
@@ -531,6 +731,142 @@ onMounted(() => {
     align-items: flex-start;
     gap: 12px;
   }
+}
+
+.claim-records-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #F0F0F0;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+  margin: 0 0 8px 0;
+}
+
+.section-tip {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.empty-claims {
+  padding: 40px 0;
+}
+
+.claim-records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.claim-record-item {
+  background-color: #F9F9F9;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #E0E0E0;
+}
+
+.claim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.claim-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.claim-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.claim-user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.claim-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+.claim-status {
+  flex-shrink: 0;
+}
+
+.claim-content {
+  margin-bottom: 12px;
+}
+
+.claim-desc {
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.claim-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.claim-proof {
+  margin-top: 8px;
+}
+
+.claim-proof strong {
+  font-size: 13px;
+  color: #606266;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.proof-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.proof-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.claim-reject-reason {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #FEF0F0;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #F56C6C;
+}
+
+.claim-reject-reason strong {
+  color: #F56C6C;
+}
+
+.claim-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #E0E0E0;
 }
 </style>
 

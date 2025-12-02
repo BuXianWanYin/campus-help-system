@@ -185,11 +185,21 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         } else if ("reward".equals(searchDTO.getSortBy())) {
             wrapper.orderByDesc(LostFound::getReward);
         } else {
+            // 默认按创建时间倒序（latest）
             wrapper.orderByDesc(LostFound::getCreateTime);
         }
         
         // 2. 查询
-        return lostFoundMapper.selectPage(page, wrapper);
+        Page<LostFound> resultPage = lostFoundMapper.selectPage(page, wrapper);
+        
+        // 3. 为每个失物填充用户信息
+        if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+            for (LostFound lostFound : resultPage.getRecords()) {
+                fillUserInfo(lostFound);
+            }
+        }
+        
+        return resultPage;
     }
     
     @Override
@@ -201,6 +211,9 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         
         // 增加浏览次数
         lostFoundMapper.incrementViewCount(id);
+        
+        // 填充用户信息
+        fillUserInfo(lostFound);
         
         return lostFound;
     }
@@ -336,6 +349,192 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         // 6. 失物状态恢复为待认领
         lostFound.setStatus("PENDING_CLAIM");
         lostFoundMapper.updateById(lostFound);
+    }
+    
+    @Override
+    public Page<LostFound> getMyPosts(LostFoundSearchDTO searchDTO, Long userId) {
+        // 1. 构建查询条件
+        Page<LostFound> page = new Page<>(searchDTO.getPageNum(), searchDTO.getPageSize());
+        LambdaQueryWrapper<LostFound> wrapper = new LambdaQueryWrapper<>();
+        
+        // 必须查询当前用户发布的
+        wrapper.eq(LostFound::getUserId, userId);
+        
+        // 关键词搜索（标题或描述）
+        if (StringUtils.hasText(searchDTO.getKeyword())) {
+            wrapper.and(w -> w.like(LostFound::getTitle, searchDTO.getKeyword())
+                            .or()
+                            .like(LostFound::getDescription, searchDTO.getKeyword()));
+        }
+        
+        // 分类筛选
+        if (StringUtils.hasText(searchDTO.getCategory())) {
+            wrapper.eq(LostFound::getCategory, searchDTO.getCategory());
+        }
+        
+        // 类型筛选
+        if (StringUtils.hasText(searchDTO.getType())) {
+            wrapper.eq(LostFound::getType, searchDTO.getType());
+        }
+        
+        // 状态筛选（我的发布页面显示所有状态）
+        if (StringUtils.hasText(searchDTO.getStatus())) {
+            wrapper.eq(LostFound::getStatus, searchDTO.getStatus());
+        }
+        
+        // 地点筛选
+        if (StringUtils.hasText(searchDTO.getLocation())) {
+            wrapper.like(LostFound::getLostLocation, searchDTO.getLocation());
+        }
+        
+        // 排序
+        if ("view".equals(searchDTO.getSortBy())) {
+            wrapper.orderByDesc(LostFound::getViewCount);
+        } else if ("reward".equals(searchDTO.getSortBy())) {
+            wrapper.orderByDesc(LostFound::getReward);
+        } else {
+            // 默认按创建时间倒序（latest）
+            wrapper.orderByDesc(LostFound::getCreateTime);
+        }
+        
+        // 2. 查询
+        Page<LostFound> resultPage = lostFoundMapper.selectPage(page, wrapper);
+        
+        // 3. 为每个失物填充用户信息
+        if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+            for (LostFound lostFound : resultPage.getRecords()) {
+                fillUserInfo(lostFound);
+            }
+        }
+        
+        return resultPage;
+    }
+    
+    @Override
+    public java.util.List<ClaimRecord> getClaimRecords(Long lostFoundId) {
+        // 查询该失物的所有认领记录
+        LambdaQueryWrapper<ClaimRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClaimRecord::getLostFoundId, lostFoundId)
+               .orderByDesc(ClaimRecord::getCreateTime);
+        
+        return claimRecordMapper.selectList(wrapper);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateLostFound(Long id, LostFoundDTO dto, Long userId) {
+        // 1. 查询失物信息
+        LostFound lostFound = lostFoundMapper.selectById(id);
+        if (lostFound == null) {
+            throw new BusinessException("失物信息不存在");
+        }
+        
+        // 2. 验证权限（只有发布者可以编辑）
+        if (!lostFound.getUserId().equals(userId)) {
+            throw new BusinessException("无权编辑此失物");
+        }
+        
+        // 3. 验证状态（已认领、已关闭的不允许编辑）
+        if ("CLAIMED".equals(lostFound.getStatus()) || "CLOSED".equals(lostFound.getStatus())) {
+            throw new BusinessException("该失物已认领或已关闭，无法编辑");
+        }
+        
+        // 4. 敏感词检测
+        String checkText = dto.getTitle() + " " + dto.getDescription();
+        SensitiveWordCheckResult checkResult = sensitiveWordService.check(checkText);
+        
+        // 5. 更新失物信息
+        BeanUtils.copyProperties(dto, lostFound, "id", "userId", "createTime", "status", "auditStatus", "viewCount", "favoriteCount", "commentCount", "version", "deleteFlag");
+        
+        // 转换图片列表为JSON字符串
+        if (dto.getImages() != null && !dto.getImages().isEmpty()) {
+            try {
+                lostFound.setImages(objectMapper.writeValueAsString(dto.getImages()));
+            } catch (JsonProcessingException e) {
+                throw new BusinessException("图片处理失败：" + e.getMessage());
+            }
+        }
+        
+        // 6. 如果包含敏感词，需要重新审核
+        if (!checkResult.isPass()) {
+            lostFound.setStatus("PENDING_REVIEW");
+            lostFound.setAuditStatus("PENDING");
+            lostFound.setAuditTriggerReason("包含敏感词");
+        } else if ("PENDING_REVIEW".equals(lostFound.getStatus())) {
+            // 如果之前是待审核，编辑后仍然保持待审核
+            // 如果需要可以触发重新审核
+        }
+        
+        lostFound.setUpdateTime(LocalDateTime.now());
+        lostFoundMapper.updateById(lostFound);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteLostFound(Long id, Long userId) {
+        // 1. 查询失物信息
+        LostFound lostFound = lostFoundMapper.selectById(id);
+        if (lostFound == null) {
+            throw new BusinessException("失物信息不存在");
+        }
+        
+        // 2. 验证权限（只有发布者可以删除）
+        if (!lostFound.getUserId().equals(userId)) {
+            throw new BusinessException("无权删除此失物");
+        }
+        
+        // 3. 验证状态（认领中的不允许删除，需要先处理认领）
+        if ("CLAIMING".equals(lostFound.getStatus())) {
+            throw new BusinessException("该失物正在认领中，无法删除");
+        }
+        
+        // 4. 逻辑删除
+        this.removeById(id);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void closeLostFound(Long id, Long userId) {
+        // 1. 查询失物信息
+        LostFound lostFound = lostFoundMapper.selectById(id);
+        if (lostFound == null) {
+            throw new BusinessException("失物信息不存在");
+        }
+        
+        // 2. 验证权限（只有发布者可以关闭）
+        if (!lostFound.getUserId().equals(userId)) {
+            throw new BusinessException("无权关闭此失物");
+        }
+        
+        // 3. 验证状态（已关闭、已认领的不允许再次关闭）
+        if ("CLOSED".equals(lostFound.getStatus())) {
+            throw new BusinessException("该失物已关闭");
+        }
+        if ("CLAIMED".equals(lostFound.getStatus())) {
+            throw new BusinessException("该失物已认领，无法关闭");
+        }
+        
+        // 4. 更新状态
+        lostFound.setStatus("CLOSED");
+        lostFound.setUpdateTime(LocalDateTime.now());
+        lostFoundMapper.updateById(lostFound);
+    }
+    
+    /**
+     * 填充用户信息
+     */
+    private void fillUserInfo(LostFound lostFound) {
+        if (lostFound.getUserId() != null) {
+            User user = userMapper.selectById(lostFound.getUserId());
+            if (user != null) {
+                // 创建简化的用户对象（只包含必要字段，避免返回敏感信息）
+                User simpleUser = new User();
+                simpleUser.setId(user.getId());
+                simpleUser.setNickname(user.getNickname());
+                simpleUser.setAvatar(user.getAvatar());
+                lostFound.setUser(simpleUser);
+            }
+        }
     }
 }
 

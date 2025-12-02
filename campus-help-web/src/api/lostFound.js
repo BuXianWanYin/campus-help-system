@@ -59,6 +59,52 @@ export const lostFoundApi = {
     return request.post(`/lost-found/claim/${claimRecordId}/reject`, null, {
       params: { reason }
     })
+  },
+
+  /**
+   * 获取当前用户发布的失物列表
+   * @param {Object} params 查询参数（pageNum, pageSize, type, category, status, location, sortBy等）
+   * @returns {Promise} 失物列表
+   */
+  getMyPosts(params) {
+    return request.get('/lost-found/my-posts', { params })
+  },
+
+  /**
+   * 获取认领记录列表
+   * @param {Number} id 失物ID
+   * @returns {Promise} 认领记录列表
+   */
+  getClaimRecords(id) {
+    return request.get(`/lost-found/${id}/claims`)
+  },
+
+  /**
+   * 编辑失物
+   * @param {Number} id 失物ID
+   * @param {Object} data 失物信息
+   * @returns {Promise} 编辑结果
+   */
+  update(id, data) {
+    return request.put(`/lost-found/${id}`, data)
+  },
+
+  /**
+   * 删除失物
+   * @param {Number} id 失物ID
+   * @returns {Promise} 删除结果
+   */
+  delete(id) {
+    return request.delete(`/lost-found/${id}`)
+  },
+
+  /**
+   * 关闭失物
+   * @param {Number} id 失物ID
+   * @returns {Promise} 关闭结果
+   */
+  close(id) {
+    return request.post(`/lost-found/${id}/close`)
   }
 }
 

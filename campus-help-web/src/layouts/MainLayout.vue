@@ -156,7 +156,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="分类：">
-              <el-select v-model="lostFoundFilters.category" placeholder="全部" style="width: 120px" clearable>
+              <el-select v-model="lostFoundFilters.category" placeholder="全部" style="width: 120px" clearable @change="handleFilter">
                 <el-option label="全部" value="" />
                 <el-option label="证件类" value="证件类" />
                 <el-option label="电子产品" value="电子产品" />
@@ -166,10 +166,13 @@
               </el-select>
             </el-form-item>
             <el-form-item label="地点：">
-              <el-input v-model="lostFoundFilters.location" placeholder="输入地点" style="width: 150px" clearable />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleFilter">筛选</el-button>
+              <el-input 
+                v-model="lostFoundFilters.location" 
+                placeholder="输入地点" 
+                style="width: 150px" 
+                clearable 
+                class="location-input"
+              />
             </el-form-item>
           </el-form>
         </div>
@@ -201,7 +204,14 @@
                   <el-avatar :size="24" :src="getAvatarUrl(item.userAvatar)">{{ item.userName?.charAt(0) || 'U' }}</el-avatar>
                   <span>{{ item.userName || '未知用户' }}</span>
                 </div>
-                <el-button type="primary" size="small" text @click.stop="handleContact(item)">联系TA</el-button>
+                <el-button 
+                  v-if="item.userId && item.userId !== userStore.userInfo?.id" 
+                  type="primary" 
+                  size="small" 
+                  text 
+                  @click.stop="handleContact(item)">
+                  联系TA
+                </el-button>
               </div>
             </div>
           </div>
@@ -401,6 +411,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, markRaw } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { debounce } from '@/utils'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, ArrowDown, User, Setting, SwitchButton, Menu, Tools,
@@ -799,7 +810,8 @@ const fetchLostFoundList = async () => {
           images: images,
           // 后端可能返回user对象，也可能只有userId
           userAvatar: item.user?.avatar || null,
-          userName: item.user?.nickname || `用户${item.userId}` || '未知用户'
+          userName: item.user?.nickname || `用户${item.userId}` || '未知用户',
+          userId: item.userId // 保存userId用于判断是否为发布者
         }
       })
       
@@ -858,6 +870,16 @@ const handleTypeChange = () => {
 const handleFilter = () => {
   fetchLostFoundList()
 }
+
+// 防抖处理地点输入框变化
+const debouncedFilter = debounce(() => {
+  fetchLostFoundList()
+}, 500)
+
+// 监听地点输入框变化，使用防抖
+watch(() => lostFoundFilters.value.location, () => {
+  debouncedFilter()
+})
 
 // 联系用户
 const handleContact = (item) => {
@@ -1387,6 +1409,10 @@ onUnmounted(() => {
   align-items: flex-end;
 }
 
+.location-input :deep(.el-input__wrapper) {
+  border-radius: 4px !important;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1418,7 +1444,7 @@ onUnmounted(() => {
 .card-image-wrapper {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 160px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -1453,19 +1479,19 @@ onUnmounted(() => {
 }
 
 .card-content {
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
 .card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
-  line-height: 1.5;
-  min-height: 48px;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+  min-height: 42px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1475,10 +1501,10 @@ onUnmounted(() => {
 }
 
 .card-desc {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-regular);
-  margin: 0 0 var(--spacing-md) 0;
-  line-height: 1.5;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
 }
 
 .card-meta {
@@ -1486,7 +1512,7 @@ onUnmounted(() => {
   gap: var(--spacing-lg);
   font-size: 12px;
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 8px;
 }
 
 .meta-item {
