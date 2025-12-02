@@ -274,5 +274,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setCreditLevel("差");
         }
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public User resetPassword(String email, String newPassword) {
+        // 检查用户是否存在
+        User user = getUserByEmail(email);
+        if (user == null) {
+            throw new BusinessException("该邮箱未注册，请先注册");
+        }
+        
+        // 验证新密码格式（至少8位，且包含字母和数字）
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new BusinessException("密码至少8位");
+        }
+        if (!newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,}$")) {
+            throw new BusinessException("密码至少8位，且包含字母和数字");
+        }
+        
+        // 加密新密码
+        user.setPassword(passwordEncoder.encode(newPassword));
+        this.updateById(user);
+        
+        return user;
+    }
 }
 

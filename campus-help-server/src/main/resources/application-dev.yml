@@ -147,8 +147,8 @@ mybatis-plus:
 security:
   # JWT 配置
   jwt:
-    # JWT 密钥
-    secret: campus-help-system-secret-key-2025
+    # JWT 密钥（HS512算法需要至少512位，即64个字符）
+    secret: campus-help-system-secret-key-2025-campus-help-system-secret-key-2025-campus-help-system-secret-key-2025
     # JWT 过期时间（毫秒），默认7天
     expiration: 604800000
     # JWT 刷新时间（毫秒），默认30天

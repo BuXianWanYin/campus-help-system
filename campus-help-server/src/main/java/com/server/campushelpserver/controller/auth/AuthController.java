@@ -44,7 +44,9 @@ public class AuthController {
             return Result.error("验证码错误或已过期，请重新获取");
         }
         
-        // 注册用户
+        // 注册用户（包含事务，如果后续步骤失败会自动回滚）
+        // 注意：生成Token在Controller层，不在事务内，如果Token生成失败，用户已保存
+        // 但这种情况极少发生，且不影响用户使用（可以重新登录获取Token）
         User registeredUser = userService.register(user);
         
         // 生成Token
@@ -108,6 +110,15 @@ public class AuthController {
         return Result.success("登录成功", result);
     }
     
+    @Operation(summary = "检查邮箱是否已注册", description = "检查邮箱是否已被注册，用于前端实时验证")
+    @GetMapping("/check-email")
+    public Result<Boolean> checkEmail(
+            @Parameter(description = "邮箱") @RequestParam String email) {
+        User existingUser = userService.getUserByEmail(email);
+        boolean isRegistered = existingUser != null;
+        return Result.success(isRegistered ? "该邮箱已被注册" : "该邮箱可以注册", isRegistered);
+    }
+    
     @Operation(summary = "发送验证码", description = "发送邮箱验证码，支持注册、登录、重置密码，带防刷机制")
     @PostMapping("/send-code")
     public Result<String> sendCode(
@@ -118,6 +129,29 @@ public class AuthController {
         String clientIp = getClientIp(request);
         String code = verificationCodeService.sendVerificationCode(type, email, clientIp);
         return Result.success("验证码已发送，请查收邮件", code);
+    }
+    
+    @Operation(summary = "重置密码", description = "通过验证码重置密码")
+    @PostMapping("/reset-password")
+    public Result<String> resetPassword(
+            @Parameter(description = "邮箱") @RequestParam String email,
+            @Parameter(description = "验证码") @RequestParam String code,
+            @Parameter(description = "新密码") @RequestParam String newPassword) {
+        // 验证验证码
+        boolean isValid = verificationCodeService.verifyCode("RESET_PASSWORD", email, code);
+        if (!isValid) {
+            return Result.error("验证码错误或已过期，请重新获取");
+        }
+        
+        // 检查用户是否存在
+        User user = userService.getUserByEmail(email);
+        if (user == null) {
+            return Result.error("该邮箱未注册，请先注册");
+        }
+        
+        // 重置密码
+        userService.resetPassword(email, newPassword);
+        return Result.success("密码重置成功，请使用新密码登录");
     }
     
     /**

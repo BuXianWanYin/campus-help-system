@@ -3,7 +3,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import appConfig from '@/config'
 
-const whiteList = ['/login', '/register'] // 白名单，不需要登录就可以访问
+const whiteList = ['/login', '/register', '/forgot-password'] // 白名单，不需要登录就可以访问
 
 /**
  * 路由守卫
@@ -16,8 +16,8 @@ export function setupRouterGuard(router) {
 
     // 如果有 token
     if (token) {
-      // 如果已登录，访问登录页或注册页，重定向到首页
-      if (to.path === '/login' || to.path === '/register') {
+      // 如果已登录，访问登录页、注册页或忘记密码页，重定向到首页
+      if (to.path === '/login' || to.path === '/register' || to.path === '/forgot-password') {
         next({ path: '/' })
       } else {
         // 检查是否需要认证

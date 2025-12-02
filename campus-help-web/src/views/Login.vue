@@ -93,24 +93,36 @@
               </template>
               <template #append>
                 <el-button
-                  :disabled="codeCountdown > 0"
+                  :disabled="codeCountdown > 0 || codeSending"
+                  :loading="codeSending"
                   @click="sendLoginCode"
                 >
-                  {{ codeCountdown > 0 ? `${codeCountdown}秒` : '获取验证码' }}
+                  {{ codeSending ? '发送中' : (codeCountdown > 0 ? `${codeCountdown}秒` : '获取验证码') }}
                 </el-button>
               </template>
             </el-input>
           </el-form-item>
           
           <div class="form-options">
-            <el-link
-              type="primary"
-              :underline="false"
-              @click="toggleLoginType"
-              class="toggle-link"
-            >
-              {{ loginType === 'password' ? '使用验证码登录' : '使用密码登录' }}
-            </el-link>
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+              <el-link
+                type="primary"
+                :underline="false"
+                @click="toggleLoginType"
+                class="toggle-link"
+              >
+                {{ loginType === 'password' ? '使用验证码登录' : '使用密码登录' }}
+              </el-link>
+              <el-link
+                v-if="loginType === 'password'"
+                type="primary"
+                :underline="false"
+                @click="goToForgotPassword"
+                class="toggle-link"
+              >
+                忘记密码？
+              </el-link>
+            </div>
           </div>
           
           <el-form-item>
@@ -144,7 +156,7 @@
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, ShoppingBag, Box, Message, Lock, Key } from '@element-plus/icons-vue'
+import { Search, ShoppingBag, Box, Message, Lock, Key, Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi } from '@/api'
 import appConfig from '@/config'
@@ -156,6 +168,7 @@ const userStore = useUserStore()
 const loginType = ref('password') // password 或 code
 const loginLoading = ref(false)
 const codeCountdown = ref(0)
+const codeSending = ref(false)
 const loginFormRef = ref(null)
 let countdownTimer = null
 
@@ -193,10 +206,11 @@ const sendLoginCode = async () => {
     return
   }
   
-  if (codeCountdown.value > 0) {
+  if (codeCountdown.value > 0 || codeSending.value) {
     return
   }
   
+  codeSending.value = true
   try {
     await authApi.sendCode('LOGIN', loginForm.email)
     ElMessage.success('验证码已发送，请查收邮件')
@@ -206,11 +220,10 @@ const sendLoginCode = async () => {
     const remainingSeconds = extractRemainingSeconds(error.message || '')
     if (remainingSeconds > 0) {
       startCountdown(remainingSeconds)
-    } else {
-      // 否则使用默认60秒
-      startCountdown(60)
     }
     ElMessage.error(error.message || '发送验证码失败')
+  } finally {
+    codeSending.value = false
   }
 }
 
@@ -272,6 +285,11 @@ const handleLogin = async () => {
 // 跳转到注册页
 const goToRegister = () => {
   router.push({ path: '/register', query: route.query })
+}
+
+// 跳转到忘记密码页
+const goToForgotPassword = () => {
+  router.push({ path: '/forgot-password', query: route.query })
 }
 </script>
 

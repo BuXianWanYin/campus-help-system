@@ -75,5 +75,13 @@ public interface UserService extends IService<User> {
      * @return 更新后的用户信息
      */
     User auditVerification(Long userId, Integer auditResult, String auditReason);
+    
+    /**
+     * 重置密码
+     * @param email 邮箱
+     * @param newPassword 新密码
+     * @return 更新后的用户信息
+     */
+    User resetPassword(String email, String newPassword);
 }
 

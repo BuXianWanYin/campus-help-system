@@ -22,6 +22,15 @@ const routes = [
     }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('../views/ForgotPassword.vue'),
+    meta: {
+      title: '忘记密码',
+      requiresAuth: false
+    }
+  },
+  {
     path: '/',
     component: BasicLayout,
     redirect: '/home',

@@ -27,6 +27,20 @@ export const authApi = {
     return request.post('/auth/send-code', null, {
       params: { type, email }
     })
+  },
+  
+  // 检查邮箱是否已注册
+  checkEmail(email) {
+    return request.get('/auth/check-email', {
+      params: { email }
+    })
+  },
+  
+  // 重置密码
+  resetPassword(email, code, newPassword) {
+    return request.post('/auth/reset-password', null, {
+      params: { email, code, newPassword }
+    })
   }
 }
 

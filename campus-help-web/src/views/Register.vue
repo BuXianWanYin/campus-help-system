@@ -105,10 +105,11 @@
               </template>
               <template #append>
                 <el-button
-                  :disabled="codeCountdown > 0"
+                  :disabled="codeCountdown > 0 || codeSending"
+                  :loading="codeSending"
                   @click="sendRegisterCode"
                 >
-                  {{ codeCountdown > 0 ? `${codeCountdown}秒` : '获取验证码' }}
+                  {{ codeSending ? '发送中' : (codeCountdown > 0 ? `${codeCountdown}秒` : '获取验证码') }}
                 </el-button>
               </template>
             </el-input>
@@ -152,7 +153,7 @@
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, ShoppingBag, Box, Message, Lock, Key } from '@element-plus/icons-vue'
+import { Search, ShoppingBag, Box, Message, Lock, Key, Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi } from '@/api'
 import appConfig from '@/config'
@@ -163,6 +164,7 @@ const userStore = useUserStore()
 
 const registerLoading = ref(false)
 const codeCountdown = ref(0)
+const codeSending = ref(false)
 const registerFormRef = ref(null)
 const agreePrivacy = ref(false)
 let countdownTimer = null
@@ -183,10 +185,39 @@ const validateConfirmPassword = (rule, value, callback) => {
   }
 }
 
+// 验证邮箱是否已注册
+const validateEmail = async (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入邮箱'))
+    return
+  }
+  
+  // 邮箱格式验证
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(value)) {
+    callback(new Error('邮箱格式不正确'))
+    return
+  }
+  
+  // 检查邮箱是否已注册
+  try {
+    const response = await authApi.checkEmail(value)
+    if (response.data === true) {
+      callback(new Error('该邮箱已被注册，请直接登录'))
+    } else {
+      callback()
+    }
+  } catch (error) {
+    // 如果接口调用失败，只验证格式，不阻止提交
+    // 后端注册时会再次检查
+    callback()
+  }
+}
+
 const registerRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+    { validator: validateEmail, trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -209,10 +240,11 @@ const sendRegisterCode = async () => {
     return
   }
   
-  if (codeCountdown.value > 0) {
+  if (codeCountdown.value > 0 || codeSending.value) {
     return
   }
   
+  codeSending.value = true
   try {
     await authApi.sendCode('REGISTER', registerForm.email)
     ElMessage.success('验证码已发送，请查收邮件')
@@ -222,11 +254,10 @@ const sendRegisterCode = async () => {
     const remainingSeconds = extractRemainingSeconds(error.message || '')
     if (remainingSeconds > 0) {
       startCountdown(remainingSeconds)
-    } else {
-      // 否则使用默认60秒
-      startCountdown(60)
     }
     ElMessage.error(error.message || '发送验证码失败')
+  } finally {
+    codeSending.value = false
   }
 }
 
