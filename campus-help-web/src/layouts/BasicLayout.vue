@@ -126,11 +126,49 @@ const handleCommand = (command) => {
 .nickname {
   font-size: 14px;
   color: #303133;
+  font-weight: 500;
 }
 
 .layout-main {
-  padding: 20px;
+  padding: 0;
   min-height: calc(100vh - 60px);
+  background-color: #f7fbfc;
+}
+
+/* 优化下拉菜单样式 */
+:deep(.el-dropdown-menu) {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid #b9d7ea;
+}
+
+:deep(.el-dropdown-menu__item) {
+  padding: 12px 20px;
+  color: #303133;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background-color: #f7fbfc;
+  color: #769fcd;
+}
+
+:deep(.el-dropdown-menu__item.is-divided) {
+  border-top: 1px solid #b9d7ea;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 16px;
+  }
+  
+  .header-left .logo {
+    font-size: 18px;
+  }
+  
+  .nickname {
+    display: none;
+  }
 }
 </style>
 

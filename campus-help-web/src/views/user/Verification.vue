@@ -1,11 +1,7 @@
 <template>
   <div class="verification-container">
-    <el-card class="verification-card">
-      <template #header>
-        <div class="card-header">
-          <span>实名认证</span>
-        </div>
-      </template>
+    <div class="verification-card">
+      <h1 class="page-title">实名认证</h1>
       
       <!-- 已认证状态 -->
       <div v-if="userInfo.isVerified === 1" class="verified-status">
@@ -93,7 +89,7 @@
           </el-form-item>
         </el-form>
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -211,18 +207,22 @@ onMounted(() => {
 .verification-container {
   max-width: 800px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .verification-card {
   background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid #b9d7ea;
-  box-shadow: 0 2px 12px 0 rgba(118, 159, 205, 0.1);
 }
 
-.card-header {
-  font-size: 16px;
+.page-title {
+  font-size: 28px;
   font-weight: bold;
   color: #303133;
+  margin: 0 0 32px 0;
 }
 
 .verified-status {
@@ -232,15 +232,65 @@ onMounted(() => {
 .form-tip {
   font-size: 12px;
   color: #909399;
-  margin-top: 4px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* 优化表单样式 */
+:deep(.el-form) {
+  padding: 20px 0;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 24px;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px #b9d7ea inset;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #769fcd inset;
+}
+
+:deep(.el-input.is-focus .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #769fcd inset;
+}
+
+:deep(.el-alert) {
+  border-radius: 8px;
+  margin-bottom: 24px;
 }
 
 :deep(.el-result__title) {
   color: #303133;
+  font-size: 20px;
 }
 
 :deep(.el-result__subtitle) {
   color: #606266;
+  font-size: 14px;
+}
+
+:deep(.el-descriptions) {
+  margin-top: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .verification-container {
+    padding: 16px;
+  }
+  
+  .verification-card {
+    padding: 24px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
 }
 </style>
 

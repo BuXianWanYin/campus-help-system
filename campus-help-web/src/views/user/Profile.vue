@@ -1,11 +1,7 @@
 <template>
   <div class="profile-container">
-    <el-card class="profile-card">
-      <template #header>
-        <div class="card-header">
-          <span>个人中心</span>
-        </div>
-      </template>
+    <div class="profile-card">
+      <h1 class="page-title">个人中心</h1>
       
       <el-row :gutter="20">
         <!-- 左侧：用户信息 -->
@@ -105,7 +101,7 @@
           </el-tabs>
         </el-col>
       </el-row>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -261,47 +257,109 @@ onMounted(() => {
 .profile-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .profile-card {
   background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid #b9d7ea;
-  box-shadow: 0 2px 12px 0 rgba(118, 159, 205, 0.1);
 }
 
-.card-header {
-  font-size: 16px;
+.page-title {
+  font-size: 28px;
   font-weight: bold;
   color: #303133;
+  margin: 0 0 32px 0;
 }
 
 .user-info-section {
   text-align: center;
   padding: 20px;
+  background-color: #f7fbfc;
+  border-radius: 8px;
 }
 
 .avatar-wrapper {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .avatar-uploader {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .user-basic-info h3 {
-  margin: 16px 0 8px;
-  font-size: 18px;
+  margin: 20px 0 8px;
+  font-size: 20px;
+  font-weight: bold;
   color: #303133;
 }
 
 .user-basic-info .email {
-  margin: 8px 0 12px;
-  color: #909399;
+  margin: 8px 0 16px;
+  color: #606266;
   font-size: 14px;
 }
 
 .user-basic-info .tags {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* 优化表单样式 */
+:deep(.el-form) {
+  padding: 20px 0;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 24px;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px #b9d7ea inset;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #769fcd inset;
+}
+
+:deep(.el-input.is-focus .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #769fcd inset;
+}
+
+:deep(.el-tabs__header) {
+  margin-bottom: 24px;
+}
+
+:deep(.el-tabs__item) {
+  font-size: 16px;
+  color: #606266;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #769fcd;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #769fcd;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .profile-container {
+    padding: 16px;
+  }
+  
+  .profile-card {
+    padding: 24px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
 }
 </style>
 

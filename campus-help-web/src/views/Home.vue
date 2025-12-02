@@ -1,46 +1,36 @@
 <template>
   <div class="home-container">
-    <el-card class="welcome-card">
-      <template #header>
-        <div class="card-header">
-          <span>欢迎使用{{ appConfig.title || '校园帮系统' }}</span>
-        </div>
-      </template>
+    <div class="welcome-card">
+      <h1 class="welcome-title">欢迎使用{{ appConfig.title || '校园帮系统' }}</h1>
       <div class="welcome-content">
-        <p>您好，{{ userStore.nickname || userStore.email }}！</p>
-        <p>欢迎来到{{ appConfig.title || '校园帮系统' }}，这里可以帮您解决失物招领、闲置交易、跑腿服务等校园互助需求。</p>
+        <p class="welcome-greeting">您好，{{ userStore.nickname || userStore.email }}！</p>
+        <p class="welcome-desc">欢迎来到{{ appConfig.title || '校园帮系统' }}，这里可以帮您解决失物招领、闲置交易、跑腿服务等校园互助需求。</p>
       </div>
-    </el-card>
+    </div>
     
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :xs="24" :sm="12" :md="8" :lg="8">
-        <el-card class="feature-card" @click="goToLostFound">
-          <div class="feature-content">
-            <el-icon class="feature-icon" :size="48"><Search /></el-icon>
-            <h3>失物招领</h3>
-            <p>发布失物信息，寻找丢失物品</p>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="8" :lg="8">
-        <el-card class="feature-card" @click="goToGoods">
-          <div class="feature-content">
-            <el-icon class="feature-icon" :size="48"><ShoppingBag /></el-icon>
-            <h3>闲置交易</h3>
-            <p>买卖闲置物品，让资源再利用</p>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="8" :lg="8">
-        <el-card class="feature-card" @click="goToTask">
-          <div class="feature-content">
-            <el-icon class="feature-icon" :size="48"><Box /></el-icon>
-            <h3>跑腿服务</h3>
-            <p>发布或接取跑腿任务，互帮互助</p>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <div class="feature-cards">
+      <div class="feature-card" @click="goToLostFound">
+        <div class="feature-icon">
+          <el-icon :size="40"><Search /></el-icon>
+        </div>
+        <div class="feature-title">失物招领</div>
+        <div class="feature-desc">发布失物信息<br/>寻找丢失物品</div>
+      </div>
+      <div class="feature-card" @click="goToGoods">
+        <div class="feature-icon">
+          <el-icon :size="40"><ShoppingBag /></el-icon>
+        </div>
+        <div class="feature-title">闲置交易</div>
+        <div class="feature-desc">买卖闲置物品<br/>让资源再利用</div>
+      </div>
+      <div class="feature-card" @click="goToTask">
+        <div class="feature-icon">
+          <el-icon :size="40"><Box /></el-icon>
+        </div>
+        <div class="feature-title">跑腿服务</div>
+        <div class="feature-desc">发布或接取任务<br/>互帮互助</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -70,65 +60,117 @@ const goToTask = () => {
 .home-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .welcome-card {
   background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 32px;
+  margin-bottom: 40px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid #b9d7ea;
-  box-shadow: 0 2px 12px 0 rgba(118, 159, 205, 0.1);
 }
 
-.card-header {
-  font-size: 16px;
+.welcome-title {
+  font-size: 28px;
   font-weight: bold;
   color: #303133;
+  margin: 0 0 20px 0;
 }
 
 .welcome-content {
-  padding: 20px 0;
+  padding: 0;
 }
 
-.welcome-content p {
-  margin: 8px 0;
+.welcome-greeting {
+  font-size: 18px;
+  color: #303133;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.welcome-desc {
+  font-size: 16px;
   color: #606266;
-  font-size: 14px;
-  line-height: 1.6;
+  margin: 0;
+  line-height: 1.8;
+}
+
+.feature-cards {
+  display: flex;
+  justify-content: space-around;
+  gap: 30px;
+  flex-wrap: wrap;
 }
 
 .feature-card {
-  background-color: #FFFFFF;
-  border: 1px solid #b9d7ea;
-  box-shadow: 0 2px 12px 0 rgba(118, 159, 205, 0.1);
+  flex: 1;
+  min-width: 280px;
+  max-width: 360px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 40px 30px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-  transition: all 0.3s;
-  height: 100%;
+  border: 1px solid #b9d7ea;
 }
 
 .feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
   border-color: #769fcd;
-  box-shadow: 0 4px 16px 0 rgba(118, 159, 205, 0.2);
-  transform: translateY(-2px);
-}
-
-.feature-content {
-  text-align: center;
-  padding: 20px;
 }
 
 .feature-icon {
-  color: #769fcd;
-  margin-bottom: 16px;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
 }
 
-.feature-content h3 {
-  margin: 12px 0;
-  font-size: 18px;
+.feature-title {
+  font-size: 20px;
+  font-weight: bold;
   color: #303133;
+  margin-bottom: 12px;
 }
 
-.feature-content p {
-  margin: 8px 0 0;
-  color: #909399;
+.feature-desc {
   font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .home-container {
+    padding: 16px;
+  }
+  
+  .welcome-card {
+    padding: 24px;
+    margin-bottom: 30px;
+  }
+  
+  .welcome-title {
+    font-size: 24px;
+  }
+  
+  .feature-cards {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .feature-card {
+    max-width: 100%;
+  }
 }
 </style>
