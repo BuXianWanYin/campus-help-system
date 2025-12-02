@@ -41,6 +41,7 @@ const routes = [
       {
         path: 'home',
         name: 'Home',
+        component: () => import('../views/Home.vue'),
         meta: {
           title: '首页',
           requiresAuth: true
@@ -61,6 +62,15 @@ const routes = [
         component: () => import('../views/lost-found/Detail.vue'),
         meta: {
           title: '失物详情',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'lost-found/publish',
+        name: 'LostFoundPublish',
+        component: () => import('../views/lost-found/Publish.vue'),
+        meta: {
+          title: '发布失物',
           requiresAuth: true
         }
       },

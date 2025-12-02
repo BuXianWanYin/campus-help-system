@@ -4,7 +4,7 @@
  */
 
 import SockJS from 'sockjs-client'
-import { Stomp } from 'stompjs'
+import Stomp from 'stompjs'
 
 class WebSocketManager {
   constructor() {
@@ -17,7 +17,16 @@ class WebSocketManager {
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
     this.reconnectInterval = 3000 // 3秒
-    this.baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+    // 使用环境变量中的 WebSocket URL
+    // SockJS 需要 HTTP URL（会自动转换为 WebSocket）
+    const wsUrl = import.meta.env.VITE_WS_URL
+    if (wsUrl.startsWith('ws://') || wsUrl.startsWith('wss://')) {
+      // 如果是 WebSocket 协议，转换为 HTTP 协议并移除 /ws
+      this.baseUrl = wsUrl.replace(/^ws:\/\//, 'http://').replace(/^wss:\/\//, 'https://').replace(/\/ws$/, '')
+    } else {
+      // 如果已经是 HTTP 协议，直接使用（移除 /ws 后缀，如果存在）
+      this.baseUrl = wsUrl.replace(/\/ws$/, '')
+    }
   }
   
   /**
@@ -32,8 +41,14 @@ class WebSocketManager {
     
     try {
       // 创建SockJS连接
+      // SockJS 会自动处理协议转换（http -> ws），所以直接使用 baseUrl + /ws
       const wsUrl = `${this.baseUrl}/ws`
+      console.log('正在连接 WebSocket:', wsUrl)
       this.socket = new SockJS(wsUrl)
+      // 检查 Stomp 是否正确导入
+      if (!Stomp || typeof Stomp.over !== 'function') {
+        throw new Error('STOMP 客户端未正确加载，请检查导入')
+      }
       this.stompClient = Stomp.over(this.socket)
       
       // 禁用调试日志（生产环境）

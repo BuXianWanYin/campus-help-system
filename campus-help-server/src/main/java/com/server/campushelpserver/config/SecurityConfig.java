@@ -59,6 +59,9 @@ public class SecurityConfig {
                 .antMatchers("/swagger-ui.html").permitAll()
                 .antMatchers("/druid/**").permitAll()
                 .antMatchers("/uploads/**").permitAll()
+                // WebSocket 端点允许匿名访问（SockJS 的 info 请求是匿名发起的）
+                // 实际的 STOMP CONNECT 消息会在 WebSocketInterceptor 中进行 JWT 认证
+                .antMatchers("/ws/**").permitAll()
                 // 用户管理接口需要认证
                 .antMatchers("/api/user/**").authenticated()
                 // 其他请求需要认证

@@ -104,7 +104,7 @@
     <!-- 主内容区 -->
     <main class="main-content">
       <!-- 首页内容（仅在首页显示） -->
-      <template v-if="isHomePage && route.name === 'Home'">
+      <template v-if="isHomePage">
         <!-- 欢迎横幅 -->
         <section class="welcome-banner">
           <div class="banner-content">
@@ -149,39 +149,24 @@
         <div class="filter-bar">
           <el-form :inline="true" class="filter-form">
             <el-form-item label="类型：">
-              <div class="tab-buttons">
-                <el-button :type="lostFoundTab === 'lost' ? 'primary' : ''" size="small" @click="handleTypeChange('lost')">失物</el-button>
-                <el-button :type="lostFoundTab === 'found' ? 'primary' : ''" size="small" @click="handleTypeChange('found')">招领</el-button>
-              </div>
+              <el-select v-model="lostFoundTab" placeholder="全部" style="width: 120px" clearable @change="handleTypeChange">
+                <el-option label="全部" value="" />
+                <el-option label="失物" value="lost" />
+                <el-option label="招领" value="found" />
+              </el-select>
             </el-form-item>
             <el-form-item label="分类：">
-              <el-select v-model="lostFoundFilters.category" placeholder="全部" style="width: 120px">
+              <el-select v-model="lostFoundFilters.category" placeholder="全部" style="width: 120px" clearable>
                 <el-option label="全部" value="" />
-                <el-option label="电子产品" value="electronics" />
-                <el-option label="证件" value="id" />
-                <el-option label="衣物" value="clothing" />
-                <el-option label="书籍" value="book" />
-                <el-option label="其他" value="other" />
+                <el-option label="证件类" value="证件类" />
+                <el-option label="电子产品" value="电子产品" />
+                <el-option label="生活用品" value="生活用品" />
+                <el-option label="书籍" value="书籍" />
+                <el-option label="其他" value="其他" />
               </el-select>
             </el-form-item>
             <el-form-item label="地点：">
-              <el-select v-model="lostFoundFilters.location" placeholder="全部" style="width: 120px">
-                <el-option label="全部" value="" />
-                <el-option label="教学楼" value="teaching" />
-                <el-option label="图书馆" value="library" />
-                <el-option label="食堂" value="canteen" />
-                <el-option label="宿舍" value="dormitory" />
-                <el-option label="体育场" value="stadium" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="时间：">
-              <el-select v-model="lostFoundFilters.time" placeholder="全部" style="width: 120px">
-                <el-option label="全部" value="" />
-                <el-option label="今天" value="today" />
-                <el-option label="最近3天" value="3days" />
-                <el-option label="最近一周" value="week" />
-                <el-option label="最近一月" value="month" />
-              </el-select>
+              <el-input v-model="lostFoundFilters.location" placeholder="输入地点" style="width: 150px" clearable />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleFilter">筛选</el-button>
@@ -413,7 +398,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, markRaw } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -437,10 +422,8 @@ const userStore = useUserStore()
 // 判断是否是首页（排除重定向过程中的误判）
 const isHomePage = computed(() => {
   const path = route.path
-  const name = route.name
-  // 只有在明确是 /home 路径且路由名称为 Home 时才返回 true
-  // 排除重定向过程中的误判（route.name 为 undefined 时）
-  return path === '/home' && name === 'Home'
+  // 判断是否为首页路径
+  return path === '/home' || path === '/'
 })
 
 const searchKeyword = ref('')
@@ -452,30 +435,30 @@ const notifications = ref([])
 const isMobile = ref(false)
 const loadingNotifications = ref(false)
 
-// 功能模块
+// 功能模块（使用 markRaw 避免图标组件被响应式化）
 const featureModules = ref([
-  { id: 1, title: '失物招领', icon: Search, path: '/lost-found/list', colorClass: 'icon-blue', description: '发布失物信息，寻找丢失物品' },
-  { id: 2, title: '闲置交易', icon: ShoppingBag, path: '/goods/list', colorClass: 'icon-green', description: '买卖闲置物品，让资源再利用' },
-  { id: 3, title: '跑腿服务', icon: TrendChartsIcon, path: '/task/list', colorClass: 'icon-orange', description: '发布或接取任务，互帮互助' }
+  { id: 1, title: '失物招领', icon: markRaw(Search), path: '/lost-found/list', colorClass: 'icon-blue', description: '发布失物信息，寻找丢失物品' },
+  { id: 2, title: '闲置交易', icon: markRaw(ShoppingBag), path: '/goods/list', colorClass: 'icon-green', description: '买卖闲置物品，让资源再利用' },
+  { id: 3, title: '跑腿服务', icon: markRaw(TrendChartsIcon), path: '/task/list', colorClass: 'icon-orange', description: '发布或接取任务，互帮互助' }
 ])
 
 // 失物招领
-const lostFoundTab = ref('lost')
-const lostFoundFilters = ref({ category: '', location: '', time: '' })
+const lostFoundTab = ref('')
+const lostFoundFilters = ref({ category: '', location: '' })
 const lostFoundList = ref([])
 const lostFoundLoading = ref(false)
 
-// 闲置交易
+// 闲置交易（使用 markRaw 避免图标组件被响应式化）
 const goodsActiveCategory = ref(1)
 const goodsCategories = ref([
-  { id: 1, name: '数码产品', icon: ComputerIcon },
-  { id: 2, name: '图书教材', icon: NotebookIcon },
-  { id: 3, name: '服装鞋包', icon: TShirtIcon },
-  { id: 4, name: '生活用品', icon: HomeFilled },
-  { id: 5, name: '运动健身', icon: BasketballIcon },
-  { id: 6, name: '乐器', icon: HeadsetIcon },
-  { id: 7, name: '文创用品', icon: EditPenIcon },
-  { id: 8, name: '更多分类', icon: More }
+  { id: 1, name: '数码产品', icon: markRaw(ComputerIcon) },
+  { id: 2, name: '图书教材', icon: markRaw(NotebookIcon) },
+  { id: 3, name: '服装鞋包', icon: markRaw(TShirtIcon) },
+  { id: 4, name: '生活用品', icon: markRaw(HomeFilled) },
+  { id: 5, name: '运动健身', icon: markRaw(BasketballIcon) },
+  { id: 6, name: '乐器', icon: markRaw(HeadsetIcon) },
+  { id: 7, name: '文创用品', icon: markRaw(EditPenIcon) },
+  { id: 8, name: '更多分类', icon: markRaw(More) }
 ])
 const goodsList = ref([
   { id: 1, title: 'iPhone 13 128GB 午夜色 9成新', price: 3999, views: 128, image: 'https://via.placeholder.com/300x200?text=iPhone', userAvatar: '', userName: '陈同学', time: '1小时前', badge: '新品', badgeClass: 'badge-red' },
@@ -496,9 +479,9 @@ const taskCategories = ref([
   { id: 'other', name: '其他' }
 ])
 const taskList = ref([
-  { id: 1, title: '取快递 - 顺丰快递', description: '快递单号：SF1234567890，放在南门快递点', route: '南门快递点 → 东区宿舍', deadline: '2025-07-20 18:00前', reward: 10, icon: ShoppingCart, colorClass: 'icon-orange', userAvatar: '', userName: '周同学' },
-  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: ForkSpoonIcon, colorClass: 'icon-orange', userAvatar: '', userName: '吴同学' },
-  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: Document, colorClass: 'icon-orange', userAvatar: '', userName: '郑同学' }
+  { id: 1, title: '取快递 - 顺丰快递', description: '快递单号：SF1234567890，放在南门快递点', route: '南门快递点 → 东区宿舍', deadline: '2025-07-20 18:00前', reward: 10, icon: markRaw(ShoppingCart), colorClass: 'icon-orange', userAvatar: '', userName: '周同学' },
+  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: markRaw(ForkSpoonIcon), colorClass: 'icon-orange', userAvatar: '', userName: '吴同学' },
+  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: markRaw(Document), colorClass: 'icon-orange', userAvatar: '', userName: '郑同学' }
 ])
 const taskForm = ref({
   type: '',
@@ -541,7 +524,9 @@ const handleSearch = () => {
 
 // 处理发布
 const handlePublish = () => {
-  router.push('/publish')
+  // 根据当前页面或上下文跳转到对应的发布页面
+  // 目前默认跳转到失物发布页面
+  router.push('/lost-found/publish')
 }
 
 // 处理用户菜单命令
@@ -698,16 +683,16 @@ const getMessageTypeClass = (type) => {
   return typeMap[type] || 'blue'
 }
 
-// 获取消息图标
+// 获取消息图标（使用 markRaw 避免图标组件被响应式化）
 const getMessageIcon = (type) => {
   const iconMap = {
-    'VERIFICATION_APPROVED': Check,
-    'VERIFICATION_REJECTED': Close,
-    'ORDER_STATUS': ShoppingBag,
-    'TASK_STATUS': TrendChartsIcon,
-    'ANNOUNCEMENT': Bell
+    'VERIFICATION_APPROVED': markRaw(Check),
+    'VERIFICATION_REJECTED': markRaw(Close),
+    'ORDER_STATUS': markRaw(ShoppingBag),
+    'TASK_STATUS': markRaw(TrendChartsIcon),
+    'ANNOUNCEMENT': markRaw(Bell)
   }
-  return iconMap[type] || InfoFilled
+  return iconMap[type] || markRaw(InfoFilled)
 }
 
 // WebSocket消息处理
@@ -748,9 +733,15 @@ const updateActiveMenu = () => {
   }
 }
 
-// 监听路由变化，实时更新激活菜单
-watch(() => route.path, () => {
+// 监听路由变化，实时更新激活菜单和加载数据
+watch(() => route.path, (newPath) => {
   updateActiveMenu()
+  // 如果是首页，加载失物招领列表
+  if (newPath === '/home' || newPath === '/') {
+    nextTick(() => {
+      fetchLostFoundList()
+    })
+  }
 }, { immediate: true })
 
 // 跳转到功能模块
@@ -760,7 +751,11 @@ const goToModule = (path) => {
 
 // 获取失物招领列表（首页显示）
 const fetchLostFoundList = async () => {
-  if (!isHomePage.value) return
+  // 只在首页时获取数据
+  const path = route.path
+  if (path !== '/home' && path !== '/') {
+    return
+  }
   
   lostFoundLoading.value = true
   try {
@@ -769,22 +764,48 @@ const fetchLostFoundList = async () => {
       pageSize: 6,
       type: lostFoundTab.value === 'lost' ? 'LOST' : lostFoundTab.value === 'found' ? 'FOUND' : undefined,
       category: lostFoundFilters.value.category || undefined,
-      status: 'PENDING_CLAIM,CLAIMING,CLAIMED',
+      location: lostFoundFilters.value.location || undefined,
+      // 不传status，让后端使用默认筛选（PENDING_CLAIM, CLAIMING, CLAIMED）
       sortBy: 'latest'
     }
     
     const response = await lostFoundApi.getList(params)
     if (response.code === 200) {
       const pageData = response.data
-      lostFoundList.value = (pageData.records || []).map(item => {
-        const images = item.images ? (typeof item.images === 'string' ? JSON.parse(item.images) : item.images) : []
+      console.log('首页失物招领数据:', pageData) // 调试日志
+      
+      // MyBatis-Plus的Page对象可能直接是数组，或者有records字段
+      let records = []
+      if (Array.isArray(pageData)) {
+        records = pageData
+      } else if (pageData.records) {
+        records = pageData.records
+      } else if (pageData.list) {
+        records = pageData.list
+      }
+      
+      lostFoundList.value = records.map(item => {
+        let images = []
+        if (item.images) {
+          try {
+            images = typeof item.images === 'string' ? JSON.parse(item.images) : item.images
+          } catch (e) {
+            console.error('解析图片失败:', e)
+            images = []
+          }
+        }
         return {
           ...item,
           images: images,
-          userAvatar: item.user?.avatar,
-          userName: item.user?.nickname || '未知用户'
+          // 后端可能返回user对象，也可能只有userId
+          userAvatar: item.user?.avatar || null,
+          userName: item.user?.nickname || `用户${item.userId}` || '未知用户'
         }
       })
+      
+      console.log('处理后的失物列表:', lostFoundList.value) // 调试日志
+    } else {
+      console.error('获取失物招领列表失败，响应码:', response.code, response.message)
     }
   } catch (error) {
     console.error('获取失物招领列表失败:', error)
@@ -829,8 +850,7 @@ const formatTime = (time) => {
 /**
  * 处理类型切换
  */
-const handleTypeChange = (type) => {
-  lostFoundTab.value = type
+const handleTypeChange = () => {
   fetchLostFoundList()
 }
 
@@ -917,7 +937,8 @@ onMounted(async () => {
   })
   
   // 如果是首页，加载失物招领列表
-  if (isHomePage.value) {
+  const path = route.path
+  if (path === '/home' || path === '/') {
     fetchLostFoundList()
   }
   
@@ -942,12 +963,6 @@ onMounted(async () => {
   })
 })
 
-// 监听路由变化，当进入首页时加载失物招领列表
-watch(() => route.path, (newPath) => {
-  if (newPath === '/home' || newPath === '/') {
-    fetchLostFoundList()
-  }
-}, { immediate: true })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
