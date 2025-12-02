@@ -1,0 +1,83 @@
+# ========== 通用 ==========
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.iml
+
+# ========== 后端 (Java/Maven) ==========
+# Maven
+campus-help-server/target/
+campus-help-server/.classpath
+campus-help-server/.project
+campus-help-server/.settings/
+campus-help-server/.idea/
+
+# 编译文件
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# 日志文件
+campus-help-server/logs/
+*.log
+
+# 上传文件
+campus-help-server/uploads/
+campus-help-server/upload/
+
+
+# 依赖
+campus-help-web/node_modules/
+campus-help-web/.pnpm-store/
+campus-help-web/.yarn/
+campus-help-web/.yarn/cache
+campus-help-web/.yarn/unplugged
+campus-help-web/.yarn/build-state.yml
+campus-help-web/.yarn/install-state.gz
+campus-help-web/.pnp.*
+
+# 构建输出
+campus-help-web/dist/
+campus-help-web/dist-ssr/
+campus-help-web/*.local
+
+# 日志
+campus-help-web/npm-debug.log*
+campus-help-web/yarn-debug.log*
+campus-help-web/yarn-error.log*
+campus-help-web/pnpm-debug.log*
+campus-help-web/lerna-debug.log*
+
+# 编辑器
+campus-help-web/.vscode/*
+!campus-help-web/.vscode/extensions.json
+campus-help-web/.idea
+campus-help-web/*.suo
+campus-help-web/*.ntvs*
+campus-help-web/*.njsproj
+campus-help-web/*.sln
+campus-help-web/*.sw?
+
+# 环境变量文件（包含敏感信息）
+campus-help-web/.env
+campus-help-web/.env.local
+campus-help-web/.env.*.local
+
+# ========== 其他 ==========
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.cache
+

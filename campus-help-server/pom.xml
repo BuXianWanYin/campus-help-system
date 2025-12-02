@@ -79,7 +79,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- BCrypt 密码加密（已包含在 Spring Security 中，但显式声明） -->
+        <!-- BCrypt 密码加密（已包含在 Spring Security 中，显式声明） -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
@@ -98,10 +98,6 @@
             <artifactId>commons-pool2</artifactId>
         </dependency>
 
-        <!-- ========== 异步与任务 ========== -->
-        <!-- Spring Async 和 Task Scheduler 已包含在 spring-boot-starter 中 -->
-
-        <!-- ========== 开发工具与辅助 ========== -->
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
