@@ -207,22 +207,22 @@ onMounted(() => {
 .verification-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--content-padding);
 }
 
 .verification-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  padding: 32px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #b9d7ea;
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 
 .page-title {
   font-size: 28px;
   font-weight: bold;
-  color: #303133;
-  margin: 0 0 32px 0;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-3xl) 0;
 }
 
 .verified-status {
@@ -246,30 +246,30 @@ onMounted(() => {
 }
 
 :deep(.el-input__wrapper) {
-  border-radius: 4px;
-  box-shadow: 0 0 0 1px #b9d7ea inset;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
 }
 
 :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #769fcd inset;
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
 :deep(.el-input.is-focus .el-input__wrapper) {
-  box-shadow: 0 0 0 1px #769fcd inset;
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
 :deep(.el-alert) {
-  border-radius: 8px;
-  margin-bottom: 24px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-2xl);
 }
 
 :deep(.el-result__title) {
-  color: #303133;
+  color: var(--color-text-primary);
   font-size: 20px;
 }
 
 :deep(.el-result__subtitle) {
-  color: #606266;
+  color: var(--color-text-regular);
   font-size: 14px;
 }
 

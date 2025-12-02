@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupRouterGuard } from './guard'
 import MainLayout from '../layouts/MainLayout.vue'
-import BasicLayout from '../layouts/BasicLayout.vue'
 
 const routes = [
   {
@@ -76,25 +75,7 @@ const routes = [
         }
       },
       {
-        path: 'about',
-        name: 'About',
-        component: () => import('../views/About.vue'),
-        meta: {
-          title: '关于我们',
-          requiresAuth: true
-        }
-      }
-    ]
-  },
-  {
-    path: '/user',
-    component: BasicLayout,
-    meta: {
-      requiresAuth: true
-    },
-    children: [
-      {
-        path: 'profile',
+        path: 'user/profile',
         name: 'UserProfile',
         component: () => import('../views/user/Profile.vue'),
         meta: {
@@ -103,7 +84,7 @@ const routes = [
         }
       },
       {
-        path: 'verification',
+        path: 'user/verification',
         name: 'UserVerification',
         component: () => import('../views/user/Verification.vue'),
         meta: {

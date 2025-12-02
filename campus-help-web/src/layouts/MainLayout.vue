@@ -23,7 +23,6 @@
             <el-menu-item index="lost-found">失物招领</el-menu-item>
             <el-menu-item index="goods">闲置交易</el-menu-item>
             <el-menu-item index="task">跑腿服务</el-menu-item>
-            <el-menu-item index="about">关于我们</el-menu-item>
           </el-menu>
         </div>
         
@@ -126,9 +125,12 @@
         <div class="module-grid">
           <div v-for="module in featureModules" :key="module.id" class="module-card" @click="goToModule(module.path)">
             <div class="module-icon" :class="module.colorClass">
-              <el-icon :size="24"><component :is="module.icon" /></el-icon>
+              <el-icon :size="32"><component :is="module.icon" /></el-icon>
             </div>
-            <h3 class="module-title">{{ module.title }}</h3>
+            <div class="module-content">
+              <h3 class="module-title">{{ module.title }}</h3>
+              <p class="module-desc">{{ module.description }}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -217,31 +219,6 @@
           </div>
         </div>
 
-        <!-- AI智能匹配 -->
-        <div class="ai-match-card">
-          <div class="ai-match-header">
-            <div class="ai-icon">
-              <el-icon><Lightbulb /></el-icon>
-            </div>
-            <h3>AI智能匹配</h3>
-          </div>
-          <div class="ai-match-content">
-            <p class="ai-match-desc">根据您的失物信息，我们为您找到了以下可能匹配的招领信息：</p>
-            <div class="ai-match-item">
-              <div class="match-icon">
-                <el-icon><Link /></el-icon>
-              </div>
-              <div class="match-content">
-                <div class="match-header">
-                  <h4>捡到黑色钱包</h4>
-                  <span class="match-score">匹配度：90%</span>
-                </div>
-                <p class="match-info">地点：图书馆，时间：2025-07-19</p>
-              </div>
-              <el-button type="primary" size="small" text @click="goToDetail('lost-found', 1)">查看详情</el-button>
-            </div>
-          </div>
-        </div>
       </section>
 
       <!-- 闲置交易模块 -->
@@ -286,30 +263,7 @@
           </div>
         </div>
 
-        <!-- 价格协商功能 -->
-        <div class="price-negotiation-card">
-          <div class="negotiation-header">
-            <div class="negotiation-icon">
-              <el-icon><ChatDotRound /></el-icon>
-            </div>
-            <h3>价格协商</h3>
-          </div>
-          <div class="negotiation-content">
-            <div class="price-info">
-              <span>当前价格：¥{{ negotiationPrice.current }}</span>
-              <span>您的出价：¥{{ negotiationPrice.offer }}</span>
-            </div>
-            <el-slider v-model="negotiationPrice.offer" :min="negotiationPrice.min" :max="negotiationPrice.current" />
-            <div class="price-range">
-              <span>¥{{ negotiationPrice.min }}</span>
-              <span>¥{{ negotiationPrice.current }}</span>
-            </div>
-            <div class="negotiation-actions">
-              <el-button @click="handleCancelNegotiation">取消</el-button>
-              <el-button type="primary" @click="handleSendOffer">发送报价</el-button>
-            </div>
-          </div>
-        </div>
+      
       </section>
 
       <!-- 跑腿服务模块 -->
@@ -372,62 +326,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- 任务发布表单 -->
-        <div class="task-publish-card">
-          <div class="publish-header">
-            <div class="publish-icon">
-              <el-icon><Plus /></el-icon>
-            </div>
-            <h3>快速发布任务</h3>
-          </div>
-          <el-form :model="taskForm" label-width="100px">
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="任务类型">
-                  <el-select v-model="taskForm.type" placeholder="请选择">
-                    <el-option label="取快递" value="express" />
-                    <el-option label="买饭" value="food" />
-                    <el-option label="送文件" value="file" />
-                    <el-option label="代排队" value="queue" />
-                    <el-option label="其他" value="other" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="任务描述">
-                  <el-input v-model="taskForm.description" placeholder="简单描述您的需求" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="报酬金额">
-                  <el-input-number v-model="taskForm.reward" :min="1" :max="1000" placeholder="设置合理的报酬" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="起始地点">
-                  <el-input v-model="taskForm.startLocation" placeholder="任务起始位置" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="目的地">
-                  <el-input v-model="taskForm.endLocation" placeholder="任务结束位置" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="截止时间">
-                  <el-date-picker v-model="taskForm.deadline" type="datetime" placeholder="选择截止时间" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-form-item>
-              <el-button @click="handlePreviewTask">预览</el-button>
-              <el-button type="primary" @click="handleSubmitTask">发布任务</el-button>
-            </el-form-item>
-          </el-form>
         </div>
       </section>
 
@@ -608,8 +506,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, ArrowDown, User, Setting, SwitchButton, Menu,
   HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star,
-  Location, Clock, View, Lightbulb, Link, Laptop, Notebook, TShirt, Home, Basketball,
-  Headset, EditPen, MoreFilled, ShoppingCart, ForkSpoon, FileText, Connection, Users, TrendCharts,
+  Location, Clock, View, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
+  Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
   Close, ArrowUp, ArrowDown as ArrowDownIcon, Box
 } from '@element-plus/icons-vue'
 import { initChart, resizeChart } from '@/utils/echarts'
@@ -628,18 +526,15 @@ const notifications = ref([
   { id: 1, title: '您的闲置商品有新的询价', description: 'iPhone 13 128GB 午夜色 9成新', time: '10分钟前', read: false, type: 'blue', icon: ChatDotRound },
   { id: 2, title: '您的跑腿任务已被接取', description: '取快递 - 顺丰快递', time: '30分钟前', read: false, type: 'green', icon: Check },
   { id: 3, title: '您收到了新的评价', description: '任务：取快递 - 顺丰快递', time: '2小时前', read: false, type: 'orange', icon: Star },
-  { id: 4, title: '您的信用评分提升了', description: '当前信用分：92，较上周提升3分', time: '昨天', read: true, type: 'blue', icon: TrendCharts }
+  { id: 4, title: '您的信用评分提升了', description: '当前信用分：92，较上周提升3分', time: '昨天', read: true, type: 'blue', icon: TrendChartsIcon }
 ])
 const isMobile = ref(false)
 
 // 功能模块
 const featureModules = ref([
-  { id: 1, title: '失物招领', icon: Search, path: '/lost-found/list', colorClass: 'icon-blue' },
-  { id: 2, title: '闲置交易', icon: ShoppingBag, path: '/goods/list', colorClass: 'icon-green' },
-  { id: 3, title: '跑腿服务', icon: TrendCharts, path: '/task/list', colorClass: 'icon-orange' },
-  { id: 4, title: '校园活动', icon: Users, path: '/activity', colorClass: 'icon-purple' },
-  { id: 5, title: '志愿互助', icon: Connection, path: '/volunteer', colorClass: 'icon-red' },
-  { id: 6, title: '创意市集', icon: Lightbulb, path: '/market', colorClass: 'icon-yellow' }
+  { id: 1, title: '失物招领', icon: Search, path: '/lost-found/list', colorClass: 'icon-blue', description: '发布失物信息，寻找丢失物品' },
+  { id: 2, title: '闲置交易', icon: ShoppingBag, path: '/goods/list', colorClass: 'icon-green', description: '买卖闲置物品，让资源再利用' },
+  { id: 3, title: '跑腿服务', icon: TrendChartsIcon, path: '/task/list', colorClass: 'icon-orange', description: '发布或接取任务，互帮互助' }
 ])
 
 // 失物招领
@@ -654,14 +549,14 @@ const lostFoundList = ref([
 // 闲置交易
 const goodsActiveCategory = ref(1)
 const goodsCategories = ref([
-  { id: 1, name: '数码产品', icon: Laptop },
-  { id: 2, name: '图书教材', icon: Notebook },
-  { id: 3, name: '服装鞋包', icon: TShirt },
-  { id: 4, name: '生活用品', icon: Home },
-  { id: 5, name: '运动健身', icon: Basketball },
-  { id: 6, name: '乐器', icon: Headset },
-  { id: 7, name: '文创用品', icon: EditPen },
-  { id: 8, name: '更多分类', icon: MoreFilled }
+  { id: 1, name: '数码产品', icon: ComputerIcon },
+  { id: 2, name: '图书教材', icon: NotebookIcon },
+  { id: 3, name: '服装鞋包', icon: TShirtIcon },
+  { id: 4, name: '生活用品', icon: HomeFilled },
+  { id: 5, name: '运动健身', icon: BasketballIcon },
+  { id: 6, name: '乐器', icon: HeadsetIcon },
+  { id: 7, name: '文创用品', icon: EditPenIcon },
+  { id: 8, name: '更多分类', icon: More }
 ])
 const goodsList = ref([
   { id: 1, title: 'iPhone 13 128GB 午夜色 9成新', price: 3999, views: 128, image: 'https://via.placeholder.com/300x200?text=iPhone', userAvatar: '', userName: '陈同学', time: '1小时前', badge: '新品', badgeClass: 'badge-red' },
@@ -683,8 +578,8 @@ const taskCategories = ref([
 ])
 const taskList = ref([
   { id: 1, title: '取快递 - 顺丰快递', description: '快递单号：SF1234567890，放在南门快递点', route: '南门快递点 → 东区宿舍', deadline: '2025-07-20 18:00前', reward: 10, icon: ShoppingCart, colorClass: 'icon-orange', userAvatar: '', userName: '周同学', rating: 5 },
-  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: ForkSpoon, colorClass: 'icon-orange', userAvatar: '', userName: '吴同学', rating: 4 },
-  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: FileText, colorClass: 'icon-orange', userAvatar: '', userName: '郑同学', rating: 4 }
+  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: ForkSpoonIcon, colorClass: 'icon-orange', userAvatar: '', userName: '吴同学', rating: 4 },
+  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: Document, colorClass: 'icon-orange', userAvatar: '', userName: '郑同学', rating: 4 }
 ])
 const taskForm = ref({
   type: '',
@@ -712,8 +607,8 @@ const creditRecords = ref([
 // 统计数据
 const statsPeriod = ref('7days')
 const statsData = ref([
-  { id: 1, label: '总互助次数', value: '12,580', change: '12.5%', changeType: 'change-up', changeIcon: ArrowUp, icon: Connection, colorClass: 'icon-blue' },
-  { id: 2, label: '活跃用户', value: '3,245', change: '8.3%', changeType: 'change-up', changeIcon: ArrowUp, icon: Users, colorClass: 'icon-green' },
+  { id: 1, label: '总互助次数', value: '12,580', change: '12.5%', changeType: 'change-up', changeIcon: ArrowUp, icon: ConnectionIcon, colorClass: 'icon-blue' },
+  { id: 2, label: '活跃用户', value: '3,245', change: '8.3%', changeType: 'change-up', changeIcon: ArrowUp, icon: UsersIcon, colorClass: 'icon-green' },
   { id: 3, label: '平均响应时间', value: '15分钟', change: '5.2%', changeType: 'change-down', changeIcon: ArrowDownIcon, icon: Clock, colorClass: 'icon-orange' }
 ])
 
@@ -735,8 +630,7 @@ const handleMenuSelect = (index) => {
     'home': '/home',
     'lost-found': '/lost-found/list',
     'goods': '/goods/list',
-    'task': '/task/list',
-    'about': '/about'
+    'task': '/task/list'
   }
   if (routeMap[index]) {
     router.push(routeMap[index])
@@ -816,8 +710,6 @@ const updateActiveMenu = () => {
     activeMenu.value = 'goods'
   } else if (path.startsWith('/task')) {
     activeMenu.value = 'task'
-  } else if (path.startsWith('/about')) {
-    activeMenu.value = 'about'
   } else if (path === '/home' || path === '/') {
     activeMenu.value = 'home'
   } else {
@@ -1261,71 +1153,72 @@ onUnmounted(() => {
 
 .module-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
 }
 
 .module-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  padding: 24px 16px;
-  text-align: center;
+  background: linear-gradient(135deg, #FFFFFF 0%, #f7fbfc 100%);
+  border-radius: 12px;
+  padding: 32px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid #b9d7ea;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .module-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-color: #769fcd;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #409eff;
 }
 
 .module-icon {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .module-icon.icon-blue {
-  background-color: #d6e6f2;
-  color: #769fcd;
+  background: linear-gradient(135deg, #769fcd 0%, #409eff 100%);
+  color: #FFFFFF;
 }
 
 .module-icon.icon-green {
-  background-color: #e8f5e9;
-  color: #4caf50;
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  color: #FFFFFF;
 }
 
 .module-icon.icon-orange {
-  background-color: #fff3e0;
-  color: #ff9800;
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  color: #FFFFFF;
 }
 
-.module-icon.icon-purple {
-  background-color: #f3e5f5;
-  color: #9c27b0;
-}
-
-.module-icon.icon-red {
-  background-color: #ffebee;
-  color: #f44336;
-}
-
-.module-icon.icon-yellow {
-  background-color: #fffde7;
-  color: #ffc107;
+.module-content {
+  flex: 1;
+  text-align: left;
 }
 
 .module-title {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: bold;
   color: #303133;
+  margin: 0 0 8px 0;
+}
+
+.module-desc {
+  font-size: 14px;
+  color: #606266;
   margin: 0;
+  line-height: 1.5;
 }
 
 /* 失物招领模块 */
@@ -2378,7 +2271,24 @@ onUnmounted(() => {
   }
   
   .module-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+  }
+  
+  .module-card {
+    padding: 24px 20px;
+  }
+  
+  .module-icon {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .module-title {
+    font-size: 16px;
+  }
+  
+  .module-desc {
+    font-size: 13px;
   }
   
   .card-grid,

@@ -1,0 +1,522 @@
+/* ============================================
+   校园帮系统 - 全局样式文件
+   基于统一配色方案（2025年更新）
+   ============================================ */
+
+/* ============================================
+   1. CSS 变量定义（配色方案）
+   ============================================ */
+:root {
+  /* 主色调 */
+  --color-primary: #1E88E5; /* 校园蓝 */
+  --color-primary-hover: #1976D2; /* 主色hover */
+  --color-primary-light: #64B5F6; /* 主色浅色 */
+  --color-primary-lighter: #BBDEFB; /* 主色极浅 */
+  
+  /* 次要色 */
+  --color-secondary: #FF9800; /* 活力橙 */
+  --color-secondary-hover: #F57C00; /* 次要色hover */
+  
+  /* 状态色 */
+  --color-success: #4CAF50; /* 成功绿 */
+  --color-warning: #FFC107; /* 警告黄 */
+  --color-danger: #F44336; /* 错误红 */
+  --color-info: #909399; /* 信息灰 */
+  
+  /* 中性色 */
+  --color-dark: #424242; /* 深灰 */
+  --color-light: #F5F5F5; /* 浅灰 */
+  --color-border: #E0E0E0; /* 边框色 */
+  
+  /* 文字色 */
+  --color-text-primary: #424242; /* 主文字 */
+  --color-text-regular: #606266; /* 常规文字 */
+  --color-text-secondary: #909399; /* 次要文字 */
+  --color-text-placeholder: #C0C4CC; /* 占位文字 */
+  
+  /* 背景色 */
+  --color-bg-primary: #F5F5F5; /* 页面主背景 */
+  --color-bg-white: #FFFFFF; /* 白色背景 */
+  --color-bg-card: #FFFFFF; /* 卡片背景 */
+  
+  /* 阴影 */
+  --shadow-sm: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  
+  /* 布局 */
+  --header-height: 60px;
+  --content-max-width: 1400px;
+  --content-padding: 20px;
+}
+
+/* ============================================
+   2. 全局重置样式
+   ============================================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-regular);
+  background-color: var(--color-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   3. 布局样式
+   ============================================ */
+
+/* 主布局容器 */
+.main-layout {
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部导航栏 */
+.main-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--color-bg-white);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 var(--content-padding);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo 样式 */
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-bg-white);
+  box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
+}
+
+.logo-text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+/* 主内容区 */
+.main-content {
+  flex: 1;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--content-padding);
+  min-height: calc(100vh - var(--header-height));
+}
+
+/* ============================================
+   4. 卡片样式
+   ============================================ */
+
+/* 基础卡片 */
+.card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--content-padding);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+/* 内容卡片 */
+.content-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--content-padding);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+/* 功能卡片 */
+.feature-card {
+  background: linear-gradient(135deg, var(--color-bg-white) 0%, var(--color-bg-primary) 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+/* ============================================
+   5. 按钮样式
+   ============================================ */
+
+/* 主要按钮 */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-bg-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md) var(--spacing-2xl);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.4);
+}
+
+.btn-primary:active {
+  background-color: var(--color-primary);
+  opacity: 0.9;
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-bg-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md) var(--spacing-2xl);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-secondary-hover);
+}
+
+/* ============================================
+   6. 输入框样式
+   ============================================ */
+
+/* Element Plus 输入框样式覆盖 */
+:deep(.el-input__wrapper) {
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+:deep(.el-input.is-focus .el-input__wrapper) {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+/* ============================================
+   7. 徽章样式
+   ============================================ */
+
+.badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-bg-white);
+}
+
+.badge-red {
+  background-color: var(--color-danger);
+}
+
+.badge-green {
+  background-color: var(--color-success);
+}
+
+.badge-orange {
+  background-color: var(--color-secondary);
+}
+
+.badge-blue {
+  background-color: var(--color-primary);
+}
+
+/* ============================================
+   8. 图标样式
+   ============================================ */
+
+.icon-blue {
+  background-color: var(--color-primary-lighter);
+  color: var(--color-primary);
+}
+
+.icon-green {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--color-success);
+}
+
+.icon-orange {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: var(--color-secondary);
+}
+
+.icon-red {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--color-danger);
+}
+
+/* ============================================
+   9. 文字样式
+   ============================================ */
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.text-dark {
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   10. 间距工具类
+   ============================================ */
+
+.mt-xs { margin-top: var(--spacing-xs); }
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+.mt-2xl { margin-top: var(--spacing-2xl); }
+
+.mb-xs { margin-bottom: var(--spacing-xs); }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+.mb-2xl { margin-bottom: var(--spacing-2xl); }
+
+.p-xs { padding: var(--spacing-xs); }
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+.p-xl { padding: var(--spacing-xl); }
+.p-2xl { padding: var(--spacing-2xl); }
+
+/* ============================================
+   11. 响应式设计
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .header-container {
+    padding: 0 var(--spacing-lg);
+  }
+  
+  .main-content {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --content-padding: 16px;
+  }
+  
+  .header-container {
+    padding: 0 var(--spacing-lg);
+  }
+  
+  .main-content {
+    padding: var(--spacing-lg);
+    padding-bottom: 80px; /* 为底部导航栏留出空间 */
+  }
+  
+  .logo-text {
+    font-size: 18px;
+  }
+}
+
+/* ============================================
+   12. Element Plus 组件样式覆盖
+   ============================================ */
+
+/* 菜单样式 */
+:deep(.el-menu--horizontal .el-menu-item) {
+  height: var(--header-height);
+  line-height: var(--header-height);
+  color: var(--color-text-regular);
+  font-size: 15px;
+  padding: 0 var(--spacing-2xl);
+}
+
+:deep(.el-menu--horizontal .el-menu-item:hover) {
+  color: var(--color-primary);
+  background-color: transparent;
+}
+
+:deep(.el-menu--horizontal .el-menu-item.is-active) {
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+/* 下拉菜单样式 */
+:deep(.el-dropdown-menu) {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+:deep(.el-dropdown-menu__item) {
+  padding: var(--spacing-md) var(--content-padding);
+  color: var(--color-text-primary);
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background-color: var(--color-bg-primary);
+  color: var(--color-primary);
+}
+
+:deep(.el-dropdown-menu__item.is-divided) {
+  border-top: 1px solid var(--color-border);
+}
+
+/* 标签页样式 */
+:deep(.el-tabs__item) {
+  color: var(--color-text-regular);
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: var(--color-primary);
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: var(--color-primary);
+}
+
+/* 进度条样式 */
+:deep(.el-progress-bar__outer) {
+  background-color: var(--color-bg-primary);
+}
+
+/* 分页样式 */
+:deep(.el-pagination.is-background .el-pager li.is-active) {
+  background-color: var(--color-primary);
+  color: var(--color-bg-white);
+}
+
+/* ============================================
+   13. 工具类
+   ============================================ */
+
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.transition {
+  transition: all 0.3s ease;
+}
+
