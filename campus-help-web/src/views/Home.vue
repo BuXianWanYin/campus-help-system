@@ -1,84 +1,133 @@
 <template>
-  <div class="home">
-    <el-container>
-      <el-header>
-        <h1>校园帮助系统</h1>
-      </el-header>
-      <el-main>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-card>
-              <template #header>
-                <div class="card-header">
-                  <span>欢迎使用校园帮助系统</span>
-                </div>
-              </template>
-              <p>这是一个基于 Vue 3 + Vite + Element Plus 的项目</p>
-              <el-button type="primary" @click="testApi">测试 API 连接</el-button>
-            </el-card>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 20px;">
-          <el-col :span="24">
-            <el-card>
-              <template #header>
-                <div class="card-header">
-                  <span>ECharts 示例</span>
-                </div>
-              </template>
-              <ChartExample />
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-main>
-    </el-container>
+  <div class="home-container">
+    <el-card class="welcome-card">
+      <template #header>
+        <div class="card-header">
+          <span>欢迎使用校园帮助系统</span>
+        </div>
+      </template>
+      <div class="welcome-content">
+        <p>您好，{{ userStore.nickname || userStore.email }}！</p>
+        <p>欢迎来到校园帮助系统，这里可以帮您解决失物招领、闲置交易、跑腿服务等校园互助需求。</p>
+      </div>
+    </el-card>
+    
+    <el-row :gutter="20" style="margin-top: 20px;">
+      <el-col :xs="24" :sm="12" :md="8" :lg="8">
+        <el-card class="feature-card" @click="goToLostFound">
+          <div class="feature-content">
+            <el-icon class="feature-icon" :size="48"><Search /></el-icon>
+            <h3>失物招领</h3>
+            <p>发布失物信息，寻找丢失物品</p>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="8" :lg="8">
+        <el-card class="feature-card" @click="goToGoods">
+          <div class="feature-content">
+            <el-icon class="feature-icon" :size="48"><ShoppingBag /></el-icon>
+            <h3>闲置交易</h3>
+            <p>买卖闲置物品，让资源再利用</p>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="8" :lg="8">
+        <el-card class="feature-card" @click="goToTask">
+          <div class="feature-content">
+            <el-icon class="feature-icon" :size="48"><Truck /></el-icon>
+            <h3>跑腿服务</h3>
+            <p>发布或接取跑腿任务，互帮互助</p>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup>
-import { ElMessage } from 'element-plus'
-import { useApiStore } from '../stores/api'
-import ChartExample from '../components/ChartExample.vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { Search, ShoppingBag, Truck } from '@element-plus/icons-vue'
 
-const apiStore = useApiStore()
+const router = useRouter()
+const userStore = useUserStore()
 
-const testApi = async () => {
-  try {
-    const response = await apiStore.testConnection()
-    ElMessage.success('API 连接成功！')
-    console.log(response)
-  } catch (error) {
-    ElMessage.error('API 连接失败：' + error.message)
-  }
+const goToLostFound = () => {
+  router.push('/lost-found/list')
+}
+
+const goToGoods = () => {
+  router.push('/goods/list')
+}
+
+const goToTask = () => {
+  router.push('/task/list')
 }
 </script>
 
 <style scoped>
-.home {
-  width: 100%;
-  height: 100vh;
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.el-header {
-  background-color: #409eff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.el-header h1 {
-  margin: 0;
-}
-
-.el-main {
-  padding: 20px;
+.welcome-card {
+  background-color: #FFFFFF;
+  border: 1px solid #b9d7ea;
+  box-shadow: 0 2px 12px 0 rgba(118, 159, 205, 0.1);
 }
 
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.welcome-content {
+  padding: 20px 0;
+}
+
+.welcome-content p {
+  margin: 8px 0;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.feature-card {
+  background-color: #FFFFFF;
+  border: 1px solid #b9d7ea;
+  box-shadow: 0 2px 12px 0 rgba(118, 159, 205, 0.1);
+  cursor: pointer;
+  transition: all 0.3s;
+  height: 100%;
+}
+
+.feature-card:hover {
+  border-color: #769fcd;
+  box-shadow: 0 4px 16px 0 rgba(118, 159, 205, 0.2);
+  transform: translateY(-2px);
+}
+
+.feature-content {
+  text-align: center;
+  padding: 20px;
+}
+
+.feature-icon {
+  color: #769fcd;
+  margin-bottom: 16px;
+}
+
+.feature-content h3 {
+  margin: 12px 0;
+  font-size: 18px;
+  color: #303133;
+}
+
+.feature-content p {
+  margin: 8px 0 0;
+  color: #909399;
+  font-size: 14px;
 }
 </style>
-

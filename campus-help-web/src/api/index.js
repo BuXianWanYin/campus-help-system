@@ -4,29 +4,29 @@ import request from '@/utils/request'
  * 认证相关 API
  */
 export const authApi = {
-  // 登录
-  login(data) {
-    return request.post('/auth/login', data)
+  // 用户注册
+  register(user, code) {
+    return request.post('/api/auth/register', user, {
+      params: { code }
+    })
   },
   
-  // 登出
-  logout() {
-    return request.post('/auth/logout')
+  // 用户登录（支持密码登录和验证码登录）
+  login(email, password, code) {
+    const params = { email }
+    if (password) {
+      params.password = password
+    } else if (code) {
+      params.code = code
+    }
+    return request.post('/api/auth/login', null, { params })
   },
   
-  // 获取用户信息
-  getUserInfo() {
-    return request.get('/auth/user/info')
-  },
-  
-  // 刷新 Token
-  refreshToken() {
-    return request.post('/auth/refresh')
-  },
-  
-  // 注册
-  register(data) {
-    return request.post('/auth/register', data)
+  // 发送验证码
+  sendCode(type, email) {
+    return request.post('/api/auth/send-code', null, {
+      params: { type, email }
+    })
   }
 }
 
@@ -34,24 +34,41 @@ export const authApi = {
  * 用户相关 API
  */
 export const userApi = {
-  // 获取用户列表
-  getUserList(params) {
-    return request.get('/user/list', { params })
+  // 获取当前用户信息
+  getCurrentUser() {
+    return request.get('/api/user/current')
   },
   
-  // 获取用户详情
+  // 更新当前用户信息
+  updateCurrentUser(data) {
+    return request.put('/api/user/current', data)
+  },
+  
+  // 分页查询用户列表（管理员）
+  getUserPage(params) {
+    return request.get('/api/user/page', { params })
+  },
+  
+  // 根据ID获取用户信息（管理员）
   getUserById(id) {
-    return request.get(`/user/${id}`)
-  },
-  
-  // 更新用户信息
-  updateUser(id, data) {
-    return request.put(`/user/${id}`, data)
-  },
-  
-  // 删除用户
-  deleteUser(id) {
-    return request.delete(`/user/${id}`)
+    return request.get(`/api/user/${id}`)
+  }
+}
+
+/**
+ * 文件相关 API
+ */
+export const fileApi = {
+  // 上传文件
+  upload(file, module = 'common') {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('module', module)
+    return request.post('/api/file/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   }
 }
 

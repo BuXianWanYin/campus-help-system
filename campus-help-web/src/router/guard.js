@@ -19,16 +19,21 @@ export function setupRouterGuard(router) {
       if (to.path === '/login') {
         next({ path: '/' })
       } else {
-        // 如果用户信息不存在，获取用户信息
-        if (!userStore.userInfo) {
-          try {
-            await userStore.getUserInfo()
+        // 检查是否需要认证
+        if (to.meta.requiresAuth !== false) {
+          // 如果用户信息不存在，尝试获取用户信息
+          if (!userStore.userInfo) {
+            try {
+              await userStore.fetchCurrentUser()
+              next()
+            } catch (error) {
+              // 获取用户信息失败，清除token，跳转到登录页
+              userStore.logout()
+              ElMessage.error('登录已过期，请重新登录')
+              next({ path: '/login', query: { redirect: to.fullPath } })
+            }
+          } else {
             next()
-          } catch (error) {
-            // 获取用户信息失败，清除 token，跳转到登录页
-            userStore.logout()
-            ElMessage.error('获取用户信息失败，请重新登录')
-            next({ path: '/login', query: { redirect: to.fullPath } })
           }
         } else {
           next()

@@ -88,11 +88,19 @@ public class JwtConfig {
     }
 
     /**
-     * 从 Token 中获取用户名
+     * 从 Token 中获取邮箱
      */
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        return claims.getSubject();
+        return (String) claims.get("email");
+    }
+    
+    /**
+     * 从 Token 中获取用户ID
+     */
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return ((Number) claims.get("userId")).longValue();
     }
 
     /**

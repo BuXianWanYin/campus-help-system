@@ -58,6 +58,8 @@ public class SecurityConfig {
                 .antMatchers("/swagger-ui.html").permitAll()
                 .antMatchers("/druid/**").permitAll()
                 .antMatchers("/uploads/**").permitAll()
+                // 用户管理接口需要认证
+                .antMatchers("/api/user/**").authenticated()
                 // 其他请求需要认证
                 .anyRequest().authenticated()
             )

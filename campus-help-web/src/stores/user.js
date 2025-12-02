@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { getToken, setToken, removeToken, getUserInfo, setUserInfo, removeUserInfo } from '@/utils/auth'
-import request from '@/utils/request'
+import { authApi } from '@/api'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -10,8 +10,12 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isLoggedIn: (state) => !!state.token,
-    username: (state) => state.userInfo?.username || '',
-    roles: (state) => state.userInfo?.roles || []
+    email: (state) => state.userInfo?.email || '',
+    nickname: (state) => state.userInfo?.nickname || '',
+    role: (state) => state.userInfo?.role || 'USER',
+    isVerified: (state) => state.userInfo?.isVerified === 1,
+    canAcceptTask: (state) => state.userInfo?.canAcceptTask === 1,
+    isAdmin: (state) => state.userInfo?.role === 'ADMIN'
   },
 
   actions: {
@@ -27,13 +31,28 @@ export const useUserStore = defineStore('user', {
       setUserInfo(userInfo)
     },
 
-    // 登录
-    async login(loginForm) {
+    // 用户注册
+    async register(user, code) {
       try {
-        const response = await request.post('/auth/login', loginForm)
+        const response = await authApi.register(user, code)
         if (response.code === 200) {
           this.setToken(response.data.token)
-          this.setUserInfo(response.data.userInfo)
+          this.setUserInfo(response.data.user)
+          return response
+        }
+        return Promise.reject(response)
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+
+    // 用户登录（支持密码登录和验证码登录）
+    async login(email, password, code) {
+      try {
+        const response = await authApi.login(email, password, code)
+        if (response.code === 200) {
+          this.setToken(response.data.token)
+          this.setUserInfo(response.data.user)
           return response
         }
         return Promise.reject(response)
@@ -43,44 +62,24 @@ export const useUserStore = defineStore('user', {
     },
 
     // 登出
-    async logout() {
-      try {
-        await request.post('/auth/logout')
-      } catch (error) {
-        console.error('登出失败:', error)
-      } finally {
-        this.token = ''
-        this.userInfo = null
-        removeToken()
-        removeUserInfo()
-      }
+    logout() {
+      this.token = ''
+      this.userInfo = null
+      removeToken()
+      removeUserInfo()
     },
-
-    // 获取用户信息
-    async getUserInfo() {
+    
+    // 获取当前用户信息
+    async fetchCurrentUser() {
       try {
-        const response = await request.get('/auth/user/info')
+        const { userApi } = await import('@/api')
+        const response = await userApi.getCurrentUser()
         if (response.code === 200) {
           this.setUserInfo(response.data)
           return response.data
         }
         return Promise.reject(response)
       } catch (error) {
-        return Promise.reject(error)
-      }
-    },
-
-    // 刷新 Token
-    async refreshToken() {
-      try {
-        const response = await request.post('/auth/refresh')
-        if (response.code === 200) {
-          this.setToken(response.data.token)
-          return response.data.token
-        }
-        return Promise.reject(response)
-      } catch (error) {
-        this.logout()
         return Promise.reject(error)
       }
     }

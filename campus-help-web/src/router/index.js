@@ -1,17 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupRouterGuard } from './guard'
-import Home from '../views/Home.vue'
+import BasicLayout from '../layouts/BasicLayout.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'Home',
-    component: Home,
-    meta: {
-      title: '首页',
-      requiresAuth: true
-    }
-  },
   {
     path: '/login',
     name: 'Login',
@@ -20,6 +11,34 @@ const routes = [
       title: '登录',
       requiresAuth: false
     }
+  },
+  {
+    path: '/',
+    component: BasicLayout,
+    redirect: '/home',
+    meta: {
+      requiresAuth: true
+    },
+    children: [
+      {
+        path: 'home',
+        name: 'Home',
+        component: () => import('../views/Home.vue'),
+        meta: {
+          title: '首页',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/profile',
+        name: 'UserProfile',
+        component: () => import('../views/user/Profile.vue'),
+        meta: {
+          title: '个人中心',
+          requiresAuth: true
+        }
+      }
+    ]
   }
 ]
 
