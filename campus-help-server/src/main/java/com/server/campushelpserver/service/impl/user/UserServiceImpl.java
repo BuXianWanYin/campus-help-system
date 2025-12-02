@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.user.UserMapper;
+import com.server.campushelpserver.service.message.EmailService;
+import com.server.campushelpserver.service.message.SystemMessageService;
 import com.server.campushelpserver.service.user.UserService;
 import com.server.campushelpserver.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private SystemMessageService systemMessageService;
+    
+    @Autowired
+    private EmailService emailService;
     
     @Override
     public User getUserByEmail(String email) {
@@ -283,6 +291,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setVerificationStatus("VERIFIED");
             // 实名认证后自动获得接单权限
             user.setCanAcceptTask(1);
+            
+            // 发送系统消息
+            systemMessageService.sendMessage(
+                userId,
+                "VERIFICATION_APPROVED",
+                "实名认证审核通过",
+                "恭喜您！您的实名认证已通过审核。您现在可以发布闲置商品和跑腿任务，也可以参与商品交易和接单跑腿了。",
+                "VERIFICATION",
+                userId
+            );
+            
+            // 发送邮件通知
+            emailService.sendVerificationApprovedEmail(user.getEmail(), user.getRealName());
         } else {
             // 审核拒绝
             if (!StringUtils.hasText(auditReason)) {
@@ -291,6 +312,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setVerificationStatus("REJECTED");
             user.setVerificationAuditReason(auditReason);
             // 拒绝后不清空认证信息，用户可以查看拒绝原因后修改重新提交
+            
+            // 发送系统消息
+            systemMessageService.sendMessage(
+                userId,
+                "VERIFICATION_REJECTED",
+                "实名认证审核未通过",
+                "很抱歉，您的实名认证未通过审核。拒绝原因：" + auditReason + "。您可以修改信息后重新提交认证。",
+                "VERIFICATION",
+                userId
+            );
+            
+            // 发送邮件通知
+            emailService.sendVerificationRejectedEmail(user.getEmail(), user.getRealName(), auditReason);
         }
         
         // 设置审核信息

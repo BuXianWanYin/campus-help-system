@@ -56,6 +56,15 @@ const routes = [
         }
       },
       {
+        path: 'lost-found/detail/:id',
+        name: 'LostFoundDetail',
+        component: () => import('../views/lost-found/Detail.vue'),
+        meta: {
+          title: '失物详情',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'goods/list',
         name: 'GoodsList',
         component: () => import('../views/goods/List.vue'),
@@ -88,6 +97,15 @@ const routes = [
         component: () => import('../views/user/Verification.vue'),
         meta: {
           title: '实名认证',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'user/messages',
+        name: 'UserMessages',
+        component: () => import('../views/user/Messages.vue'),
+        meta: {
+          title: '消息通知',
           requiresAuth: true
         }
       }

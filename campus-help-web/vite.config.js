@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue()],
+    define: {
+      // 修复 sockjs-client 在浏览器环境中的 global 未定义问题
+      global: 'globalThis'
+    },
     server: {
       port: serverPort,
       open: true, // 启动后自动打开浏览器

@@ -24,7 +24,6 @@
         show-word-limit
         clearable
       />
-      <div class="form-tip">请输入18位身份证号码</div>
     </el-form-item>
     
     <el-form-item label="学号/工号" prop="studentId">
@@ -38,44 +37,45 @@
     </el-form-item>
     
     <el-form-item label="用户类型" prop="userType">
-      <el-radio-group v-model="form.userType">
-        <el-radio label="学生">学生</el-radio>
-        <el-radio label="教师">教师</el-radio>
-      </el-radio-group>
-      <div class="form-tip">
-        <span v-if="form.userType === '学生'">学生：请上传学生证照片、校园卡照片或教务系统截图</span>
-        <span v-else-if="form.userType === '教师'">教师：请上传教师证照片、工作证照片或校园系统截图</span>
-        <span v-else>请选择用户类型</span>
+      <div class="user-type-wrapper">
+        <el-radio-group v-model="form.userType">
+          <el-radio label="学生">学生</el-radio>
+          <el-radio label="教师">教师</el-radio>
+        </el-radio-group>
+        <div v-if="form.userType" class="user-type-tip">
+          <span v-if="form.userType === '学生'">学生：请上传学生证照片、校园卡照片或教务系统截图</span>
+          <span v-else-if="form.userType === '教师'">教师：请上传教师证照片、工作证照片或校园系统截图</span>
+        </div>
       </div>
     </el-form-item>
     
     <el-form-item label="证明文件" prop="proofImages">
-      <el-upload
-        ref="uploadRef"
-        v-model:file-list="fileList"
-        :action="uploadAction"
-        :headers="uploadHeaders"
-        :limit="3"
-        :on-exceed="handleExceed"
-        :on-success="handleUploadSuccess"
-        :on-error="handleUploadError"
-        :on-remove="handleRemove"
-        :before-upload="beforeUpload"
-        list-type="picture-card"
-        accept="image/jpeg,image/jpg,image/png"
-        :disabled="loading"
-      >
-        <el-icon><Plus /></el-icon>
-        <template #tip>
-          <div class="upload-tip">
-            <p>支持格式：jpg、jpeg、png</p>
-            <p>单张图片不超过5MB</p>
-            <p>至少上传1张，最多3张</p>
-          </div>
-        </template>
-      </el-upload>
-      <div v-if="formErrors.proofImages" class="form-error">
-        {{ formErrors.proofImages }}
+      <div class="upload-wrapper">
+        <el-upload
+          ref="uploadRef"
+          v-model:file-list="fileList"
+          :action="uploadAction"
+          :headers="uploadHeaders"
+          :limit="3"
+          :on-exceed="handleExceed"
+          :on-success="handleUploadSuccess"
+          :on-error="handleUploadError"
+          :on-remove="handleRemove"
+          :before-upload="beforeUpload"
+          list-type="picture-card"
+          accept="image/jpeg,image/jpg,image/png"
+          :disabled="loading"
+        >
+          <el-icon><Plus /></el-icon>
+        </el-upload>
+        <div class="upload-tip">
+          <p>支持格式：jpg、jpeg、png</p>
+          <p>单张图片不超过5MB</p>
+          <p>至少上传1张，最多3张</p>
+        </div>
+        <div v-if="formErrors.proofImages" class="form-error">
+          {{ formErrors.proofImages }}
+        </div>
       </div>
     </el-form-item>
     
@@ -338,28 +338,51 @@ const handleReset = () => {
 </script>
 
 <style scoped>
-.form-tip {
+.user-type-wrapper {
+  width: 100%;
+}
+
+.user-type-tip {
+  font-size: 13px;
+  color: #606266;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  border-left: 3px solid #409eff;
+  line-height: 1.6;
+}
+
+.upload-wrapper {
+  width: 100%;
+}
+
+.upload-tip {
   font-size: 12px;
   color: #909399;
-  margin-top: 8px;
-  line-height: 1.5;
+  margin-top: 12px;
+  line-height: 1.8;
+  padding: 0;
+}
+
+.upload-tip p {
+  margin: 4px 0;
 }
 
 .form-error {
   font-size: 12px;
   color: #f56c6c;
   margin-top: 8px;
-}
-
-.upload-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 8px;
-  line-height: 1.8;
+  line-height: 1.5;
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+}
+
+:deep(.el-form-item__error) {
+  padding-top: 4px;
+  line-height: 1.5;
 }
 
 :deep(.el-input__wrapper) {
@@ -375,15 +398,51 @@ const handleReset = () => {
   box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
+:deep(.el-radio-group) {
+  display: flex;
+  gap: 24px;
+}
+
 :deep(.el-upload--picture-card) {
   width: 100px;
   height: 100px;
   line-height: 100px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+:deep(.el-upload--picture-card:hover) {
+  border-color: #409eff;
+}
+
+:deep(.el-upload-list--picture-card) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 :deep(.el-upload-list--picture-card .el-upload-list__item) {
   width: 100px;
   height: 100px;
+  border-radius: 6px;
+  margin: 0;
+}
+
+:deep(.el-upload-list--picture-card .el-upload-list__item-thumbnail) {
+  object-fit: cover;
+}
+
+/* 确保错误提示不会遮挡其他内容 */
+:deep(.el-form-item.is-error) {
+  margin-bottom: 28px;
+}
+
+:deep(.el-form-item.is-error .el-form-item__error) {
+  position: relative;
+  top: 0;
+  left: 0;
+  padding-top: 4px;
 }
 </style>
 

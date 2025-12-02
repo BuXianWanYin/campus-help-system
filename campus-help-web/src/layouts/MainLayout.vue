@@ -150,8 +150,8 @@
           <el-form :inline="true" class="filter-form">
             <el-form-item label="类型：">
               <div class="tab-buttons">
-                <el-button :type="lostFoundTab === 'lost' ? 'primary' : ''" size="small" @click="lostFoundTab = 'lost'">失物</el-button>
-                <el-button :type="lostFoundTab === 'found' ? 'primary' : ''" size="small" @click="lostFoundTab = 'found'">招领</el-button>
+                <el-button :type="lostFoundTab === 'lost' ? 'primary' : ''" size="small" @click="handleTypeChange('lost')">失物</el-button>
+                <el-button :type="lostFoundTab === 'found' ? 'primary' : ''" size="small" @click="handleTypeChange('found')">招领</el-button>
               </div>
             </el-form-item>
             <el-form-item label="分类：">
@@ -190,12 +190,12 @@
         </div>
 
         <!-- 失物列表 -->
-        <div class="card-grid">
+        <div class="card-grid" v-loading="lostFoundLoading">
           <div v-for="item in lostFoundList" :key="item.id" class="lost-found-card" @click="goToDetail('lost-found', item.id)">
             <div class="card-image-wrapper">
-              <img :src="item.image" :alt="item.title" class="card-image" />
-              <span class="card-badge" :class="item.type === 'lost' ? 'badge-red' : 'badge-green'">
-                {{ item.type === 'lost' ? '失物' : '招领' }}
+              <img :src="getFirstImage(item.images)" :alt="item.title" class="card-image" />
+              <span class="card-badge" :class="item.type === 'LOST' ? 'badge-red' : 'badge-green'">
+                {{ item.type === 'LOST' ? '失物' : '招领' }}
               </span>
             </div>
             <div class="card-content">
@@ -204,23 +204,25 @@
               <div class="card-meta">
                 <span class="meta-item">
                   <el-icon><Location /></el-icon>
-                  {{ item.location }}
+                  {{ item.lostLocation }}
                 </span>
                 <span class="meta-item">
                   <el-icon><Clock /></el-icon>
-                  {{ item.time }}
+                  {{ formatTime(item.createTime) }}
                 </span>
               </div>
               <div class="card-footer">
                 <div class="card-user">
-                  <el-avatar :size="24" :src="getAvatarUrl(item.userAvatar)">{{ item.userName.charAt(0) }}</el-avatar>
-                  <span>{{ item.userName }}</span>
+                  <el-avatar :size="24" :src="getAvatarUrl(item.userAvatar)">{{ item.userName?.charAt(0) || 'U' }}</el-avatar>
+                  <span>{{ item.userName || '未知用户' }}</span>
                 </div>
                 <el-button type="primary" size="small" text @click.stop="handleContact(item)">联系TA</el-button>
               </div>
             </div>
           </div>
         </div>
+        
+        <el-empty v-if="!lostFoundLoading && lostFoundList.length === 0" description="暂无失物信息" />
 
       </section>
 
@@ -369,9 +371,12 @@
         <h3>消息通知</h3>
         <el-button text @click="markAllAsRead">全部标记为已读</el-button>
       </div>
-      <div class="notification-list">
+      <div class="notification-list" v-loading="loadingNotifications">
+        <div v-if="notifications.length === 0 && !loadingNotifications" class="notification-empty">
+          <p>暂无消息</p>
+        </div>
         <!-- 消息列表内容 -->
-        <div v-for="item in notifications" :key="item.id" class="notification-item">
+        <div v-for="item in notifications" :key="item.id" class="notification-item" @click="handleNotificationClick(item)">
           <div class="notification-icon" :class="item.type">
             <el-icon><component :is="item.icon" /></el-icon>
           </div>
@@ -417,10 +422,13 @@ import {
   HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star,
   Location, Clock, View, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
   Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
-  Close, ArrowUp, ArrowDown as ArrowDownIcon, Box
+  Close, ArrowUp, ArrowDown as ArrowDownIcon, Box, InfoFilled
 } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
+import { messageApi, lostFoundApi } from '@/api'
+import wsManager from '@/utils/websocket'
+import { getToken } from '@/utils/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -439,13 +447,10 @@ const searchKeyword = ref('')
 const activeMenu = ref('') // 初始为空，避免默认激活首页
 const showMobileMenu = ref(false)
 const showNotificationPanel = ref(false)
-const unreadCount = ref(3)
-const notifications = ref([
-  { id: 1, title: '您的闲置商品有新的询价', description: 'iPhone 13 128GB 午夜色 9成新', time: '10分钟前', read: false, type: 'blue', icon: ChatDotRound },
-  { id: 2, title: '您的跑腿任务已被接取', description: '取快递 - 顺丰快递', time: '30分钟前', read: false, type: 'green', icon: Check },
-  { id: 3, title: '您收到了新的评价', description: '任务：取快递 - 顺丰快递', time: '2小时前', read: false, type: 'orange', icon: Star }
-])
+const unreadCount = ref(0)
+const notifications = ref([])
 const isMobile = ref(false)
+const loadingNotifications = ref(false)
 
 // 功能模块
 const featureModules = ref([
@@ -457,11 +462,8 @@ const featureModules = ref([
 // 失物招领
 const lostFoundTab = ref('lost')
 const lostFoundFilters = ref({ category: '', location: '', time: '' })
-const lostFoundList = ref([
-  { id: 1, title: '遗失黑色钱包一个', description: '内有身份证、银行卡等物品', location: '图书馆二楼', time: '2025-07-20', type: 'lost', image: 'https://via.placeholder.com/300x200?text=钱包', userAvatar: '', userName: '张同学' },
-  { id: 2, title: '遗失小米手机一部', description: '黑色小米11，有蓝色手机壳', location: '教学楼A302', time: '2025-07-19', type: 'lost', image: 'https://via.placeholder.com/300x200?text=手机', userAvatar: '', userName: '李同学' },
-  { id: 3, title: '捡到校园卡一张', description: '姓名：王小明，学号：20220101', location: '食堂一楼', time: '2025-07-20', type: 'found', image: 'https://via.placeholder.com/300x200?text=校园卡', userAvatar: '', userName: '赵同学' }
-])
+const lostFoundList = ref([])
+const lostFoundLoading = ref(false)
 
 // 闲置交易
 const goodsActiveCategory = ref(1)
@@ -581,18 +583,143 @@ const goToRoute = (path) => {
 }
 
 // 标记全部为已读
-const markAllAsRead = () => {
-  unreadCount.value = 0
-  notifications.value.forEach(item => {
-    item.read = true
-  })
-  ElMessage.success('已全部标记为已读')
+const markAllAsRead = async () => {
+  if (!userStore.isLoggedIn) return
+  try {
+    await messageApi.markAllAsRead()
+    ElMessage.success('已全部标记为已读')
+    notifications.value.forEach(item => {
+      item.read = true
+    })
+    unreadCount.value = 0
+  } catch (error) {
+    ElMessage.error(error.message || '操作失败')
+  }
 }
 
 // 前往消息页面
 const goToMessages = () => {
   router.push('/user/messages')
   showNotificationPanel.value = false
+}
+
+// 点击通知项
+const handleNotificationClick = async (item) => {
+  if (!item.read) {
+    try {
+      await messageApi.markAsRead(item.id)
+      item.read = true
+      unreadCount.value = Math.max(0, unreadCount.value - 1)
+    } catch (error) {
+      console.error('标记已读失败:', error)
+    }
+  }
+  // 跳转到消息详情或相关页面
+  goToMessages()
+}
+
+// 获取未读消息数量
+const fetchUnreadCount = async () => {
+  if (!userStore.isLoggedIn) return
+  try {
+    const response = await messageApi.getUnreadCount()
+    if (response.code === 200) {
+      unreadCount.value = response.data || 0
+    }
+  } catch (error) {
+    console.error('获取未读数量失败:', error)
+  }
+}
+
+// 获取最新消息列表（用于通知面板）
+const fetchRecentMessages = async () => {
+  if (!userStore.isLoggedIn) return
+  loadingNotifications.value = true
+  try {
+    const response = await messageApi.getMessagePage({
+      current: 1,
+      size: 5
+    })
+    if (response.code === 200) {
+      const records = response.data.records || []
+      notifications.value = records.map(msg => ({
+        id: msg.id,
+        title: msg.title,
+        description: msg.content,
+        time: formatMessageTime(msg.createTime),
+        read: msg.isRead === 1,
+        type: getMessageTypeClass(msg.type),
+        icon: getMessageIcon(msg.type)
+      }))
+    }
+  } catch (error) {
+    console.error('获取消息列表失败:', error)
+  } finally {
+    loadingNotifications.value = false
+  }
+}
+
+// 格式化消息时间
+const formatMessageTime = (timeStr) => {
+  if (!timeStr) return ''
+  const date = new Date(timeStr)
+  const now = new Date()
+  const diff = now - date
+  
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  
+  if (minutes < 1) {
+    return '刚刚'
+  } else if (minutes < 60) {
+    return `${minutes}分钟前`
+  } else if (hours < 24) {
+    return `${hours}小时前`
+  } else if (days < 7) {
+    return `${days}天前`
+  } else {
+    return date.toLocaleDateString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit'
+    })
+  }
+}
+
+// 获取消息类型样式类
+const getMessageTypeClass = (type) => {
+  const typeMap = {
+    'VERIFICATION_APPROVED': 'green',
+    'VERIFICATION_REJECTED': 'red',
+    'ORDER_STATUS': 'blue',
+    'TASK_STATUS': 'orange',
+    'ANNOUNCEMENT': 'blue'
+  }
+  return typeMap[type] || 'blue'
+}
+
+// 获取消息图标
+const getMessageIcon = (type) => {
+  const iconMap = {
+    'VERIFICATION_APPROVED': Check,
+    'VERIFICATION_REJECTED': Close,
+    'ORDER_STATUS': ShoppingBag,
+    'TASK_STATUS': TrendChartsIcon,
+    'ANNOUNCEMENT': Bell
+  }
+  return iconMap[type] || InfoFilled
+}
+
+// WebSocket消息处理
+const handleWebSocketMessage = (message) => {
+  // STOMP发送的是SystemMessage对象，直接处理
+  if (message && message.id) {
+    // 收到新的系统消息
+    ElMessage.info('您有新的消息')
+    // 刷新消息列表和未读数量
+    fetchRecentMessages()
+    fetchUnreadCount()
+  }
 }
 
 // 更新当前激活菜单
@@ -631,9 +758,85 @@ const goToModule = (path) => {
   router.push(path)
 }
 
+// 获取失物招领列表（首页显示）
+const fetchLostFoundList = async () => {
+  if (!isHomePage.value) return
+  
+  lostFoundLoading.value = true
+  try {
+    const params = {
+      pageNum: 1,
+      pageSize: 6,
+      type: lostFoundTab.value === 'lost' ? 'LOST' : lostFoundTab.value === 'found' ? 'FOUND' : undefined,
+      category: lostFoundFilters.value.category || undefined,
+      status: 'PENDING_CLAIM,CLAIMING,CLAIMED',
+      sortBy: 'latest'
+    }
+    
+    const response = await lostFoundApi.getList(params)
+    if (response.code === 200) {
+      const pageData = response.data
+      lostFoundList.value = (pageData.records || []).map(item => {
+        const images = item.images ? (typeof item.images === 'string' ? JSON.parse(item.images) : item.images) : []
+        return {
+          ...item,
+          images: images,
+          userAvatar: item.user?.avatar,
+          userName: item.user?.nickname || '未知用户'
+        }
+      })
+    }
+  } catch (error) {
+    console.error('获取失物招领列表失败:', error)
+  } finally {
+    lostFoundLoading.value = false
+  }
+}
+
+/**
+ * 获取第一张图片
+ */
+const getFirstImage = (images) => {
+  if (Array.isArray(images) && images.length > 0) {
+    return getAvatarUrl(images[0])
+  }
+  return 'https://via.placeholder.com/300x200?text=暂无图片'
+}
+
+/**
+ * 格式化时间
+ */
+const formatTime = (time) => {
+  if (!time) return ''
+  const date = new Date(time)
+  const now = new Date()
+  const diff = now - date
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor(diff / (1000 * 60))
+  
+  if (days > 0) {
+    return `${days}天前`
+  } else if (hours > 0) {
+    return `${hours}小时前`
+  } else if (minutes > 0) {
+    return `${minutes}分钟前`
+  } else {
+    return '刚刚'
+  }
+}
+
+/**
+ * 处理类型切换
+ */
+const handleTypeChange = (type) => {
+  lostFoundTab.value = type
+  fetchLostFoundList()
+}
+
 // 处理筛选
 const handleFilter = () => {
-  ElMessage.success('筛选功能开发中')
+  fetchLostFoundList()
 }
 
 // 联系用户
@@ -700,7 +903,7 @@ const disableMenuCollapse = () => {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   
@@ -712,10 +915,44 @@ onMounted(() => {
       disableMenuCollapse()
     }, 100)
   })
+  
+  // 如果是首页，加载失物招领列表
+  if (isHomePage.value) {
+    fetchLostFoundList()
+  }
+  
+  // 如果用户已登录，加载消息和连接WebSocket
+  if (userStore.isLoggedIn) {
+    await fetchUnreadCount()
+    await fetchRecentMessages()
+    
+    // 连接WebSocket
+    const token = getToken()
+    if (token) {
+      wsManager.connect(token)
+      wsManager.addMessageHandler(handleWebSocketMessage)
+    }
+  }
+  
+  // 监听通知面板显示，自动刷新消息
+  watch(showNotificationPanel, (show) => {
+    if (show && userStore.isLoggedIn) {
+      fetchRecentMessages()
+    }
+  })
 })
+
+// 监听路由变化，当进入首页时加载失物招领列表
+watch(() => route.path, (newPath) => {
+  if (newPath === '/home' || newPath === '/') {
+    fetchLostFoundList()
+  }
+}, { immediate: true })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  // 移除WebSocket消息处理器（但不关闭连接，因为可能其他页面也在使用）
+  wsManager.removeMessageHandler(handleWebSocketMessage)
 })
 </script>
 
@@ -1759,6 +1996,13 @@ onUnmounted(() => {
 
 .notification-item:hover {
   background-color: var(--color-bg-primary);
+}
+
+.notification-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
 }
 
 .notification-icon {

@@ -27,8 +27,8 @@
             </el-descriptions>
             <div style="margin-top: 20px;">
               <p style="color: var(--color-text-regular); font-size: 14px;">
-                ✅ 您现在可以发布闲置商品和跑腿任务<br>
-                ✅ 您现在可以参与商品交易和接单跑腿
+                您现在可以发布闲置商品和跑腿任务<br>
+                您现在可以参与商品交易和接单跑腿
               </p>
             </div>
           </template>
@@ -58,9 +58,9 @@
             </el-descriptions>
             <div style="margin-top: 20px; padding: 16px; background-color: #f0f9ff; border-radius: 8px;">
               <p style="color: var(--color-text-regular); font-size: 14px; margin: 0;">
-                ⏳ 预计审核时间：1-3个工作日<br>
-                📧 审核结果将通过站内消息和邮件通知您<br>
-                💡 请耐心等待管理员审核
+                预计审核时间：1-3个工作日<br>
+                审核结果将通过站内消息和邮件通知您<br>
+                请耐心等待管理员审核
               </p>
             </div>
           </template>
@@ -115,7 +115,7 @@
         >
           <template #title>
             <div>
-              <p style="font-weight: 500; margin-bottom: 8px;">📌 实名认证说明</p>
+              <p style="font-weight: 500; margin-bottom: 8px;">实名认证说明</p>
               <ul style="margin: 0; padding-left: 20px;">
                 <li>实名认证后可以发布闲置商品和跑腿任务</li>
                 <li>实名认证后可以参与商品交易和接单跑腿</li>
