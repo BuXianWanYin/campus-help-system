@@ -68,6 +68,11 @@ export const userApi = {
     return request.get(`/user/${id}`)
   },
   
+  // 更新用户信息（管理员）
+  updateUser(id, data) {
+    return request.put(`/admin/user/${id}`, data)
+  },
+  
   // 提交实名认证
   submitVerification(data) {
     return request.post('/user/verification/submit', data)
@@ -76,6 +81,11 @@ export const userApi = {
   // 审核实名认证（管理员）
   auditVerification(data) {
     return request.post('/user/verification/audit', data)
+  },
+  
+  // 修改密码
+  changePassword(data) {
+    return request.post('/user/change-password', data)
   }
 }
 
@@ -118,6 +128,16 @@ export const adminApi = {
   // 解封用户
   unbanUser(userId) {
     return request.post(`/admin/user/unban/${userId}`)
+  },
+  
+  // 创建用户
+  createUser(data) {
+    return request.post('/admin/user/create', data)
+  },
+  
+  // 删除用户
+  deleteUser(userId) {
+    return request.delete(`/admin/user/${userId}`)
   }
 }
 

@@ -3,8 +3,8 @@
     <div class="verification-card">
       <h1 class="page-title">实名认证</h1>
       
-      <!-- 已认证状态 -->
-      <div v-if="userInfo.isVerified === 1" class="verified-status">
+      <!-- 已认证状态（非管理员） -->
+      <div v-if="userInfo.isVerified === 1 && userInfo.role !== 'ADMIN'" class="verified-status">
         <el-result icon="success" title="认证成功" sub-title="您已完成实名认证">
           <template #extra>
             <el-descriptions :column="1" border>
@@ -22,6 +22,12 @@
               </el-descriptions-item>
             </el-descriptions>
           </template>
+        </el-result>
+      </div>
+      
+      <!-- 管理员提示 -->
+      <div v-else-if="userInfo.role === 'ADMIN'" class="admin-status">
+        <el-result icon="info" title="管理员无需认证" sub-title="管理员账号已自动获得所有权限，无需进行实名认证">
         </el-result>
       </div>
       

@@ -52,14 +52,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user.getStatus() == null) {
             user.setStatus(1);
         }
-        if (user.getIsVerified() == null) {
-            user.setIsVerified(0);
-        }
-        if (user.getCanAcceptTask() == null) {
-            user.setCanAcceptTask(0);
-        }
-        if (user.getVerificationStatus() == null) {
-            user.setVerificationStatus("NOT_VERIFIED");
+        // 管理员自动获得认证状态，无需实名认证
+        if ("ADMIN".equals(user.getRole())) {
+            user.setIsVerified(1);
+            user.setCanAcceptTask(1);
+            user.setVerificationStatus("VERIFIED");
+        } else {
+            if (user.getIsVerified() == null) {
+                user.setIsVerified(0);
+            }
+            if (user.getCanAcceptTask() == null) {
+                user.setCanAcceptTask(0);
+            }
+            if (user.getVerificationStatus() == null) {
+                user.setVerificationStatus("NOT_VERIFIED");
+            }
         }
         if (user.getUserType() == null) {
             user.setUserType("学生");
@@ -181,6 +188,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = this.getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
+        }
+        
+        // 管理员不需要实名认证
+        if ("ADMIN".equals(user.getRole())) {
+            throw new BusinessException("管理员无需实名认证");
         }
         
         // 检查是否已经认证

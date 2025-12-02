@@ -90,47 +90,58 @@ const routes = [
           title: '实名认证',
           requiresAuth: true
         }
-      },
+      }
+    ]
+  },
+  {
+    path: '/admin',
+    component: () => import('../layouts/AdminLayout.vue'),
+    redirect: '/admin/dashboard',
+    meta: {
+      title: '管理后台',
+      requiresAuth: true,
+      requiresAdmin: true
+    },
+    children: [
       {
-        path: 'admin',
-        component: () => import('../layouts/AdminLayout.vue'),
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('../views/admin/Dashboard.vue'),
         meta: {
-          title: '管理后台',
+          title: '数据概览',
           requiresAuth: true,
           requiresAdmin: true
-        },
-        children: [
-          {
-            path: 'dashboard',
-            name: 'AdminDashboard',
-            component: () => import('../views/admin/Dashboard.vue'),
-            meta: {
-              title: '数据概览',
-              requiresAuth: true,
-              requiresAdmin: true
-            }
-          },
-          {
-            path: 'verification',
-            name: 'AdminVerification',
-            component: () => import('../views/admin/Verification.vue'),
-            meta: {
-              title: '实名认证审核',
-              requiresAuth: true,
-              requiresAdmin: true
-            }
-          },
-          {
-            path: 'users',
-            name: 'AdminUsers',
-            component: () => import('../views/admin/Users.vue'),
-            meta: {
-              title: '用户管理',
-              requiresAuth: true,
-              requiresAdmin: true
-            }
-          }
-        ]
+        }
+      },
+      {
+        path: 'verification',
+        name: 'AdminVerification',
+        component: () => import('../views/admin/Verification.vue'),
+        meta: {
+          title: '实名认证审核',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('../views/admin/Users.vue'),
+        meta: {
+          title: '用户管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'profile',
+        name: 'AdminProfile',
+        component: () => import('../views/user/Profile.vue'),
+        meta: {
+          title: '个人中心',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
       }
     ]
   }

@@ -55,31 +55,41 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile">
-                  <el-icon><User /></el-icon>
-                  个人中心
-                </el-dropdown-item>
-                <el-dropdown-item command="my-posts">
-                  <el-icon><Document /></el-icon>
-                  我的发布
-                </el-dropdown-item>
-                <el-dropdown-item command="messages">
-                  <el-icon><Message /></el-icon>
-                  消息通知
-                  <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" />
-                </el-dropdown-item>
-                <el-dropdown-item command="settings">
-                  <el-icon><Setting /></el-icon>
-                  设置
-                </el-dropdown-item>
-                <el-dropdown-item v-if="userStore.isAdmin" divided command="admin">
-                  <el-icon><Tools /></el-icon>
-                  管理后台
-                </el-dropdown-item>
-                <el-dropdown-item divided command="logout">
-                  <el-icon><SwitchButton /></el-icon>
-                  退出登录
-                </el-dropdown-item>
+                <!-- 管理员只显示管理后台和退出登录 -->
+                <template v-if="userStore.isAdmin">
+                  <el-dropdown-item command="admin">
+                    <el-icon><Tools /></el-icon>
+                    管理后台
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="logout">
+                    <el-icon><SwitchButton /></el-icon>
+                    退出登录
+                  </el-dropdown-item>
+                </template>
+                <!-- 普通用户显示完整菜单 -->
+                <template v-else>
+                  <el-dropdown-item command="profile">
+                    <el-icon><User /></el-icon>
+                    个人中心
+                  </el-dropdown-item>
+                  <el-dropdown-item command="my-posts">
+                    <el-icon><Document /></el-icon>
+                    我的发布
+                  </el-dropdown-item>
+                  <el-dropdown-item command="messages">
+                    <el-icon><Message /></el-icon>
+                    消息通知
+                    <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" />
+                  </el-dropdown-item>
+                  <el-dropdown-item command="settings">
+                    <el-icon><Setting /></el-icon>
+                    设置
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="logout">
+                    <el-icon><SwitchButton /></el-icon>
+                    退出登录
+                  </el-dropdown-item>
+                </template>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -409,7 +419,6 @@ import {
   Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
   Close, ArrowUp, ArrowDown as ArrowDownIcon, Box
 } from '@element-plus/icons-vue'
-import { initChart, resizeChart } from '@/utils/echarts'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
 
@@ -694,7 +703,6 @@ const disableMenuCollapse = () => {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  window.addEventListener('resize', handleResize)
   
   // 禁用菜单自动折叠
   disableMenuCollapse()
@@ -704,22 +712,10 @@ onMounted(() => {
       disableMenuCollapse()
     }, 100)
   })
-  
-  // 延迟初始化图表，确保DOM已渲染
-  setTimeout(() => {
-    initCharts()
-  }, 100)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
-  window.removeEventListener('resize', handleResize)
-  if (typeChartInstance) {
-    typeChartInstance.dispose()
-  }
-  if (trendChartInstance) {
-    trendChartInstance.dispose()
-  }
 })
 </script>
 
@@ -1657,109 +1653,6 @@ onUnmounted(() => {
 }
 
 
-/* 数据统计分析 */
-.stats-section {
-  margin-bottom: 48px;
-}
-
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
-}
-
-.stat-card {
-  background-color: var(--color-bg-white);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-2xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-}
-
-.stat-card-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.stat-change {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-change.change-up {
-  color: var(--color-success);
-}
-
-.stat-change.change-down {
-  color: var(--color-success);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-icon.icon-blue {
-  background-color: var(--color-primary-lighter);
-  color: var(--color-primary);
-}
-
-.stat-icon.icon-green {
-  background-color: rgba(76, 175, 80, 0.1);
-  color: var(--color-success);
-}
-
-.stat-icon.icon-orange {
-  background-color: rgba(255, 152, 0, 0.1);
-  color: var(--color-secondary);
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
-}
-
-.chart-card {
-  background-color: var(--color-bg-white);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-2xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-}
-
-.chart-card h3 {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--content-padding) 0;
-}
-
-.chart-container {
-  width: 100%;
-  height: 256px;
-}
 
 /* 底部导航栏（移动端） */
 .bottom-nav {

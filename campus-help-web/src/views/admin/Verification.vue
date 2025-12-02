@@ -27,38 +27,53 @@
       v-loading="loading"
       stripe
       style="width: 100%"
+      :default-sort="{ prop: 'verificationSubmitTime', order: 'descending' }"
     >
-      <el-table-column prop="id" label="用户ID" width="80" />
-      <el-table-column prop="nickname" label="昵称" width="120" />
-      <el-table-column prop="email" label="邮箱" width="200" />
-      <el-table-column prop="realName" label="真实姓名" width="120" />
-      <el-table-column prop="studentId" label="学号" width="150" />
-      <el-table-column prop="userType" label="用户类型" width="100">
+      <el-table-column prop="id" label="用户ID" min-width="80" sortable />
+      <el-table-column prop="nickname" label="昵称" min-width="120" sortable>
         <template #default="{ row }">
-          <el-tag size="small">{{ row.userType || '学生' }}</el-tag>
+          {{ row.nickname || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="verificationStatus" label="审核状态" width="120">
+      <el-table-column prop="email" label="邮箱" min-width="180" sortable show-overflow-tooltip />
+      <el-table-column prop="realName" label="真实姓名" min-width="120" sortable>
+        <template #default="{ row }">
+          {{ row.realName || '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="studentId" label="学号" min-width="150" sortable>
+        <template #default="{ row }">
+          {{ row.studentId || '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="userType" label="用户类型" min-width="100">
+        <template #default="{ row }">
+          <el-tag size="small" effect="plain">{{ row.userType || '学生' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="verificationStatus" label="审核状态" min-width="120" sortable>
         <template #default="{ row }">
           <el-tag
             :type="getStatusType(row.verificationStatus)"
             size="small"
+            effect="plain"
           >
             {{ getStatusText(row.verificationStatus) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="verificationSubmitTime" label="提交时间" width="180">
+      <el-table-column prop="verificationSubmitTime" label="提交时间" min-width="160" sortable>
         <template #default="{ row }">
           {{ formatDate(row.verificationSubmitTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" min-width="180" fixed="right">
         <template #default="{ row }">
           <el-button
             v-if="row.verificationStatus === 'PENDING'"
             type="primary"
             size="small"
+            :icon="DocumentChecked"
             @click="handleAudit(row)"
           >
             审核
@@ -67,6 +82,7 @@
             v-else
             type="info"
             size="small"
+            :icon="View"
             @click="handleViewDetail(row)"
           >
             查看详情
@@ -151,6 +167,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { DocumentChecked, View } from '@element-plus/icons-vue'
 import { adminApi, userApi } from '@/api'
 
 const loading = ref(false)

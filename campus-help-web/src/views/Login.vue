@@ -263,8 +263,14 @@ const handleLogin = async () => {
         
         await userStore.login(email, password, code)
         ElMessage.success('登录成功')
-        const redirect = route.query.redirect || '/'
-        router.push(redirect)
+        
+        // 如果是管理员，跳转到管理后台；否则跳转到指定页面或首页
+        if (userStore.isAdmin) {
+          router.push('/admin/dashboard')
+        } else {
+          const redirect = route.query.redirect || '/'
+          router.push(redirect)
+        }
       } catch (error) {
         ElMessage.error(error.message || '登录失败')
       } finally {

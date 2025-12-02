@@ -33,13 +33,15 @@
               <p class="user-email">{{ userInfo.email }}</p>
               
               <div class="user-tags">
-                <el-tag v-show="userInfo.isVerified === 1" type="success" size="small">已认证</el-tag>
-                <el-tag v-show="userInfo.isVerified !== 1 && userInfo.isVerified !== undefined" type="info" size="small">未认证</el-tag>
                 <el-tag v-show="userInfo.role === 'ADMIN'" type="warning" size="small">管理员</el-tag>
+                <template v-if="userInfo.role !== 'ADMIN'">
+                  <el-tag v-show="userInfo.isVerified === 1" type="success" size="small">已认证</el-tag>
+                  <el-tag v-show="userInfo.isVerified !== 1 && userInfo.isVerified !== undefined" type="info" size="small">未认证</el-tag>
+                </template>
               </div>
 
               <el-button
-                v-if="userInfo.isVerified !== 1"
+                v-if="userInfo.isVerified !== 1 && userInfo.role !== 'ADMIN'"
                 type="primary"
                 size="small"
                 style="margin-top: 16px;"
@@ -162,6 +164,58 @@
                   </div>
                 </div>
               </el-tab-pane>
+
+              <el-tab-pane label="更改密码" name="password">
+                <div class="tab-content">
+                  <el-form
+                    ref="passwordFormRef"
+                    :model="passwordForm"
+                    :rules="passwordRules"
+                    label-width="120px"
+                    class="profile-form"
+                  >
+                    <el-form-item label="当前密码" prop="currentPassword">
+                      <el-input
+                        v-model="passwordForm.currentPassword"
+                        type="password"
+                        placeholder="请输入当前密码"
+                        show-password
+                        clearable
+                      />
+                    </el-form-item>
+
+                    <el-form-item label="新密码" prop="newPassword">
+                      <el-input
+                        v-model="passwordForm.newPassword"
+                        type="password"
+                        placeholder="请输入新密码（至少8位，包含字母和数字）"
+                        show-password
+                        clearable
+                      />
+                    </el-form-item>
+
+                    <el-form-item label="确认新密码" prop="confirmPassword">
+                      <el-input
+                        v-model="passwordForm.confirmPassword"
+                        type="password"
+                        placeholder="请再次输入新密码"
+                        show-password
+                        clearable
+                      />
+                    </el-form-item>
+
+                    <el-form-item class="form-actions">
+                      <el-button type="primary" :loading="passwordLoading" @click="handleChangePassword">
+                        保存修改
+                      </el-button>
+                      <el-button @click="handleResetPassword">
+                        <el-icon><RefreshLeft /></el-icon>
+                        重置
+                      </el-button>
+                    </el-form-item>
+                  </el-form>
+                </div>
+              </el-tab-pane>
             </el-tabs>
           </div>
         </el-col>
@@ -176,7 +230,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
   Camera, User, Check, Warning, Star, Document, 
-  Message, Clock, Timer, CircleCheck, Calendar, Reading, RefreshLeft 
+  Message, Clock, Timer, CircleCheck, Calendar, Reading, RefreshLeft, Lock
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api'
@@ -186,8 +240,10 @@ import { getAvatarUrl } from '@/utils/image'
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
+const passwordFormRef = ref(null)
 const activeTab = ref('basic')
 const loading = ref(false)
+const passwordLoading = ref(false)
 // 从 userStore 获取初始用户信息，避免刷新时抖动
 const userInfo = ref(userStore.userInfo || {})
 
@@ -198,9 +254,38 @@ const form = reactive({
   major: ''
 })
 
+const passwordForm = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
 const rules = {
   nickname: [
     { max: 50, message: '昵称长度不能超过50个字符', trigger: 'blur' }
+  ]
+}
+
+const validateConfirmPassword = (rule, value, callback) => {
+  if (value !== passwordForm.newPassword) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const passwordRules = {
+  currentPassword: [
+    { required: true, message: '请输入当前密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 8, message: '密码至少8位', trigger: 'blur' },
+    { pattern: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/, message: '密码至少8位，且包含字母和数字', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: 'blur' }
   ]
 }
 
@@ -324,6 +409,46 @@ const formatDate = (date) => {
 // 前往实名认证页面
 const goToVerification = () => {
   router.push('/user/verification')
+}
+
+// 修改密码
+const handleChangePassword = async () => {
+  if (!passwordFormRef.value) return
+  
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      passwordLoading.value = true
+      try {
+        const response = await userApi.changePassword({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+        if (response.code === 200) {
+          ElMessage.success('密码修改成功，请重新登录')
+          handleResetPassword()
+          // 延迟跳转到登录页
+          setTimeout(() => {
+            userStore.logout()
+            router.push('/login')
+          }, 1500)
+        }
+      } catch (error) {
+        ElMessage.error(error.message || '密码修改失败')
+      } finally {
+        passwordLoading.value = false
+      }
+    }
+  })
+}
+
+// 重置密码表单
+const handleResetPassword = () => {
+  passwordForm.currentPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+  if (passwordFormRef.value) {
+    passwordFormRef.value.clearValidate()
+  }
 }
 
 onMounted(() => {

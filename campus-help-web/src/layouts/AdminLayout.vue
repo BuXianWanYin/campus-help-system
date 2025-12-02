@@ -6,17 +6,13 @@
         <div class="header-left">
           <div class="logo-wrapper">
             <div class="logo-icon">
-              <el-icon :size="32"><Tools /></el-icon>
+              <el-icon :size="20"><Tools /></el-icon>
             </div>
             <h1 class="logo-text">校园帮管理后台</h1>
           </div>
         </div>
         
         <div class="header-right">
-          <el-button text @click="goBack">
-            <el-icon><ArrowLeft /></el-icon>
-            返回前台
-          </el-button>
           <el-dropdown @command="handleCommand" trigger="click">
             <span class="user-info">
               <el-avatar :size="32" :src="getAvatarUrl(userStore.userInfo?.avatar)">
@@ -27,9 +23,25 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="home">
+                  <el-icon><HomeFilled /></el-icon>
+                  校园帮首页
+                </el-dropdown-item>
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon>
                   个人中心
+                </el-dropdown-item>
+                <el-dropdown-item command="my-posts">
+                  <el-icon><Document /></el-icon>
+                  我的发布
+                </el-dropdown-item>
+                <el-dropdown-item command="messages">
+                  <el-icon><Message /></el-icon>
+                  消息通知
+                </el-dropdown-item>
+                <el-dropdown-item command="settings">
+                  <el-icon><Setting /></el-icon>
+                  设置
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
@@ -62,6 +74,10 @@
             <el-icon><UserFilled /></el-icon>
             <span>用户管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/profile">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
+          </el-menu-item>
           <el-menu-item index="/admin/content" disabled>
             <el-icon><Files /></el-icon>
             <span>信息审核</span>
@@ -89,8 +105,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Tools, ArrowLeft, ArrowDown, User, SwitchButton,
-  DataAnalysis, DocumentChecked, UserFilled, Files, TrendCharts
+  Tools, ArrowDown, User, SwitchButton, HomeFilled,
+  DataAnalysis, DocumentChecked, UserFilled, Files, TrendCharts,
+  Document, Message, Setting
 } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils/image'
 
@@ -100,14 +117,27 @@ const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
 
-const goBack = () => {
-  router.push('/home')
-}
-
 const handleCommand = (command) => {
   switch (command) {
+    case 'home':
+      // 在新标签页打开首页
+      window.open('/home', '_blank')
+      break
     case 'profile':
-      router.push('/user/profile')
+      // 跳转到后台的个人中心页面
+      router.push('/admin/profile')
+      break
+    case 'my-posts':
+      // 在新标签页打开我的发布
+      window.open('/user/posts', '_blank')
+      break
+    case 'messages':
+      // 在新标签页打开消息通知
+      window.open('/user/messages', '_blank')
+      break
+    case 'settings':
+      // 在新标签页打开设置
+      window.open('/user/settings', '_blank')
       break
     case 'logout':
       ElMessageBox.confirm('确定要退出登录吗？', '提示', {
