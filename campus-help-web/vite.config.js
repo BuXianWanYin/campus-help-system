@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
     server: {
       port: serverPort,
+      open: true, // 启动后自动打开浏览器
       proxy: {
         [baseApi]: {
           target: proxyTarget,

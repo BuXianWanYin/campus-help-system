@@ -1,7 +1,7 @@
 <template>
-  <div class="login-container">
+  <div class="register-container">
     <!-- 左侧：插图和宣传文字 -->
-    <div class="login-left">
+    <div class="register-left">
       <div class="illustration-wrapper">
         <!-- 装饰性几何图形 -->
         <div class="decoration-shapes">
@@ -35,21 +35,21 @@
       </div>
     </div>
     
-    <!-- 右侧：登录表单 -->
-    <div class="login-right">
-      <div class="login-form-wrapper">
-        <h1 class="form-title">欢迎回来</h1>
-        <p class="form-subtitle">输入您的邮箱和密码登录</p>
+    <!-- 右侧：注册表单 -->
+    <div class="register-right">
+      <div class="register-form-wrapper">
+        <h1 class="form-title">创建账号</h1>
+        <p class="form-subtitle">欢迎加入我们，请填写以下信息完成注册</p>
         
         <el-form
-          ref="loginFormRef"
-          :model="loginForm"
-          :rules="loginRules"
-          class="login-form"
+          ref="registerFormRef"
+          :model="registerForm"
+          :rules="registerRules"
+          class="register-form"
         >
           <el-form-item prop="email">
             <el-input
-              v-model="loginForm.email"
+              v-model="registerForm.email"
               placeholder="请输入邮箱"
               size="large"
             >
@@ -59,14 +59,13 @@
             </el-input>
           </el-form-item>
           
-          <el-form-item prop="password" v-if="loginType === 'password'">
+          <el-form-item prop="password">
             <el-input
-              v-model="loginForm.password"
+              v-model="registerForm.password"
               type="password"
-              placeholder="请输入密码"
+              placeholder="至少8位，包含字母和数字"
               size="large"
               show-password
-              @keyup.enter="handleLogin"
             >
               <template #prefix>
                 <el-icon><Lock /></el-icon>
@@ -74,12 +73,25 @@
             </el-input>
           </el-form-item>
           
-          <el-form-item prop="code" v-if="loginType === 'code'">
+          <el-form-item prop="confirmPassword">
             <el-input
-              v-model="loginForm.code"
+              v-model="registerForm.confirmPassword"
+              type="password"
+              placeholder="请再次输入密码"
+              size="large"
+              show-password
+            >
+              <template #prefix>
+                <el-icon><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+          
+          <el-form-item prop="code">
+            <el-input
+              v-model="registerForm.code"
               placeholder="请输入验证码"
               size="large"
-              @keyup.enter="handleLogin"
             >
               <template #prefix>
                 <el-icon><Key /></el-icon>
@@ -87,7 +99,7 @@
               <template #append>
                 <el-button
                   :disabled="codeCountdown > 0"
-                  @click="sendLoginCode"
+                  @click="sendRegisterCode"
                 >
                   {{ codeCountdown > 0 ? `${codeCountdown}秒` : '获取验证码' }}
                 </el-button>
@@ -95,26 +107,22 @@
             </el-input>
           </el-form-item>
           
-          <div class="form-options">
-            <el-link
-              type="primary"
-              :underline="false"
-              @click="toggleLoginType"
-              class="toggle-link"
-            >
-              {{ loginType === 'password' ? '使用验证码登录' : '使用密码登录' }}
-            </el-link>
-          </div>
+          <el-form-item>
+            <el-checkbox v-model="agreePrivacy">
+              我同意<el-link type="primary" :underline="false" style="margin: 0 4px;">《隐私政策》</el-link>
+            </el-checkbox>
+          </el-form-item>
           
           <el-form-item>
             <el-button
               type="primary"
-              :loading="loginLoading"
+              :loading="registerLoading"
+              :disabled="!agreePrivacy"
               size="large"
               style="width: 100%"
-              @click="handleLogin"
+              @click="handleRegister"
             >
-              登录
+              注册
             </el-button>
           </el-form-item>
           
@@ -122,9 +130,9 @@
             <el-link
               type="primary"
               :underline="false"
-              @click="goToRegister"
+              @click="goToLogin"
             >
-              还没有账号？<span class="link-text">注册</span>
+              已有账号？<span class="link-text">去登录</span>
             </el-link>
           </div>
         </el-form>
@@ -146,47 +154,55 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const loginType = ref('password') // password 或 code
-const loginLoading = ref(false)
+const registerLoading = ref(false)
 const codeCountdown = ref(0)
-const loginFormRef = ref(null)
+const registerFormRef = ref(null)
+const agreePrivacy = ref(false)
 
-const loginForm = reactive({
+const registerForm = reactive({
   email: '',
   password: '',
+  confirmPassword: '',
   code: ''
 })
 
-const loginRules = {
+// 验证确认密码
+const validateConfirmPassword = (rule, value, callback) => {
+  if (value !== registerForm.password) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const registerRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 8, message: '密码至少8位', trigger: 'blur' },
+    { pattern: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/, message: '密码至少8位，且包含字母和数字', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: 'blur' }
   ],
   code: [
     { required: true, message: '请输入验证码', trigger: 'blur' }
   ]
 }
 
-// 切换登录方式
-const toggleLoginType = () => {
-  loginType.value = loginType.value === 'password' ? 'code' : 'password'
-  if (loginFormRef.value) {
-    loginFormRef.value.clearValidate()
-  }
-}
-
-// 发送登录验证码
-const sendLoginCode = async () => {
-  if (!loginForm.email) {
+// 发送注册验证码
+const sendRegisterCode = async () => {
+  if (!registerForm.email) {
     ElMessage.warning('请先输入邮箱')
     return
   }
   
   try {
-    await authApi.sendCode('LOGIN', loginForm.email)
+    await authApi.sendCode('REGISTER', registerForm.email)
     ElMessage.success('验证码已发送，请查收邮件')
     startCountdown()
   } catch (error) {
@@ -205,46 +221,51 @@ const startCountdown = () => {
   }, 1000)
 }
 
-// 处理登录
-const handleLogin = async () => {
-  if (!loginFormRef.value) return
+// 处理注册
+const handleRegister = async () => {
+  if (!registerFormRef.value) return
   
-  await loginFormRef.value.validate(async (valid) => {
+  if (!agreePrivacy.value) {
+    ElMessage.warning('请先同意隐私政策')
+    return
+  }
+  
+  await registerFormRef.value.validate(async (valid) => {
     if (valid) {
-      loginLoading.value = true
+      registerLoading.value = true
       try {
-        const email = loginForm.email
-        const password = loginType.value === 'password' ? loginForm.password : null
-        const code = loginType.value === 'code' ? loginForm.code : null
-        
-        await userStore.login(email, password, code)
-        ElMessage.success('登录成功')
+        const user = {
+          email: registerForm.email,
+          password: registerForm.password
+        }
+        await userStore.register(user, registerForm.code)
+        ElMessage.success('注册成功')
         const redirect = route.query.redirect || '/'
         router.push(redirect)
       } catch (error) {
-        ElMessage.error(error.message || '登录失败')
+        ElMessage.error(error.message || '注册失败')
       } finally {
-        loginLoading.value = false
+        registerLoading.value = false
       }
     }
   })
 }
 
-// 跳转到注册页
-const goToRegister = () => {
-  router.push({ path: '/register', query: route.query })
+// 跳转到登录页
+const goToLogin = () => {
+  router.push({ path: '/login', query: route.query })
 }
 </script>
 
 <style scoped>
-.login-container {
+.register-container {
   display: flex;
   min-height: 100vh;
   background-color: #f7fbfc;
 }
 
 /* 左侧区域 */
-.login-left {
+.register-left {
   flex: 0 0 60%;
   background-color: #d6e6f2;
   display: flex;
@@ -418,7 +439,7 @@ const goToRegister = () => {
 }
 
 /* 右侧区域 */
-.login-right {
+.register-right {
   flex: 0 0 40%;
   display: flex;
   justify-content: center;
@@ -427,7 +448,7 @@ const goToRegister = () => {
   padding: 40px;
 }
 
-.login-form-wrapper {
+.register-form-wrapper {
   width: 100%;
   max-width: 420px;
 }
@@ -445,40 +466,33 @@ const goToRegister = () => {
   margin: 0 0 32px 0;
 }
 
-.login-form {
+.register-form {
   margin-top: 32px;
 }
 
-.login-form :deep(.el-form-item) {
+.register-form :deep(.el-form-item) {
   margin-bottom: 20px;
 }
 
-.login-form :deep(.el-input__wrapper) {
+.register-form :deep(.el-input__wrapper) {
   border-radius: 4px;
   box-shadow: 0 0 0 1px #b9d7ea inset;
 }
 
-.login-form :deep(.el-input__wrapper:hover) {
+.register-form :deep(.el-input__wrapper:hover) {
   box-shadow: 0 0 0 1px #769fcd inset;
 }
 
-.login-form :deep(.el-input.is-focus .el-input__wrapper) {
+.register-form :deep(.el-input.is-focus .el-input__wrapper) {
   box-shadow: 0 0 0 1px #769fcd inset;
 }
 
-.form-options {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 24px;
+.register-form :deep(.el-checkbox) {
+  color: #606266;
 }
 
-.toggle-link {
+.register-form :deep(.el-checkbox__label) {
   font-size: 14px;
-  color: #769fcd;
-}
-
-.toggle-link:hover {
-  color: #b9d7ea;
 }
 
 .form-footer {
@@ -499,17 +513,17 @@ const goToRegister = () => {
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
-  .login-container {
+  .register-container {
     flex-direction: column;
   }
   
-  .login-left {
+  .register-left {
     flex: 0 0 auto;
     min-height: 300px;
     padding: 40px 20px;
   }
   
-  .login-right {
+  .register-right {
     flex: 0 0 auto;
     width: 100%;
   }

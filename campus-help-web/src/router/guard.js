@@ -1,6 +1,7 @@
 import { getToken } from '@/utils/auth'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import appConfig from '@/config'
 
 const whiteList = ['/login', '/register'] // 白名单，不需要登录就可以访问
 
@@ -15,8 +16,8 @@ export function setupRouterGuard(router) {
 
     // 如果有 token
     if (token) {
-      // 如果已登录，访问登录页，重定向到首页
-      if (to.path === '/login') {
+      // 如果已登录，访问登录页或注册页，重定向到首页
+      if (to.path === '/login' || to.path === '/register') {
         next({ path: '/' })
       } else {
         // 检查是否需要认证
@@ -53,8 +54,9 @@ export function setupRouterGuard(router) {
 
   // 后置守卫
   router.afterEach((to, from) => {
-    // 可以在这里设置页面标题等
-    document.title = to.meta.title || '校园帮助系统'
+    // 设置页面标题
+    const title = to.meta.title ? `${to.meta.title} - ${appConfig.title}` : appConfig.title
+    document.title = title || '校园帮助系统'
   })
 }
 

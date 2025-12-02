@@ -4,7 +4,7 @@
     <el-header class="layout-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="logo">校园帮助系统</h1>
+          <h1 class="logo">{{ appConfig.title || '校园帮助系统' }}</h1>
         </div>
         <div class="header-right">
           <el-dropdown @command="handleCommand">
@@ -48,6 +48,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Setting, SwitchButton, ArrowDown } from '@element-plus/icons-vue'
+import appConfig from '@/config'
 
 const router = useRouter()
 const userStore = useUserStore()
