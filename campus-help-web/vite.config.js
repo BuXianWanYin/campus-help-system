@@ -23,6 +23,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           // 不重写路径，直接转发，因为后端 Controller 路径已经包含 /api
           // rewrite: (path) => path.replace(new RegExp(`^${baseApi}`), '')
+        },
+        // 代理上传文件的静态资源访问
+        '/uploads': {
+          target: proxyTarget,
+          changeOrigin: true
         }
       }
     },

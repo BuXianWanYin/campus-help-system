@@ -24,15 +24,32 @@ public class FileConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 创建上传目录
+        // 获取并规范化上传路径
         File uploadDir = new File(uploadPath);
+        if (!uploadDir.isAbsolute()) {
+            // 如果是相对路径，使用项目根目录
+            String projectRoot = System.getProperty("user.dir");
+            uploadDir = new File(projectRoot, uploadPath);
+        }
+        
+        // 创建上传目录
         if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
+            boolean created = uploadDir.mkdirs();
+            if (!created) {
+                throw new RuntimeException("无法创建上传目录：" + uploadDir.getAbsolutePath());
+            }
+        }
+        
+        // 获取绝对路径
+        String absolutePath = uploadDir.getAbsolutePath();
+        // 确保路径以分隔符结尾
+        if (!absolutePath.endsWith(File.separator)) {
+            absolutePath += File.separator;
         }
 
         // 配置静态资源映射
         registry.addResourceHandler(accessPath)
-                .addResourceLocations("file:" + uploadPath + File.separator);
+                .addResourceLocations("file:" + absolutePath);
     }
 
     /**

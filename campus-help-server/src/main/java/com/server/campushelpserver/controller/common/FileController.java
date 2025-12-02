@@ -59,20 +59,42 @@ public class FileController {
         String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileName = UUID.randomUUID().toString() + "." + extension;
         String relativePath = module + File.separator + dateDir + File.separator + fileName;
-        String fullPath = fileConfig.getUploadPath() + File.separator + relativePath;
         
-        // 创建目录
-        File targetFile = new File(fullPath);
+        // 获取上传路径并规范化
+        String uploadPath = fileConfig.getUploadPath();
+        // 处理相对路径，转换为绝对路径
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.isAbsolute()) {
+            // 如果是相对路径，使用项目根目录
+            String projectRoot = System.getProperty("user.dir");
+            uploadDir = new File(projectRoot, uploadPath);
+        }
+        
+        // 确保上传根目录存在
+        if (!uploadDir.exists()) {
+            boolean created = uploadDir.mkdirs();
+            if (!created) {
+                return Result.error("无法创建上传目录：" + uploadDir.getAbsolutePath());
+            }
+        }
+        
+        // 构建完整文件路径
+        File targetFile = new File(uploadDir, relativePath);
         File parentDir = targetFile.getParentFile();
+        
+        // 创建父目录
         if (!parentDir.exists()) {
-            parentDir.mkdirs();
+            boolean created = parentDir.mkdirs();
+            if (!created) {
+                return Result.error("无法创建文件目录：" + parentDir.getAbsolutePath());
+            }
         }
         
         // 保存文件
         try {
             file.transferTo(targetFile);
         } catch (IOException e) {
-            return Result.error("文件上传失败：" + e.getMessage());
+            return Result.error("文件上传失败：" + e.getMessage() + "，路径：" + targetFile.getAbsolutePath());
         }
         
         // 返回访问路径

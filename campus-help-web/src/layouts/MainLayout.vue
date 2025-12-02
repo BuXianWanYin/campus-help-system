@@ -17,6 +17,7 @@
             mode="horizontal"
             :default-active="activeMenu"
             class="main-menu"
+            :collapse="false"
             @select="handleMenuSelect"
           >
             <el-menu-item index="home">首页</el-menu-item>
@@ -46,7 +47,7 @@
           
           <el-dropdown @command="handleCommand" trigger="click">
             <span class="user-info">
-              <el-avatar :size="32" :src="userStore.userInfo?.avatar">
+              <el-avatar :size="32" :src="getAvatarUrl(userStore.userInfo?.avatar)">
                 {{ userStore.nickname?.charAt(0) || 'U' }}
               </el-avatar>
               <span class="nickname">{{ userStore.nickname || userStore.email }}</span>
@@ -89,7 +90,7 @@
     <!-- 主内容区 -->
     <main class="main-content">
       <!-- 首页内容（仅在首页显示） -->
-      <template v-if="isHomePage">
+      <template v-if="isHomePage && route.name === 'Home'">
         <!-- 欢迎横幅 -->
         <section class="welcome-banner">
           <div class="banner-content">
@@ -118,24 +119,7 @@
           </div>
         </section>
 
-      <!-- 功能模块导航 -->
-      <section class="feature-modules">
-        <div class="section-header">
-          <h2 class="section-title">服务分类</h2>
-          <el-link type="primary" :underline="false" @click="goToRoute('/home')">查看全部</el-link>
-        </div>
-        <div class="module-grid">
-          <div v-for="module in featureModules" :key="module.id" class="module-card" @click="goToModule(module.path)">
-            <div class="module-icon" :class="module.colorClass">
-              <el-icon :size="32"><component :is="module.icon" /></el-icon>
-            </div>
-            <div class="module-content">
-              <h3 class="module-title">{{ module.title }}</h3>
-              <p class="module-desc">{{ module.description }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+     
 
       <!-- 失物招领模块 -->
       <section class="lost-found-section">
@@ -212,7 +196,7 @@
               </div>
               <div class="card-footer">
                 <div class="card-user">
-                  <el-avatar :size="24" :src="item.userAvatar">{{ item.userName.charAt(0) }}</el-avatar>
+                  <el-avatar :size="24" :src="getAvatarUrl(item.userAvatar)">{{ item.userName.charAt(0) }}</el-avatar>
                   <span>{{ item.userName }}</span>
                 </div>
                 <el-button type="primary" size="small" text @click.stop="handleContact(item)">联系TA</el-button>
@@ -256,7 +240,7 @@
               </div>
               <div class="card-footer">
                 <div class="card-user">
-                  <el-avatar :size="20" :src="item.userAvatar">{{ item.userName.charAt(0) }}</el-avatar>
+                  <el-avatar :size="20" :src="getAvatarUrl(item.userAvatar)">{{ item.userName.charAt(0) }}</el-avatar>
                   <span>{{ item.userName }}</span>
                 </div>
                 <span class="card-time">{{ item.time }}</span>
@@ -315,7 +299,7 @@
               </div>
               <div class="task-footer">
                 <div class="task-user">
-                  <el-avatar :size="24" :src="task.userAvatar">{{ task.userName.charAt(0) }}</el-avatar>
+                  <el-avatar :size="24" :src="getAvatarUrl(task.userAvatar)">{{ task.userName.charAt(0) }}</el-avatar>
                   <span>{{ task.userName }}</span>
                   <div class="task-rating">
                     <el-icon v-for="i in 5" :key="i" :class="{ 'star-filled': i <= task.rating }"><Star /></el-icon>
@@ -340,7 +324,7 @@
         <div class="credit-card">
           <div class="credit-left">
             <div class="credit-profile">
-              <el-avatar :size="96" :src="userStore.userInfo?.avatar">
+              <el-avatar :size="96" :src="getAvatarUrl(userStore.userInfo?.avatar)">
                 {{ userStore.nickname?.charAt(0) || 'U' }}
               </el-avatar>
               <h3>{{ userStore.nickname || userStore.email }}</h3>
@@ -503,7 +487,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -516,18 +500,23 @@ import {
 } from '@element-plus/icons-vue'
 import { initChart, resizeChart } from '@/utils/echarts'
 import appConfig from '@/config'
+import { getAvatarUrl } from '@/utils/image'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-// 判断是否是首页
+// 判断是否是首页（排除重定向过程中的误判）
 const isHomePage = computed(() => {
-  return route.path === '/home' || route.path === '/'
+  const path = route.path
+  const name = route.name
+  // 只有在明确是 /home 路径且路由名称为 Home 时才返回 true
+  // 排除重定向过程中的误判（route.name 为 undefined 时）
+  return path === '/home' && name === 'Home'
 })
 
 const searchKeyword = ref('')
-const activeMenu = ref('home')
+const activeMenu = ref('') // 初始为空，避免默认激活首页
 const showMobileMenu = ref(false)
 const showNotificationPanel = ref(false)
 const unreadCount = ref(3)
@@ -713,18 +702,33 @@ const goToMessages = () => {
 // 更新当前激活菜单
 const updateActiveMenu = () => {
   const path = route.path
+  // 等待路由完全加载后再更新，避免重定向过程中的误判
+  if (!route.name) {
+    activeMenu.value = ''
+    return
+  }
+  
   if (path.startsWith('/lost-found')) {
     activeMenu.value = 'lost-found'
   } else if (path.startsWith('/goods')) {
     activeMenu.value = 'goods'
   } else if (path.startsWith('/task')) {
     activeMenu.value = 'task'
-  } else if (path === '/home' || path === '/') {
+  } else if (path.startsWith('/user')) {
+    // 个人中心相关页面不激活任何菜单项
+    activeMenu.value = ''
+  } else if (path === '/home' || (path === '/' && route.name === 'Home')) {
     activeMenu.value = 'home'
   } else {
-    activeMenu.value = 'home'
+    // 其他未匹配的路径，默认不激活任何菜单
+    activeMenu.value = ''
   }
 }
+
+// 监听路由变化，实时更新激活菜单
+watch(() => route.path, () => {
+  updateActiveMenu()
+}, { immediate: true })
 
 // 跳转到功能模块
 const goToModule = (path) => {
@@ -888,13 +892,39 @@ const handleResize = () => {
   resizeChart(trendChartInstance)
 }
 
+// 禁用菜单自动折叠功能
+const disableMenuCollapse = () => {
+  nextTick(() => {
+    const menuEl = document.querySelector('.main-menu')
+    if (menuEl) {
+      // 强制显示所有菜单项
+      const menuItems = menuEl.querySelectorAll('.el-menu-item')
+      menuItems.forEach(item => {
+        item.style.display = 'inline-flex'
+        item.style.visibility = 'visible'
+        item.style.opacity = '1'
+      })
+      // 隐藏"更多"按钮（子菜单）
+      const submenus = menuEl.querySelectorAll('.el-submenu')
+      submenus.forEach(submenu => {
+        submenu.style.display = 'none'
+      })
+    }
+  })
+}
+
 onMounted(() => {
   checkMobile()
-  updateActiveMenu()
   window.addEventListener('resize', checkMobile)
   window.addEventListener('resize', handleResize)
-  router.afterEach(() => {
-    updateActiveMenu()
+  
+  // 禁用菜单自动折叠
+  disableMenuCollapse()
+  // 监听窗口大小变化，重新禁用折叠
+  window.addEventListener('resize', () => {
+    setTimeout(() => {
+      disableMenuCollapse()
+    }, 100)
   })
   
   // 延迟初始化图表，确保DOM已渲染
@@ -978,18 +1008,52 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   padding: 0 40px;
+  min-width: 600px; /* 增加最小宽度，确保菜单项有足够空间 */
+  overflow: visible; /* 确保菜单项可见 */
 }
 
 .main-menu {
   border-bottom: none;
+  /* 禁用菜单自动折叠 */
+  overflow: visible !important;
+  width: 100% !important;
 }
 
+/* 隐藏"更多"下拉菜单按钮和所有子菜单 */
+:deep(.el-menu--horizontal .el-submenu) {
+  display: none !important;
+}
+
+:deep(.el-menu--horizontal .el-submenu__title) {
+  display: none !important;
+}
+
+/* 强制显示所有菜单项 */
 :deep(.el-menu--horizontal .el-menu-item) {
   height: var(--header-height);
   line-height: var(--header-height);
   color: var(--color-text-regular);
   font-size: 15px;
   padding: 0 var(--spacing-2xl);
+  white-space: nowrap;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-width: 80px;
+  position: relative !important;
+}
+
+/* 确保菜单容器不隐藏溢出内容 */
+:deep(.el-menu--horizontal) {
+  overflow: visible !important;
+  width: 100% !important;
+}
+
+/* 确保跑腿服务菜单项始终显示 */
+:deep(.el-menu--horizontal .el-menu-item[index="task"]) {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 :deep(.el-menu--horizontal .el-menu-item:hover) {
@@ -2260,7 +2324,26 @@ onUnmounted(() => {
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .header-center {
-    display: none;
+    flex: 1;
+    padding: 0 var(--spacing-md);
+    min-width: 500px; /* 在中等屏幕上保持足够宽度 */
+  }
+  
+  .header-center :deep(.el-menu--horizontal .el-menu-item) {
+    padding: 0 var(--spacing-md); /* 保持合理的 padding */
+    font-size: 14px;
+    display: inline-flex !important;
+    min-width: 70px; /* 设置最小宽度 */
+  }
+  
+  /* 确保所有菜单项都显示，包括跑腿服务 */
+  .header-center :deep(.el-menu--horizontal) {
+    overflow: visible !important;
+  }
+  
+  /* 隐藏"更多"下拉菜单按钮 */
+  .header-center :deep(.el-menu--horizontal .el-submenu__title) {
+    display: none !important;
   }
   
   .search-wrapper {

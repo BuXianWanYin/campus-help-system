@@ -159,8 +159,9 @@ security:
     header: Authorization
 
 file:
-  # 本地文件存储路径（项目根目录）
-  upload-path: ./uploads
+  # 本地文件存储路径（相对于项目根目录）
+  # 文件将存储在项目根目录下的 uploads 文件夹
+  upload-path: uploads
   # 访问路径前缀
   access-path: /uploads/**
 

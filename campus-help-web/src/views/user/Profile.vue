@@ -12,25 +12,20 @@
         <el-col :xs="24" :sm="24" :md="8" :lg="8">
           <div class="user-info-card">
             <div class="avatar-section">
-              <div class="avatar-wrapper">
-                <el-avatar :size="120" :src="userInfo.avatar" class="user-avatar">
-                  {{ userInfo.nickname?.charAt(0) || 'U' }}
-                </el-avatar>
-                <el-upload
-                  class="avatar-uploader"
-                  :action="uploadAction"
-                  :headers="getUploadHeaders()"
-                  :data="{ module: 'avatar' }"
-                  :show-file-list="false"
-                  :on-success="handleAvatarSuccess"
-                  :before-upload="beforeAvatarUpload"
-                >
-                  <el-button type="primary" size="small" class="change-avatar-btn">
-                    <el-icon><Camera /></el-icon>
-                    更换头像
-                  </el-button>
-                </el-upload>
-              </div>
+              <el-avatar :size="80" :src="getAvatarUrl(userInfo.avatar)" class="user-avatar">
+                {{ userInfo.nickname?.charAt(0) || 'U' }}
+              </el-avatar>
+              <el-upload
+                class="avatar-uploader"
+                :action="uploadAction"
+                :headers="getUploadHeaders()"
+                :data="{ module: 'avatar' }"
+                :show-file-list="false"
+                :on-success="handleAvatarSuccess"
+                :before-upload="beforeAvatarUpload"
+              >
+                <el-button type="primary" size="small" text>更换头像</el-button>
+              </el-upload>
             </div>
 
             <div class="user-basic-info">
@@ -38,43 +33,28 @@
               <p class="user-email">{{ userInfo.email }}</p>
               
               <div class="user-tags">
-                <span v-if="userInfo.isVerified === 1" class="tag tag-success">
-                  <el-icon><Check /></el-icon>
-                  已认证
-                </span>
-                <span v-else class="tag tag-info">
-                  <el-icon><Warning /></el-icon>
-                  未认证
-                </span>
-                <span v-if="userInfo.role === 'ADMIN'" class="tag tag-warning">
-                  <el-icon><Star /></el-icon>
-                  管理员
-                </span>
+                <el-tag v-show="userInfo.isVerified === 1" type="success" size="small">已认证</el-tag>
+                <el-tag v-show="userInfo.isVerified !== 1 && userInfo.isVerified !== undefined" type="info" size="small">未认证</el-tag>
+                <el-tag v-show="userInfo.role === 'ADMIN'" type="warning" size="small">管理员</el-tag>
               </div>
 
               <el-button
                 v-if="userInfo.isVerified !== 1"
                 type="primary"
-                class="verify-btn"
+                size="small"
+                style="margin-top: 16px;"
                 @click="goToVerification"
               >
-                <el-icon><Document /></el-icon>
                 前往实名认证
               </el-button>
-            </div>
 
-            <!-- 信用积分卡片 -->
-            <div class="credit-info">
-              <div class="credit-header">
-                <el-icon class="credit-icon"><TrendCharts /></el-icon>
-                <span>信用积分</span>
-              </div>
-              <div class="credit-score">
-                <span class="score-value">{{ userInfo.creditScore || 0 }}</span>
-                <span class="score-label">分</span>
-              </div>
-              <div class="credit-level">
-                <el-tag :type="getCreditLevelType(userInfo.creditLevel)" size="large">
+              <div class="credit-info">
+                <div class="credit-label">信用积分</div>
+                <div class="credit-score">
+                  <span class="score-value">{{ userInfo.creditScore || 0 }}</span>
+                  <span class="score-label">分</span>
+                </div>
+                <el-tag :type="getCreditLevelType(userInfo.creditLevel)" size="small">
                   {{ userInfo.creditLevel || '暂无等级' }}
                 </el-tag>
               </div>
@@ -109,9 +89,9 @@
 
                     <el-form-item label="性别" prop="gender">
                       <el-radio-group v-model="form.gender" class="gender-group">
-                        <el-radio :label="0" border>未知</el-radio>
-                        <el-radio :label="1" border>男</el-radio>
-                        <el-radio :label="2" border>女</el-radio>
+                        <el-radio :label="1">男</el-radio>
+                        <el-radio :label="2">女</el-radio>
+                        <el-radio :label="0">保密</el-radio>
                       </el-radio-group>
                     </el-form-item>
 
@@ -141,7 +121,6 @@
 
                     <el-form-item class="form-actions">
                       <el-button type="primary" :loading="loading" @click="handleSubmit">
-                        <el-icon><Check /></el-icon>
                         保存修改
                       </el-button>
                       <el-button @click="handleReset">
@@ -225,13 +204,15 @@ import {
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api'
 import { getToken } from '@/utils/auth'
+import { getAvatarUrl } from '@/utils/image'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const activeTab = ref('basic')
 const loading = ref(false)
-const userInfo = ref({})
+// 从 userStore 获取初始用户信息，避免刷新时抖动
+const userInfo = ref(userStore.userInfo || {})
 
 const form = reactive({
   nickname: '',
@@ -254,6 +235,16 @@ const getUploadHeaders = () => ({
 // 获取用户信息
 const fetchUserInfo = async () => {
   try {
+    // 如果 userStore 中已有用户信息，先使用它避免抖动
+    if (userStore.userInfo && (!userInfo.value || Object.keys(userInfo.value).length === 0)) {
+      userInfo.value = { ...userStore.userInfo }
+      // 填充表单
+      form.nickname = userInfo.value.nickname || ''
+      form.gender = userInfo.value.gender || 0
+      form.grade = userInfo.value.grade || ''
+      form.major = userInfo.value.major || ''
+    }
+    
     const response = await userApi.getCurrentUser()
     if (response.code === 200) {
       userInfo.value = response.data
@@ -299,7 +290,12 @@ const beforeAvatarUpload = (file) => {
 // 更新用户信息
 const updateUserInfo = async (data) => {
   try {
-    const response = await userApi.updateCurrentUser(data)
+    // 确保包含邮箱字段，避免后端验证失败
+    const updateData = {
+      ...data,
+      email: userInfo.value.email || userStore.userInfo?.email
+    }
+    const response = await userApi.updateCurrentUser(updateData)
     if (response.code === 200) {
       userStore.setUserInfo(response.data)
       userInfo.value = response.data
@@ -318,7 +314,12 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
-        await updateUserInfo(form)
+        // 确保包含邮箱字段，避免后端验证失败
+        const formData = {
+          ...form,
+          email: userInfo.value.email || userStore.userInfo?.email
+        }
+        await updateUserInfo(formData)
       } finally {
         loading.value = false
       }
@@ -400,69 +401,39 @@ onMounted(() => {
 /* 用户信息卡片 */
 .user-info-card {
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-3xl);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2xl);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  transition: all 0.3s ease;
-}
-
-.user-info-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
 }
 
 /* 头像区域 */
 .avatar-section {
   text-align: center;
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e8f4f8;
-}
-
-.avatar-wrapper {
-  position: relative;
-  display: inline-block;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .user-avatar {
   background-color: var(--color-primary);
-  font-size: 48px;
+  font-size: 32px;
   font-weight: bold;
   color: var(--color-bg-white);
-  border: 4px solid var(--color-primary-lighter);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.2);
 }
 
 .avatar-uploader {
-  margin-top: 16px;
-}
-
-.change-avatar-btn {
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-sm) var(--content-padding);
-  background-color: var(--color-primary);
-  border: none;
-  box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
-}
-
-.change-avatar-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.4);
-  background-color: var(--color-primary-hover);
+  margin-top: var(--spacing-md);
 }
 
 /* 用户基本信息 */
 .user-basic-info {
   text-align: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e8f4f8;
-  margin-bottom: 24px;
 }
 
 .user-name {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 600;
   color: var(--color-text-primary);
   margin: 0 0 var(--spacing-sm) 0;
 }
@@ -476,73 +447,22 @@ onMounted(() => {
 .user-tags {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-lg);
 }
 
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.tag-success {
-  background-color: rgba(76, 175, 80, 0.1);
-  color: var(--color-success);
-}
-
-.tag-info {
-  background-color: var(--color-primary-lighter);
-  color: var(--color-primary);
-}
-
-.tag-warning {
-  background-color: rgba(255, 152, 0, 0.1);
-  color: var(--color-secondary);
-}
-
-.verify-btn {
-  width: 100%;
-  border-radius: var(--radius-md);
-  padding: 10px var(--content-padding);
-  background-color: var(--color-primary);
-  border: none;
-  box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
-}
-
-.verify-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.4);
-  background-color: var(--color-primary-hover);
-}
-
-/* 信用积分卡片 */
+/* 信用积分 */
 .credit-info {
-  background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-primary-lighter) 100%);
-  border-radius: var(--radius-lg);
-  padding: var(--content-padding);
-  text-align: center;
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-2xl);
+  border-top: 1px solid var(--color-border);
 }
 
-.credit-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #606266;
-}
-
-.credit-icon {
-  font-size: 20px;
-  color: var(--color-primary);
+.credit-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
 }
 
 .credit-score {
@@ -550,52 +470,40 @@ onMounted(() => {
 }
 
 .score-value {
-  font-size: 48px;
+  font-size: 32px;
   font-weight: bold;
   color: var(--color-primary);
   line-height: 1;
 }
 
 .score-label {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--color-text-secondary);
   margin-left: var(--spacing-xs);
-}
-
-.credit-level {
-  display: flex;
-  justify-content: center;
 }
 
 /* 信息标签页卡片 */
 .info-tabs-card {
   background-color: var(--color-bg-white);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-3xl);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2xl);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  transition: all 0.3s ease;
-  min-height: 500px;
-}
-
-.info-tabs-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
 }
 
 /* 标签页样式 */
 .profile-tabs :deep(.el-tabs__header) {
-  margin-bottom: 32px;
-  border-bottom: 2px solid #e8f4f8;
+  margin-bottom: var(--spacing-2xl);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .profile-tabs :deep(.el-tabs__item) {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
-  color: #606266;
-  padding: 0 24px;
-  height: 48px;
-  line-height: 48px;
+  color: var(--color-text-regular);
+  padding: 0 var(--spacing-2xl);
+  height: 40px;
+  line-height: 40px;
 }
 
 .profile-tabs :deep(.el-tabs__item:hover) {
@@ -609,7 +517,7 @@ onMounted(() => {
 
 .profile-tabs :deep(.el-tabs__active-bar) {
   background-color: var(--color-primary);
-  height: 3px;
+  height: 2px;
 }
 
 .tab-content {
@@ -622,7 +530,7 @@ onMounted(() => {
 }
 
 .profile-form :deep(.el-form-item) {
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .profile-form :deep(.el-form-item__label) {
@@ -633,8 +541,15 @@ onMounted(() => {
 .profile-form :deep(.el-input__wrapper) {
   border-radius: var(--radius-md);
   box-shadow: 0 0 0 1px var(--color-border) inset;
-  padding: var(--spacing-sm) 15px;
+  padding: 4px 12px;
+  min-height: 32px;
   transition: all 0.3s;
+}
+
+.profile-form :deep(.el-input__inner) {
+  height: 24px;
+  line-height: 24px;
+  font-size: 14px;
 }
 
 .profile-form :deep(.el-input__wrapper:hover) {
@@ -666,71 +581,49 @@ onMounted(() => {
 }
 
 .form-actions {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #e8f4f8;
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-2xl);
+  border-top: 1px solid var(--color-border);
 }
 
 .form-actions :deep(.el-button) {
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-weight: 500;
-}
-
-.form-actions :deep(.el-button--primary) {
-  background-color: var(--color-primary);
-  border: none;
-  box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
-}
-
-.form-actions :deep(.el-button--primary:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.4);
-  background-color: var(--color-primary-hover);
+  border-radius: var(--radius-md);
 }
 
 /* 账户信息列表 */
 .account-info-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--content-padding);
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-primary-lighter);
-  transition: all 0.3s ease;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.info-item:hover {
-  background-color: var(--color-primary-lighter);
-  border-color: var(--color-primary);
-  transform: translateX(4px);
+.info-item:last-child {
+  border-bottom: none;
 }
 
 .info-label {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
   color: var(--color-text-regular);
 }
 
 .info-label .el-icon {
-  font-size: 20px;
-  color: var(--color-primary);
+  font-size: 16px;
+  color: var(--color-text-secondary);
 }
 
 .info-value {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--color-text-primary);
-  font-weight: 500;
 }
 
 /* 响应式设计 */
