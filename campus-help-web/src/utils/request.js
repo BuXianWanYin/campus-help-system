@@ -3,9 +3,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getToken, removeToken } from './auth'
 
 // 创建 axios 实例
+const baseURL = import.meta.env.VITE_APP_BASE_API || '/api'
+const timeout = parseInt(import.meta.env.VITE_APP_TIMEOUT) || 60000 // 默认60秒
+
 const service = axios.create({
-  baseURL: import.meta.env.VITE_APP_BASE_API,
-  timeout: parseInt(import.meta.env.VITE_APP_TIMEOUT),
+  baseURL: baseURL,
+  timeout: timeout, // 默认60秒，邮件发送可能需要更长时间
   headers: {
     'Content-Type': 'application/json'
   }
@@ -44,7 +47,7 @@ service.interceptors.response.use(
       // 401: 未授权，清除 token 并跳转到登录页（但认证接口除外）
       if (res.code === 401) {
         // 检查是否是认证相关接口
-        const isAuthApi = response.config?.url?.includes('/api/auth/')
+        const isAuthApi = response.config?.url?.includes('/auth/')
         if (!isAuthApi) {
           // 非认证接口的 401 错误，清除 token 并跳转登录页
           ElMessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
@@ -75,7 +78,7 @@ service.interceptors.response.use(
           break
         case 401:
           // 如果是认证相关接口（登录、注册、发送验证码），不跳转登录页
-          const isAuthApi = error.config?.url?.includes('/api/auth/')
+          const isAuthApi = error.config?.url?.includes('/auth/')
           if (isAuthApi) {
             // 认证接口的 401 错误，只显示错误信息，不跳转
             message = error.response?.data?.message || '认证失败'
@@ -108,7 +111,12 @@ service.interceptors.response.use(
           message = `连接错误${error.response.status}`
       }
     } else if (error.request) {
-      message = '网络连接失败，请检查网络'
+      // 检查是否是超时错误
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        message = '请求超时，请检查网络连接或稍后重试'
+      } else {
+        message = '网络连接失败，请检查网络'
+      }
     } else {
       message = error.message
     }

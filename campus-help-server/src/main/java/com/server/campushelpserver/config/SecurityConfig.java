@@ -53,6 +53,7 @@ public class SecurityConfig {
             .authorizeRequests(auth -> auth
                 // 允许访问的路径
                 .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/error").permitAll()  // 允许访问错误页面
                 .antMatchers("/swagger-ui/**").permitAll()
                 .antMatchers("/v3/api-docs/**").permitAll()
                 .antMatchers("/swagger-ui.html").permitAll()

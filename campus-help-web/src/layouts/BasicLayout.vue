@@ -4,7 +4,7 @@
     <el-header class="layout-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="logo">{{ appConfig.title || '校园帮助系统' }}</h1>
+          <h1 class="logo">{{ appConfig.title || '校园帮系统' }}</h1>
         </div>
         <div class="header-right">
           <el-dropdown @command="handleCommand">

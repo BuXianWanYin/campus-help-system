@@ -21,7 +21,8 @@ export default defineConfig(({ mode }) => {
         [baseApi]: {
           target: proxyTarget,
           changeOrigin: true,
-          rewrite: (path) => path.replace(new RegExp(`^${baseApi}`), '')
+          // 不重写路径，直接转发，因为后端 Controller 路径已经包含 /api
+          // rewrite: (path) => path.replace(new RegExp(`^${baseApi}`), '')
         }
       }
     },

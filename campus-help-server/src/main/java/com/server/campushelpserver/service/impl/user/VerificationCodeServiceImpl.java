@@ -2,6 +2,8 @@ package com.server.campushelpserver.service.impl.user;
 
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.service.user.VerificationCodeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -17,6 +19,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class VerificationCodeServiceImpl implements VerificationCodeService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(VerificationCodeServiceImpl.class);
     
     @Autowired
     private JavaMailSender mailSender;
@@ -44,6 +48,9 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     
     @Value("${verification.code.limit.email-total-limit:5}")
     private int emailTotalLimit;
+    
+    @Value("${spring.mail.username}")
+    private String mailFrom;
     
     /**
      * 发送验证码（带防刷机制）
@@ -101,14 +108,42 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         // 7. 发送邮件
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("校园帮系统 <" + mailFrom + ">");
             message.setTo(email);
-            message.setSubject("校园帮助系统验证码");
+            message.setSubject("校园帮系统验证码");
             message.setText("您的验证码是：" + code + "，有效期" + expireMinutes + "分钟，请勿泄露给他人。");
             mailSender.send(message);
         } catch (Exception e) {
-            // 邮件发送失败，删除已存储的验证码
+            // 邮件发送失败，清理已存储的数据
             stringRedisTemplate.delete(codeKey);
-            throw new BusinessException("邮件发送失败，请检查邮箱配置");
+            // 清理限流标记，允许用户重试
+            stringRedisTemplate.delete(emailTypeKey);
+            // 不清理IP和邮箱总限流标记，防止恶意重试
+            
+            // 记录详细的错误日志
+            String errorMsg = e.getMessage();
+            String errorClass = e.getClass().getSimpleName();
+            
+            // 记录完整异常信息到日志
+            logger.error("邮件发送失败 - 异常类型: {}, 异常消息: {}, 目标邮箱: {}", 
+                    errorClass, errorMsg, email, e);
+            
+            // 根据异常类型和消息提供更具体的错误提示
+            if (errorMsg != null) {
+                String lowerMsg = errorMsg.toLowerCase();
+                if (lowerMsg.contains("timeout") || lowerMsg.contains("timed out")) {
+                    throw new BusinessException("邮件发送超时，请检查网络连接或稍后重试");
+                } else if (lowerMsg.contains("authentication") || lowerMsg.contains("auth") || lowerMsg.contains("535")) {
+                    throw new BusinessException("邮箱认证失败，请检查邮箱账号和授权码配置");
+                } else if (lowerMsg.contains("connection") || lowerMsg.contains("connect")) {
+                    throw new BusinessException("无法连接到邮件服务器，请检查网络或邮件服务器配置");
+                } else if (lowerMsg.contains("ssl") || lowerMsg.contains("tls")) {
+                    throw new BusinessException("SSL/TLS 连接失败，请检查邮件服务器配置");
+                }
+            }
+            
+            // 默认错误提示
+            throw new BusinessException("邮件发送失败：" + (errorMsg != null ? errorMsg : errorClass) + "，请检查邮箱配置或联系管理员");
         }
         
         return code;

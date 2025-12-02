@@ -17,9 +17,9 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("校园帮助系统 API 文档")
+                        .title("校园帮系统 API 文档")
                         .version("1.0.0")
-                        .description("校园帮助系统后端 API 接口文档")
+                        .description("校园帮系统后端 API 接口文档")
                         .contact(new Contact()
                                 .name("开发团队")
                                 .email("support@campus-help.com"))

@@ -3,12 +3,12 @@
     <el-card class="welcome-card">
       <template #header>
         <div class="card-header">
-          <span>欢迎使用{{ appConfig.title || '校园帮助系统' }}</span>
+          <span>欢迎使用{{ appConfig.title || '校园帮系统' }}</span>
         </div>
       </template>
       <div class="welcome-content">
         <p>您好，{{ userStore.nickname || userStore.email }}！</p>
-        <p>欢迎来到{{ appConfig.title || '校园帮助系统' }}，这里可以帮您解决失物招领、闲置交易、跑腿服务等校园互助需求。</p>
+        <p>欢迎来到{{ appConfig.title || '校园帮系统' }}，这里可以帮您解决失物招领、闲置交易、跑腿服务等校园互助需求。</p>
       </div>
     </el-card>
     

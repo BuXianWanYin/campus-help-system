@@ -6,7 +6,7 @@ import request from '@/utils/request'
 export const authApi = {
   // 用户注册
   register(user, code) {
-    return request.post('/api/auth/register', user, {
+    return request.post('/auth/register', user, {
       params: { code }
     })
   },
@@ -19,12 +19,12 @@ export const authApi = {
     } else if (code) {
       params.code = code
     }
-    return request.post('/api/auth/login', null, { params })
+    return request.post('/auth/login', null, { params })
   },
   
   // 发送验证码
   sendCode(type, email) {
-    return request.post('/api/auth/send-code', null, {
+    return request.post('/auth/send-code', null, {
       params: { type, email }
     })
   }
@@ -36,32 +36,32 @@ export const authApi = {
 export const userApi = {
   // 获取当前用户信息
   getCurrentUser() {
-    return request.get('/api/user/current')
+    return request.get('/user/current')
   },
   
   // 更新当前用户信息
   updateCurrentUser(data) {
-    return request.put('/api/user/current', data)
+    return request.put('/user/current', data)
   },
   
   // 分页查询用户列表（管理员）
   getUserPage(params) {
-    return request.get('/api/user/page', { params })
+    return request.get('/user/page', { params })
   },
   
   // 根据ID获取用户信息（管理员）
   getUserById(id) {
-    return request.get(`/api/user/${id}`)
+    return request.get(`/user/${id}`)
   },
   
   // 提交实名认证
   submitVerification(data) {
-    return request.post('/api/user/verification/submit', data)
+    return request.post('/user/verification/submit', data)
   },
   
   // 审核实名认证（管理员）
   auditVerification(data) {
-    return request.post('/api/user/verification/audit', data)
+    return request.post('/user/verification/audit', data)
   }
 }
 
@@ -74,7 +74,7 @@ export const fileApi = {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('module', module)
-    return request.post('/api/file/upload', formData, {
+    return request.post('/file/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

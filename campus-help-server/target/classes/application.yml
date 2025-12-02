@@ -1,20 +1,33 @@
 spring:
   profiles:
     active: dev
+  # 邮件配置
   mail:
+    # SMTP 服务器地址
     host: smtp.qq.com
+    # SMTP 服务器端口（QQ邮箱使用587端口，支持STARTTLS）
     port: 587
+    # 发送邮件的邮箱账号
     username: 3050604024@qq.com
+    # 邮箱授权码（不是登录密码，需要在QQ邮箱设置中生成）
     password: rxhidqusgbsmdcgh
-    from: 校园帮 <3050604024@qq.com>
+    # 默认编码
     default-encoding: UTF-8
+    # SMTP 服务器属性配置
     properties:
       mail:
         smtp:
+          # 启用身份验证
           auth: true
+          # 启用 STARTTLS（传输层安全）
           starttls:
             enable: true
             required: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+          # 连接超时时间（毫秒）
+          connectiontimeout: 10000
+          # 读取超时时间（毫秒）
+          timeout: 30000
+          # 写入超时时间（毫秒）
+          writetimeout: 30000
+          # 启用调试模式（生产环境建议关闭）
+          debug: false
