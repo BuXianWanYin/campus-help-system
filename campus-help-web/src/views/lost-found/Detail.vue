@@ -75,6 +75,14 @@
             <span class="reward-value">¥{{ lostFound.reward }}</span>
           </div>
           
+          <!-- 联系方式 -->
+          <div v-if="lostFound.contactInfo" class="contact-section">
+            <div class="contact-label">
+              <span>联系方式：</span>
+            </div>
+            <div class="contact-value">{{ lostFound.contactInfo }}</div>
+          </div>
+          
           <!-- 发布者信息 -->
           <div class="publisher-section">
             <div class="publisher-info">
@@ -257,7 +265,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Location, Clock, Folder, View, Plus } from '@element-plus/icons-vue'
+import { ArrowLeft, Location, Clock, Folder, View, Plus, Message } from '@element-plus/icons-vue'
 import { lostFoundApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
@@ -682,6 +690,34 @@ onMounted(() => {
   font-weight: bold;
   color: #F56C6C;
   margin-left: 8px;
+}
+
+.contact-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #F0F9FF;
+  border: 1px solid #B3D8FF;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.contact-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  flex-shrink: 0;
+}
+
+.contact-value {
+  font-size: 14px;
+  color: #409EFF;
+  word-break: break-all;
+  flex: 1;
 }
 
 .publisher-section {
