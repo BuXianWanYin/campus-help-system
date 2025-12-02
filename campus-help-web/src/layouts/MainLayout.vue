@@ -126,17 +126,20 @@
         <div class="section-header">
           <h2 class="section-title">失物招领</h2>
           <div class="section-actions">
-            <div class="tab-buttons">
-              <el-button :type="lostFoundTab === 'lost' ? 'primary' : ''" size="small" @click="lostFoundTab = 'lost'">失物</el-button>
-              <el-button :type="lostFoundTab === 'found' ? 'primary' : ''" size="small" @click="lostFoundTab = 'found'">招领</el-button>
-            </div>
-            <el-link type="primary" :underline="false" @click="goToRoute('/lost-found/list')">更多</el-link>
+            <el-button type="primary" @click="handlePublish">发布信息</el-button>
+            <el-link type="primary" :underline="false" @click="goToRoute('/lost-found/list')">查看更多</el-link>
           </div>
         </div>
 
         <!-- 筛选栏 -->
         <div class="filter-bar">
           <el-form :inline="true" class="filter-form">
+            <el-form-item label="类型：">
+              <div class="tab-buttons">
+                <el-button :type="lostFoundTab === 'lost' ? 'primary' : ''" size="small" @click="lostFoundTab = 'lost'">失物</el-button>
+                <el-button :type="lostFoundTab === 'found' ? 'primary' : ''" size="small" @click="lostFoundTab = 'found'">招领</el-button>
+              </div>
+            </el-form-item>
             <el-form-item label="分类：">
               <el-select v-model="lostFoundFilters.category" placeholder="全部" style="width: 120px">
                 <el-option label="全部" value="" />
@@ -211,7 +214,10 @@
       <section class="goods-section">
         <div class="section-header">
           <h2 class="section-title">闲置交易</h2>
-          <el-link type="primary" :underline="false" @click="goToRoute('/goods/list')">更多</el-link>
+          <div class="section-actions">
+            <el-button type="primary" @click="handlePublish">发布闲置</el-button>
+            <el-link type="primary" :underline="false" @click="goToRoute('/goods/list')">查看更多</el-link>
+          </div>
         </div>
 
         <!-- 分类导航 -->
@@ -258,7 +264,7 @@
           <h2 class="section-title">跑腿服务</h2>
           <div class="section-actions">
             <el-button type="primary" @click="handlePublish">发布任务</el-button>
-            <el-link type="primary" :underline="false" @click="goToRoute('/task/list')">更多</el-link>
+            <el-link type="primary" :underline="false" @click="goToRoute('/task/list')">查看更多</el-link>
           </div>
         </div>
 
@@ -301,70 +307,10 @@
                 <div class="task-user">
                   <el-avatar :size="24" :src="getAvatarUrl(task.userAvatar)">{{ task.userName.charAt(0) }}</el-avatar>
                   <span>{{ task.userName }}</span>
-                  <div class="task-rating">
-                    <el-icon v-for="i in 5" :key="i" :class="{ 'star-filled': i <= task.rating }"><Star /></el-icon>
-                  </div>
                 </div>
                 <div class="task-actions">
                   <el-button type="primary" size="small" text @click.stop="goToDetail('task', task.id)">查看详情</el-button>
                   <el-button type="warning" size="small" @click.stop="handleAcceptTask(task)">立即接取</el-button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 信用评价体系 -->
-      <section class="credit-section">
-        <div class="section-header">
-          <h2 class="section-title">信用评价</h2>
-          <el-link type="primary" :underline="false" @click="goToRoute('/user/profile')">查看我的信用</el-link>
-        </div>
-        <div class="credit-card">
-          <div class="credit-left">
-            <div class="credit-profile">
-              <el-avatar :size="96" :src="getAvatarUrl(userStore.userInfo?.avatar)">
-                {{ userStore.nickname?.charAt(0) || 'U' }}
-              </el-avatar>
-              <h3>{{ userStore.nickname || userStore.email }}</h3>
-              <p>计算机科学与技术学院</p>
-              <div class="credit-rating">
-                <el-icon v-for="i in 5" :key="i" :class="{ 'star-filled': i <= 4 }"><Star /></el-icon>
-              </div>
-              <div class="credit-score">
-                <span class="score-value">{{ userStore.userInfo?.creditScore || 92 }}</span>
-                <span class="score-label">信用分</span>
-              </div>
-              <el-tag type="success" size="small">优秀信用用户</el-tag>
-            </div>
-          </div>
-          <div class="credit-right">
-            <h3 class="credit-subtitle">信用评分详情</h3>
-            <div class="credit-metrics">
-              <div v-for="metric in creditMetrics" :key="metric.name" class="metric-item">
-                <div class="metric-header">
-                  <span>{{ metric.name }}</span>
-                  <span>{{ metric.value }}%</span>
-                </div>
-                <el-progress :percentage="metric.value" :color="metric.color" />
-              </div>
-            </div>
-            <h3 class="credit-subtitle">信用记录</h3>
-            <div class="credit-records">
-              <div v-for="record in creditRecords" :key="record.id" class="credit-record">
-                <div class="record-icon" :class="record.type">
-                  <el-icon><component :is="record.icon" /></el-icon>
-                </div>
-                <div class="record-content">
-                  <div class="record-header">
-                    <span>{{ record.title }}</span>
-                    <span>{{ record.date }}</span>
-                  </div>
-                  <p>{{ record.desc }}</p>
-                </div>
-                <div class="record-score" :class="record.scoreType">
-                  {{ record.score > 0 ? '+' : '' }}{{ record.score }}分
                 </div>
               </div>
             </div>
@@ -523,8 +469,7 @@ const unreadCount = ref(3)
 const notifications = ref([
   { id: 1, title: '您的闲置商品有新的询价', description: 'iPhone 13 128GB 午夜色 9成新', time: '10分钟前', read: false, type: 'blue', icon: ChatDotRound },
   { id: 2, title: '您的跑腿任务已被接取', description: '取快递 - 顺丰快递', time: '30分钟前', read: false, type: 'green', icon: Check },
-  { id: 3, title: '您收到了新的评价', description: '任务：取快递 - 顺丰快递', time: '2小时前', read: false, type: 'orange', icon: Star },
-  { id: 4, title: '您的信用评分提升了', description: '当前信用分：92，较上周提升3分', time: '昨天', read: true, type: 'blue', icon: TrendChartsIcon }
+  { id: 3, title: '您收到了新的评价', description: '任务：取快递 - 顺丰快递', time: '2小时前', read: false, type: 'orange', icon: Star }
 ])
 const isMobile = ref(false)
 
@@ -575,9 +520,9 @@ const taskCategories = ref([
   { id: 'other', name: '其他' }
 ])
 const taskList = ref([
-  { id: 1, title: '取快递 - 顺丰快递', description: '快递单号：SF1234567890，放在南门快递点', route: '南门快递点 → 东区宿舍', deadline: '2025-07-20 18:00前', reward: 10, icon: ShoppingCart, colorClass: 'icon-orange', userAvatar: '', userName: '周同学', rating: 5 },
-  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: ForkSpoonIcon, colorClass: 'icon-orange', userAvatar: '', userName: '吴同学', rating: 4 },
-  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: Document, colorClass: 'icon-orange', userAvatar: '', userName: '郑同学', rating: 4 }
+  { id: 1, title: '取快递 - 顺丰快递', description: '快递单号：SF1234567890，放在南门快递点', route: '南门快递点 → 东区宿舍', deadline: '2025-07-20 18:00前', reward: 10, icon: ShoppingCart, colorClass: 'icon-orange', userAvatar: '', userName: '周同学' },
+  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: ForkSpoonIcon, colorClass: 'icon-orange', userAvatar: '', userName: '吴同学' },
+  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: Document, colorClass: 'icon-orange', userAvatar: '', userName: '郑同学' }
 ])
 const taskForm = ref({
   type: '',
@@ -587,20 +532,6 @@ const taskForm = ref({
   endLocation: '',
   deadline: null
 })
-
-// 信用评价
-const creditMetrics = ref([
-  { name: '交易完成率', value: 98, color: 'var(--color-success)' },
-  { name: '响应速度', value: 90, color: 'var(--color-primary)' },
-  { name: '服务质量', value: 95, color: '#9c27b0' },
-  { name: '用户评价', value: 88, color: 'var(--color-secondary)' }
-])
-const creditRecords = ref([
-  { id: 1, title: '成功完成闲置交易', date: '2025-07-18', desc: '交易物品：MacBook Pro 2020款', score: 2, type: 'green', icon: Check, scoreType: 'score-positive' },
-  { id: 2, title: '成功完成跑腿任务', date: '2025-07-15', desc: '任务内容：取快递', score: 1, type: 'green', icon: Check, scoreType: 'score-positive' },
-  { id: 3, title: '失物招领信息真实有效', date: '2025-07-10', desc: '招领物品：校园卡', score: 2, type: 'green', icon: Check, scoreType: 'score-positive' },
-  { id: 4, title: '任务超时未完成', date: '2025-06-20', desc: '任务内容：买饭', score: -3, type: 'red', icon: Close, scoreType: 'score-negative' }
-])
 
 // 统计数据
 const statsPeriod = ref('7days')
@@ -1377,6 +1308,9 @@ onUnmounted(() => {
   border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .lost-found-card:hover,
@@ -1391,6 +1325,7 @@ onUnmounted(() => {
   width: 100%;
   height: 200px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .card-image {
@@ -1424,6 +1359,9 @@ onUnmounted(() => {
 
 .card-content {
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .card-title {
@@ -1431,6 +1369,14 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--color-text-primary);
   margin: 0 0 var(--spacing-sm) 0;
+  line-height: 1.5;
+  min-height: 48px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-desc {
@@ -1460,6 +1406,7 @@ onUnmounted(() => {
   align-items: center;
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border-light);
+  margin-top: auto;
 }
 
 .card-user {
@@ -1636,9 +1583,21 @@ onUnmounted(() => {
 
 .goods-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .goods-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .goods-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* 价格协商 */
@@ -1811,21 +1770,6 @@ onUnmounted(() => {
   color: var(--color-text-regular);
 }
 
-.task-rating {
-  display: flex;
-  gap: 2px;
-  margin-left: 8px;
-}
-
-.task-rating .el-icon {
-  font-size: 12px;
-  color: var(--color-border);
-}
-
-.task-rating .star-filled {
-  color: var(--color-warning);
-}
-
 .task-actions {
   display: flex;
   gap: 8px;
@@ -1865,171 +1809,6 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* 信用评价体系 */
-.credit-section {
-  margin-bottom: 48px;
-}
-
-.credit-card {
-  background-color: var(--color-bg-white);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-3xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  display: flex;
-  gap: var(--spacing-3xl);
-}
-
-.credit-left {
-  width: 33.33%;
-  border-right: 1px solid var(--color-border);
-  padding-right: var(--spacing-3xl);
-}
-
-.credit-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.credit-profile h3 {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--color-text-primary);
-  margin: var(--spacing-lg) 0 var(--spacing-xs) 0;
-}
-
-.credit-profile p {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.credit-rating {
-  display: flex;
-  gap: 4px;
-  margin: 12px 0;
-}
-
-.credit-rating .el-icon {
-  font-size: 20px;
-  color: var(--color-border);
-}
-
-.credit-rating .star-filled {
-  color: var(--color-warning);
-}
-
-.credit-score {
-  margin: var(--spacing-md) 0;
-}
-
-.score-value {
-  font-size: 32px;
-  font-weight: bold;
-  color: var(--color-primary);
-}
-
-.score-label {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin-left: var(--spacing-xs);
-}
-
-.credit-right {
-  flex: 1;
-}
-
-.credit-subtitle {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-lg) 0;
-}
-
-.credit-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-bottom: 32px;
-}
-
-.metric-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.metric-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  color: var(--color-text-regular);
-}
-
-.credit-records {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.credit-record {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.record-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.record-icon.green {
-  background-color: rgba(76, 175, 80, 0.1);
-  color: var(--color-success);
-}
-
-.record-icon.red {
-  background-color: rgba(244, 67, 54, 0.1);
-  color: var(--color-danger);
-}
-
-.record-content {
-  flex: 1;
-}
-
-.record-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.record-content p {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-.record-score {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.record-score.score-positive {
-  color: var(--color-success);
-}
-
-.record-score.score-negative {
-  color: var(--color-danger);
-}
 
 /* 数据统计分析 */
 .stats-section {
@@ -2422,25 +2201,11 @@ onUnmounted(() => {
     font-size: 13px;
   }
   
-  .card-grid,
-  .goods-grid {
+  .card-grid {
     grid-template-columns: 1fr;
   }
   
-  .credit-card {
-    flex-direction: column;
-  }
-  
-  .credit-left {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    padding-right: 0;
-    padding-bottom: var(--spacing-2xl);
-    margin-bottom: var(--spacing-2xl);
-  }
-  
-  .credit-metrics {
+  .goods-grid {
     grid-template-columns: 1fr;
   }
   

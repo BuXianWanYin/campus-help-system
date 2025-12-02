@@ -494,12 +494,12 @@ const goToLogin = () => {
 }
 
 .link-text {
-  color: #769fcd;
+  color: #409eff;
   font-weight: 500;
 }
 
 .form-footer .el-link:hover .link-text {
-  color: #b9d7ea;
+  color: #66b1ff;
 }
 
 /* 响应式设计 */

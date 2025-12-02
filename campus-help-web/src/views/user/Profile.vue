@@ -47,17 +47,6 @@
               >
                 前往实名认证
               </el-button>
-
-              <div class="credit-info">
-                <div class="credit-label">信用积分</div>
-                <div class="credit-score">
-                  <span class="score-value">{{ userInfo.creditScore || 0 }}</span>
-                  <span class="score-label">分</span>
-                </div>
-                <el-tag :type="getCreditLevelType(userInfo.creditLevel)" size="small">
-                  {{ userInfo.creditLevel || '暂无等级' }}
-                </el-tag>
-              </div>
             </div>
           </div>
         </el-col>
@@ -161,18 +150,6 @@
 
                     <div class="info-item">
                       <div class="info-label">
-                        <el-icon><TrendCharts /></el-icon>
-                        <span>信用积分</span>
-                      </div>
-                      <div class="info-value">
-                        <el-tag :type="getCreditLevelType(userInfo.creditLevel)" size="large">
-                          {{ userInfo.creditScore }}分 - {{ userInfo.creditLevel }}
-                        </el-tag>
-                      </div>
-                    </div>
-
-                    <div class="info-item">
-                      <div class="info-label">
                         <el-icon><CircleCheck /></el-icon>
                         <span>账户状态</span>
                       </div>
@@ -198,7 +175,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
-  Camera, User, Check, Warning, Star, Document, TrendCharts, 
+  Camera, User, Check, Warning, Star, Document, 
   Message, Clock, Timer, CircleCheck, Calendar, Reading, RefreshLeft 
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -344,18 +321,6 @@ const formatDate = (date) => {
   return new Date(date).toLocaleString('zh-CN')
 }
 
-// 获取信用等级类型
-const getCreditLevelType = (level) => {
-  const levelMap = {
-    '优秀': 'success',
-    '良好': 'primary',
-    '一般': 'info',
-    '较差': 'warning',
-    '差': 'danger'
-  }
-  return levelMap[level] || 'info'
-}
-
 // 前往实名认证页面
 const goToVerification = () => {
   router.push('/user/verification')
@@ -450,36 +415,6 @@ onMounted(() => {
   gap: var(--spacing-sm);
   flex-wrap: wrap;
   margin-bottom: var(--spacing-lg);
-}
-
-/* 信用积分 */
-.credit-info {
-  margin-top: var(--spacing-2xl);
-  padding-top: var(--spacing-2xl);
-  border-top: 1px solid var(--color-border);
-}
-
-.credit-label {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-md);
-}
-
-.credit-score {
-  margin-bottom: var(--spacing-md);
-}
-
-.score-value {
-  font-size: 32px;
-  font-weight: bold;
-  color: var(--color-primary);
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin-left: var(--spacing-xs);
 }
 
 /* 信息标签页卡片 */
@@ -649,10 +584,6 @@ onMounted(() => {
 
   .user-name {
     font-size: 20px;
-  }
-
-  .score-value {
-    font-size: 40px;
   }
 
   .profile-form {

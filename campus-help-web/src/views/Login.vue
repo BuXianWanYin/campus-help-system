@@ -442,11 +442,11 @@ const goToForgotPassword = () => {
 
 .toggle-link {
   font-size: 14px;
-  color: #769fcd;
+  color: #409eff;
 }
 
 .toggle-link:hover {
-  color: #b9d7ea;
+  color: #66b1ff;
 }
 
 .form-footer {
@@ -457,12 +457,12 @@ const goToForgotPassword = () => {
 }
 
 .link-text {
-  color: #769fcd;
+  color: #409eff;
   font-weight: 500;
 }
 
 .form-footer .el-link:hover .link-text {
-  color: #b9d7ea;
+  color: #66b1ff;
 }
 
 /* 响应式设计 */

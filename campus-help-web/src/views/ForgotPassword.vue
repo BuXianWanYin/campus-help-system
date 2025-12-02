@@ -36,7 +36,7 @@
     <div class="forgot-password-right">
       <div class="forgot-password-form-wrapper">
         <h2>重置密码</h2>
-        <p class="form-desc">请输入您的邮箱，我们将发送验证码到您的邮箱</p>
+        <p class="form-desc">请填写以下信息完成密码重置</p>
         
         <el-form
           ref="forgotPasswordFormRef"
@@ -56,7 +56,7 @@
             </el-input>
           </el-form-item>
           
-          <el-form-item prop="code" v-if="step === 2">
+          <el-form-item prop="code">
             <el-input
               v-model="forgotPasswordForm.code"
               placeholder="请输入验证码"
@@ -77,7 +77,7 @@
             </el-input>
           </el-form-item>
           
-          <el-form-item prop="newPassword" v-if="step === 2">
+          <el-form-item prop="newPassword">
             <el-input
               v-model="forgotPasswordForm.newPassword"
               type="password"
@@ -91,7 +91,7 @@
             </el-input>
           </el-form-item>
           
-          <el-form-item prop="confirmPassword" v-if="step === 2">
+          <el-form-item prop="confirmPassword">
             <el-input
               v-model="forgotPasswordForm.confirmPassword"
               type="password"
@@ -113,14 +113,16 @@
               @click="handleForgotPassword"
               style="width: 100%"
             >
-              {{ step === 1 ? '发送验证码' : '重置密码' }}
+              重置密码
             </el-button>
           </el-form-item>
           
           <div class="form-footer">
             <el-link
               type="primary"
+              :underline="false"
               @click="goToLogin"
+              class="back-login-link"
             >
               返回登录
             </el-link>
@@ -142,7 +144,6 @@ import appConfig from '@/config'
 const router = useRouter()
 const route = useRoute()
 
-const step = ref(1) // 1: 输入邮箱, 2: 输入验证码和新密码
 const forgotPasswordLoading = ref(false)
 const codeCountdown = ref(0)
 const codeSending = ref(false)
@@ -236,46 +237,37 @@ const startCountdown = (seconds) => {
 const handleForgotPassword = async () => {
   if (!forgotPasswordFormRef.value) return
   
-  if (step.value === 1) {
-    // 第一步：验证邮箱并发送验证码
-    await forgotPasswordFormRef.value.validateField('email', async (valid) => {
-      if (valid) {
-        // 检查邮箱是否已注册
-        try {
-          const response = await authApi.checkEmail(forgotPasswordForm.email)
-          if (response.data === false) {
-            ElMessage.warning('该邮箱未注册，请先注册')
-            return
-          }
-          // 发送验证码
-          await sendResetCode()
-          step.value = 2
-        } catch (error) {
-          ElMessage.error(error.message || '检查邮箱失败')
+  await forgotPasswordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      // 检查邮箱是否已注册
+      try {
+        const response = await authApi.checkEmail(forgotPasswordForm.email)
+        if (response.data === false) {
+          ElMessage.warning('该邮箱未注册，请先注册')
+          return
         }
+      } catch (error) {
+        ElMessage.error(error.message || '检查邮箱失败')
+        return
       }
-    })
-  } else {
-    // 第二步：重置密码
-    await forgotPasswordFormRef.value.validate(async (valid) => {
-      if (valid) {
-        forgotPasswordLoading.value = true
-        try {
-          await authApi.resetPassword(
-            forgotPasswordForm.email,
-            forgotPasswordForm.code,
-            forgotPasswordForm.newPassword
-          )
-          ElMessage.success('密码重置成功，请使用新密码登录')
-          router.push({ path: '/login', query: { email: forgotPasswordForm.email } })
-        } catch (error) {
-          ElMessage.error(error.message || '重置密码失败')
-        } finally {
-          forgotPasswordLoading.value = false
-        }
+      
+      // 重置密码
+      forgotPasswordLoading.value = true
+      try {
+        await authApi.resetPassword(
+          forgotPasswordForm.email,
+          forgotPasswordForm.code,
+          forgotPasswordForm.newPassword
+        )
+        ElMessage.success('密码重置成功，请使用新密码登录')
+        router.push({ path: '/login', query: { email: forgotPasswordForm.email } })
+      } catch (error) {
+        ElMessage.error(error.message || '重置密码失败')
+      } finally {
+        forgotPasswordLoading.value = false
       }
-    })
-  }
+    }
+  })
 }
 
 // 跳转到登录页
@@ -431,8 +423,13 @@ onUnmounted(() => {
   margin-top: 20px;
 }
 
-.toggle-link {
+.back-login-link {
   font-size: 14px;
+  color: #409eff;
+}
+
+.back-login-link:hover {
+  color: #66b1ff;
 }
 
 /* 响应式设计 */
