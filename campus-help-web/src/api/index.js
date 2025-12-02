@@ -52,6 +52,16 @@ export const userApi = {
   // 根据ID获取用户信息（管理员）
   getUserById(id) {
     return request.get(`/api/user/${id}`)
+  },
+  
+  // 提交实名认证
+  submitVerification(data) {
+    return request.post('/api/user/verification/submit', data)
+  },
+  
+  // 审核实名认证（管理员）
+  auditVerification(data) {
+    return request.post('/api/user/verification/audit', data)
   }
 }
 

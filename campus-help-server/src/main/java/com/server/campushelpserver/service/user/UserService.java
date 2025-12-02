@@ -56,5 +56,24 @@ public interface UserService extends IService<User> {
     com.baomidou.mybatisplus.extension.plugins.pagination.Page<User> getUserPage(
             com.baomidou.mybatisplus.extension.plugins.pagination.Page<User> page,
             String email, String nickname, String role, Integer status);
+    
+    /**
+     * 提交实名认证
+     * @param userId 用户ID
+     * @param realName 真实姓名
+     * @param idCard 身份证号
+     * @param studentId 学号
+     * @return 更新后的用户信息
+     */
+    User submitVerification(Long userId, String realName, String idCard, String studentId);
+    
+    /**
+     * 审核实名认证（管理员）
+     * @param userId 用户ID
+     * @param auditResult 审核结果：1-通过，0-拒绝
+     * @param auditReason 审核原因
+     * @return 更新后的用户信息
+     */
+    User auditVerification(Long userId, Integer auditResult, String auditReason);
 }
 

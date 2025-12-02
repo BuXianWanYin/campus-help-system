@@ -37,6 +37,15 @@ const routes = [
           title: '个人中心',
           requiresAuth: true
         }
+      },
+      {
+        path: 'user/verification',
+        name: 'UserVerification',
+        component: () => import('../views/user/Verification.vue'),
+        meta: {
+          title: '实名认证',
+          requiresAuth: true
+        }
       }
     ]
   }

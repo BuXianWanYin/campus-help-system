@@ -173,5 +173,106 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         return this.page(page, wrapper);
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public User submitVerification(Long userId, String realName, String idCard, String studentId) {
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 检查是否已经认证
+        if (user.getIsVerified() != null && user.getIsVerified() == 1) {
+            throw new BusinessException("您已完成实名认证，无需重复提交");
+        }
+        
+        // 检查身份证号是否已被使用
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getIdCard, idCard);
+        wrapper.eq(User::getDeleteFlag, 0);
+        wrapper.ne(User::getId, userId);
+        User existingUser = this.getOne(wrapper);
+        if (existingUser != null) {
+            throw new BusinessException("该身份证号已被其他用户使用");
+        }
+        
+        // 检查学号是否已被使用
+        wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getStudentId, studentId);
+        wrapper.eq(User::getDeleteFlag, 0);
+        wrapper.ne(User::getId, userId);
+        existingUser = this.getOne(wrapper);
+        if (existingUser != null) {
+            throw new BusinessException("该学号已被其他用户使用");
+        }
+        
+        // 更新用户信息（提交认证信息，等待审核）
+        user.setRealName(realName);
+        user.setIdCard(idCard);
+        user.setStudentId(studentId);
+        // is_verified 保持为 0，等待管理员审核
+        
+        this.updateById(user);
+        return user;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public User auditVerification(Long userId, Integer auditResult, String auditReason) {
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 检查是否已经认证
+        if (user.getIsVerified() != null && user.getIsVerified() == 1) {
+            throw new BusinessException("该用户已完成实名认证，无需重复审核");
+        }
+        
+        if (auditResult == 1) {
+            // 审核通过
+            user.setIsVerified(1);
+            // 实名认证后自动获得接单权限
+            user.setCanAcceptTask(1);
+            // 认证通过，信用积分+10
+            if (user.getCreditScore() == null) {
+                user.setCreditScore(100);
+            }
+            user.setCreditScore(user.getCreditScore() + 10);
+            // 更新信用等级
+            updateCreditLevel(user);
+        } else {
+            // 审核拒绝
+            if (!StringUtils.hasText(auditReason)) {
+                throw new BusinessException("拒绝审核必须填写审核原因");
+            }
+            // 拒绝后清空认证信息，用户可以重新提交
+            user.setRealName(null);
+            user.setIdCard(null);
+            user.setStudentId(null);
+        }
+        
+        this.updateById(user);
+        return user;
+    }
+    
+    /**
+     * 更新信用等级
+     */
+    private void updateCreditLevel(User user) {
+        int score = user.getCreditScore() != null ? user.getCreditScore() : 100;
+        if (score >= 90) {
+            user.setCreditLevel("优秀");
+        } else if (score >= 80) {
+            user.setCreditLevel("良好");
+        } else if (score >= 70) {
+            user.setCreditLevel("一般");
+        } else if (score >= 60) {
+            user.setCreditLevel("较差");
+        } else {
+            user.setCreditLevel("差");
+        }
+    }
 }
 

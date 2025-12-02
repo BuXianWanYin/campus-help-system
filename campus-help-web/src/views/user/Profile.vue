@@ -33,9 +33,20 @@
             <div class="user-basic-info">
               <h3>{{ userInfo.nickname || '未设置昵称' }}</h3>
               <p class="email">{{ userInfo.email }}</p>
-              <el-tag v-if="userInfo.isVerified === 1" type="success" size="small">已认证</el-tag>
-              <el-tag v-else type="info" size="small">未认证</el-tag>
-              <el-tag v-if="userInfo.role === 'ADMIN'" type="warning" size="small" style="margin-left: 8px;">管理员</el-tag>
+              <div class="tags">
+                <el-tag v-if="userInfo.isVerified === 1" type="success" size="small">已认证</el-tag>
+                <el-tag v-else type="info" size="small">未认证</el-tag>
+                <el-tag v-if="userInfo.role === 'ADMIN'" type="warning" size="small" style="margin-left: 8px;">管理员</el-tag>
+              </div>
+              <el-button
+                v-if="userInfo.isVerified !== 1"
+                type="primary"
+                size="small"
+                style="margin-top: 12px;"
+                @click="goToVerification"
+              >
+                前往实名认证
+              </el-button>
             </div>
           </div>
         </el-col>
@@ -100,12 +111,14 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Camera } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api'
 import { getToken } from '@/utils/auth'
 
+const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const activeTab = ref('basic')
@@ -234,6 +247,11 @@ const getCreditLevelType = (level) => {
   return levelMap[level] || 'info'
 }
 
+// 前往实名认证页面
+const goToVerification = () => {
+  router.push('/user/verification')
+}
+
 onMounted(() => {
   fetchUserInfo()
 })
@@ -280,6 +298,10 @@ onMounted(() => {
   margin: 8px 0 12px;
   color: #909399;
   font-size: 14px;
+}
+
+.user-basic-info .tags {
+  margin-bottom: 8px;
 }
 </style>
 

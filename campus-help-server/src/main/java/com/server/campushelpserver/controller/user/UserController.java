@@ -2,6 +2,8 @@ package com.server.campushelpserver.controller.user;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.campushelpserver.common.Result;
+import com.server.campushelpserver.dto.user.VerificationAuditRequest;
+import com.server.campushelpserver.dto.user.VerificationRequest;
 import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.service.user.UserService;
 import com.server.campushelpserver.util.SecurityUtils;
@@ -76,6 +78,39 @@ public class UserController {
         // 清除敏感信息
         user.setPassword(null);
         return Result.success("查询成功", user);
+    }
+    
+    @Operation(summary = "提交实名认证", description = "用户提交实名认证信息")
+    @PostMapping("/verification/submit")
+    public Result<User> submitVerification(@Parameter(description = "认证信息") @Validated @RequestBody VerificationRequest request) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return Result.error("未登录");
+        }
+        User currentUser = userService.getUserByEmail(email);
+        if (currentUser == null) {
+            return Result.error("用户不存在");
+        }
+        User updatedUser = userService.submitVerification(
+            currentUser.getId(),
+            request.getRealName(),
+            request.getIdCard(),
+            request.getStudentId()
+        );
+        return Result.success("认证信息提交成功，请等待管理员审核", updatedUser);
+    }
+    
+    @Operation(summary = "审核实名认证", description = "管理员审核用户实名认证")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("/verification/audit")
+    public Result<User> auditVerification(@Parameter(description = "审核信息") @Validated @RequestBody VerificationAuditRequest request) {
+        User updatedUser = userService.auditVerification(
+            request.getUserId(),
+            request.getAuditResult(),
+            request.getAuditReason()
+        );
+        String message = request.getAuditResult() == 1 ? "审核通过" : "审核拒绝";
+        return Result.success(message, updatedUser);
     }
 }
 
