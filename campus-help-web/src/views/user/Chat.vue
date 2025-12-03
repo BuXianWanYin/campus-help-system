@@ -115,7 +115,15 @@
             </div>
           </div>
           <div class="input-wrapper">
-            <div class="input-toolbar">
+            <textarea
+              v-model="inputMessage"
+              class="chat-textarea"
+              :placeholder="inputMessage.trim() === '' ? '输入消息... (Shift+Enter换行, Enter发送)' : ''"
+              :maxlength="500"
+              @keydown="handleKeydown"
+              @input="handleInput"
+            ></textarea>
+            <div class="input-actions">
               <el-upload
                 :action="''"
                 :auto-upload="false"
@@ -124,26 +132,16 @@
                 accept="image/*"
                 :multiple="true"
               >
-                <el-button text type="primary" class="image-upload-btn">
-                  <el-icon><Picture /></el-icon>
-                </el-button>
+                <el-icon class="input-icon image-icon"><Picture /></el-icon>
               </el-upload>
+              <el-icon 
+                class="input-icon send-icon" 
+                :class="{ 'send-disabled': !canSend }"
+                @click="handleSendMessage"
+              >
+                <Promotion />
+              </el-icon>
             </div>
-            <el-input
-              v-model="inputMessage"
-              type="textarea"
-              :rows="3"
-              :maxlength="500"
-              placeholder="输入消息...（Ctrl+Enter 发送）"
-              show-word-limit
-              @keydown.ctrl.enter="handleSendMessage"
-              @keydown.enter.exact.prevent="handleSendMessage"
-            />
-          </div>
-          <div class="input-actions">
-            <el-button type="primary" @click="handleSendMessage" :loading="sending">
-              发送
-            </el-button>
           </div>
         </div>
       </div>
@@ -155,7 +153,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Picture, Close } from '@element-plus/icons-vue'
+import { Picture, Close, Promotion } from '@element-plus/icons-vue'
 import { chatApi, fileApi, messageApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
@@ -396,6 +394,34 @@ const removeImage = (index) => {
   selectedImages.value.splice(index, 1)
 }
 
+// 判断是否可以发送
+const canSend = computed(() => {
+  return inputMessage.value.trim().length > 0 || selectedImages.value.length > 0
+})
+
+// 处理键盘事件
+const handleKeydown = (event) => {
+  // Shift+Enter: 换行
+  if (event.shiftKey && event.key === 'Enter') {
+    return // 允许默认行为（换行）
+  }
+  // Enter: 发送消息
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    if (canSend.value) {
+      handleSendMessage()
+    }
+  }
+}
+
+// 处理输入事件
+const handleInput = (event) => {
+  // 自动调整高度
+  const textarea = event.target
+  textarea.style.height = 'auto'
+  textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'
+}
+
 // 上传图片并获取URL
 const uploadImages = async () => {
   const uploadedUrls = []
@@ -426,7 +452,6 @@ const handleSendMessage = async () => {
   const hasImages = selectedImages.value.length > 0
   
   if (!hasText && !hasImages) {
-    ElMessage.warning('请输入消息内容或选择图片')
     return
   }
   
@@ -918,12 +943,15 @@ onUnmounted(() => {
 }
 
 .bubble-received {
-  background-color: var(--color-bg-secondary);
+  background-color: #f0f0f0;
   color: var(--color-text-primary);
+  border: 1px solid #e0e0e0;
 }
 
 .message-text {
   line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .message-images {
@@ -994,21 +1022,83 @@ onUnmounted(() => {
 }
 
 .input-wrapper {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: flex-end;
+  background-color: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-height: 40px;
 }
 
-.input-toolbar {
+.chat-textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 0;
+  padding-right: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background: transparent;
+}
+
+.chat-textarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.chat-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-textarea::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.chat-textarea::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+.input-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 4px 0;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.image-upload-btn {
-  padding: 4px 8px;
-  font-size: 18px;
+.input-icon {
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.input-icon:hover {
+  color: var(--color-primary);
+}
+
+.send-icon {
+  color: var(--color-primary);
+}
+
+.send-icon.send-disabled {
+  color: var(--color-text-placeholder);
+  cursor: not-allowed;
+}
+
+.send-icon.send-disabled:hover {
+  color: var(--color-text-placeholder);
 }
 
 .image-preview-list {
@@ -1052,17 +1142,5 @@ onUnmounted(() => {
   background-color: rgba(0, 0, 0, 0.7);
 }
 
-.input-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  gap: 8px;
-}
-
-.input-tip {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
 </style>
 

@@ -4,12 +4,6 @@
     <header class="main-header">
       <div class="header-container">
         <div class="header-left">
-          <div class="logo-wrapper">
-            <div class="logo-icon">
-              <el-icon :size="32"><Box /></el-icon>
-            </div>
-            <h1 class="logo-text">{{ appConfig.title || '校园帮系统' }}</h1>
-          </div>
         </div>
         
         <div class="header-center">

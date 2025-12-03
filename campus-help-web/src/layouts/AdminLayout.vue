@@ -4,12 +4,6 @@
     <header class="admin-header">
       <div class="header-container">
         <div class="header-left">
-          <div class="logo-wrapper">
-            <div class="logo-icon">
-              <el-icon :size="20"><Tools /></el-icon>
-            </div>
-            <h1 class="logo-text">校园帮管理后台</h1>
-          </div>
         </div>
         
         <div class="header-right">
