@@ -105,6 +105,34 @@ export const lostFoundApi = {
    */
   close(id) {
     return request.post(`/lost-found/${id}/close`)
+  },
+
+  /**
+   * 获取我的申请
+   * @param {Number} id 失物ID
+   * @returns {Promise} 认领记录
+   */
+  getMyClaim(id) {
+    return request.get(`/lost-found/${id}/my-claim`)
+  },
+
+  /**
+   * 更新认领申请
+   * @param {Number} claimRecordId 认领记录ID
+   * @param {Object} data 认领信息
+   * @returns {Promise} 更新结果
+   */
+  updateClaim(claimRecordId, data) {
+    return request.put(`/lost-found/claim/${claimRecordId}`, data)
+  },
+
+  /**
+   * 删除认领申请
+   * @param {Number} claimRecordId 认领记录ID
+   * @returns {Promise} 删除结果
+   */
+  deleteClaim(claimRecordId) {
+    return request.delete(`/lost-found/claim/${claimRecordId}`)
   }
 }
 

@@ -97,13 +97,85 @@
             <el-button v-if="!isPublisher" type="primary" @click="handleContact">联系TA</el-button>
           </div>
           
-          <!-- 认领按钮（仅非发布者可见） -->
-          <div v-if="!isPublisher && (lostFound.status === 'PENDING_CLAIM' || lostFound.status === 'CLAIMING')" class="action-section">
+          <!-- 认领按钮（仅非发布者可见，且未提交申请） -->
+          <div v-if="!isPublisher && !myClaimRecord && (lostFound.status === 'PENDING_CLAIM' || lostFound.status === 'CLAIMING')" class="action-section">
             <el-button type="primary" size="large" @click="showClaimDialog = true">
               {{ lostFound.type === 'LOST' ? '我捡到了' : '这是我的' }}
             </el-button>
             <div class="action-tip" v-if="lostFound.type === 'LOST'">
               如果您捡到了这个物品或能提供相关线索，请点击按钮提交申请
+            </div>
+          </div>
+          
+          <!-- 我的申请（仅非发布者可见，且已提交申请） -->
+          <div v-if="!isPublisher" class="my-claim-section" v-loading="myClaimLoading">
+            <div v-if="myClaimRecord" class="claim-records-section">
+              <h3 class="section-title">我的申请</h3>
+              <div class="claim-record-item">
+                <div class="claim-header">
+                  <div class="claim-user-info">
+                    <el-avatar :size="32" :src="getAvatarUrl(myClaimRecord.user?.avatar)">
+                      {{ myClaimRecord.user?.nickname?.charAt(0) || 'U' }}
+                    </el-avatar>
+                    <div class="claim-user-details">
+                      <div class="claim-user-name">{{ myClaimRecord.user?.nickname || '我' }}</div>
+                      <div class="claim-time">{{ formatDateTime(myClaimRecord.createTime) }}</div>
+                    </div>
+                  </div>
+                  <div class="claim-status">
+                    <el-tag v-if="myClaimRecord.status === 'PENDING'" type="warning">待处理</el-tag>
+                    <el-tag v-else-if="myClaimRecord.status === 'CONFIRMED'" type="success">已确认</el-tag>
+                    <el-tag v-else-if="myClaimRecord.status === 'REJECTED'" type="danger">已拒绝</el-tag>
+                  </div>
+                </div>
+                <div class="claim-content">
+                  <div class="claim-desc">
+                    <strong>{{ lostFound.type === 'LOST' ? '拾取信息：' : '物品特征：' }}</strong>{{ myClaimRecord.description }}
+                  </div>
+                  <div v-if="myClaimRecord.lostTime" class="claim-meta">
+                    <el-icon><Clock /></el-icon>
+                    <span>{{ lostFound.type === 'LOST' ? '拾取时间：' : '丢失时间：' }}{{ formatDateTime(myClaimRecord.lostTime) }}</span>
+                  </div>
+                  <div v-if="myClaimRecord.otherInfo" class="claim-meta">
+                    <span>其他信息：{{ myClaimRecord.otherInfo }}</span>
+                  </div>
+                  <div v-if="myClaimRecord.proofImages && parseImages(myClaimRecord.proofImages).length > 0" class="claim-proof">
+                    <strong>证明文件：</strong>
+                    <div class="proof-images">
+                      <div
+                        v-for="(img, index) in parseImages(myClaimRecord.proofImages)"
+                        :key="index"
+                        class="proof-image-wrapper"
+                      >
+                        <el-image
+                          v-if="!isBlobUrl(img)"
+                          :src="getAvatarUrl(img)"
+                          :preview-src-list="parseImages(myClaimRecord.proofImages).filter(i => !isBlobUrl(i)).map(i => getAvatarUrl(i))"
+                          fit="cover"
+                          class="proof-image"
+                          preview-teleported
+                        >
+                          <template #error>
+                            <div class="image-error">图片加载失败</div>
+                          </template>
+                        </el-image>
+                        <div v-else class="image-error">图片已失效（请重新提交）</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="myClaimRecord.status === 'REJECTED' && myClaimRecord.rejectReason" class="claim-reject-reason">
+                    <strong>拒绝原因：</strong>{{ myClaimRecord.rejectReason }}
+                  </div>
+                </div>
+                <div v-if="myClaimRecord.status === 'PENDING'" class="claim-actions">
+                  <el-button type="primary" size="small" @click="openEditClaimDialog">
+                    编辑
+                  </el-button>
+                  <el-button type="danger" size="small" @click="handleDeleteClaim">
+                    删除
+                  </el-button>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -159,26 +231,54 @@
                     <div v-if="record.proofImages && parseImages(record.proofImages).length > 0" class="claim-proof">
                       <strong>证明文件：</strong>
                       <div class="proof-images">
-                        <el-image
+                        <div
                           v-for="(img, index) in parseImages(record.proofImages)"
                           :key="index"
-                          :src="getAvatarUrl(img)"
-                          :preview-src-list="parseImages(record.proofImages).map(i => getAvatarUrl(i))"
-                          fit="cover"
-                          class="proof-image"
-                          preview-teleported
-                        />
+                          class="proof-image-wrapper"
+                        >
+                          <el-image
+                            v-if="!isBlobUrl(img)"
+                            :src="getAvatarUrl(img)"
+                            :preview-src-list="parseImages(record.proofImages).filter(i => !isBlobUrl(i)).map(i => getAvatarUrl(i))"
+                            fit="cover"
+                            class="proof-image"
+                            preview-teleported
+                          >
+                            <template #error>
+                              <div class="image-error">图片加载失败</div>
+                            </template>
+                          </el-image>
+                          <div v-else class="image-error">图片已失效（请重新提交）</div>
+                        </div>
                       </div>
                     </div>
                     <div v-if="record.status === 'REJECTED' && record.rejectReason" class="claim-reject-reason">
                       <strong>拒绝原因：</strong>{{ record.rejectReason }}
                     </div>
                   </div>
-                  <div v-if="record.status === 'PENDING'" class="claim-actions">
-                    <el-button type="success" size="small" @click="handleConfirmClaim(record.id)">
+                  <div class="claim-actions">
+                    <el-button 
+                      type="primary" 
+                      size="small" 
+                      :icon="Message"
+                      @click="handleContactClaimer(record)"
+                    >
+                      联系TA
+                    </el-button>
+                    <el-button 
+                      v-if="record.status === 'PENDING'" 
+                      type="success" 
+                      size="small" 
+                      @click="handleConfirmClaim(record.id)"
+                    >
                       确认认领
                     </el-button>
-                    <el-button type="danger" size="small" @click="handleRejectClaim(record.id)">
+                    <el-button 
+                      v-if="record.status === 'PENDING'" 
+                      type="danger" 
+                      size="small" 
+                      @click="handleRejectClaim(record.id)"
+                    >
                       拒绝
                     </el-button>
                   </div>
@@ -258,6 +358,67 @@
         <el-button type="primary" @click="handleSubmitClaim" :loading="claimLoading">提交</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 编辑申请对话框 -->
+    <el-dialog
+      v-model="showEditClaimDialog"
+      :title="lostFound?.type === 'LOST' ? '编辑申请' : '编辑认领申请'"
+      width="600px"
+      @close="resetEditClaimForm"
+    >
+      <el-form :model="editClaimForm" label-width="100px">
+        <el-form-item :label="lostFound?.type === 'LOST' ? '拾取信息' : '物品特征'" required>
+          <el-input
+            v-model="editClaimForm.description"
+            type="textarea"
+            :rows="4"
+            :placeholder="lostFound?.type === 'LOST' ? '请详细描述您在哪里捡到的、物品的状况等信息，以便发布者确认' : '请详细描述物品的特征，以便发布者确认'"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item :label="lostFound?.type === 'LOST' ? '拾取时间' : '丢失时间'">
+          <el-date-picker
+            v-model="editClaimForm.lostTime"
+            type="datetime"
+            :placeholder="lostFound?.type === 'LOST' ? '选择拾取时间' : '选择丢失时间'"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="其他信息">
+          <el-input
+            v-model="editClaimForm.otherInfo"
+            type="textarea"
+            :rows="3"
+            :placeholder="lostFound?.type === 'LOST' ? '其他相关信息，如联系方式、可以归还的时间和地点等' : '其他能够证明物品归属的信息'"
+            maxlength="300"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item :label="lostFound?.type === 'LOST' ? '物品照片' : '证明文件'">
+          <el-upload
+            v-model:file-list="editClaimForm.proofImages"
+            action="#"
+            list-type="picture-card"
+            :auto-upload="false"
+            :limit="5"
+            accept="image/*"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <div class="form-tip" v-if="lostFound?.type === 'LOST'">
+            请上传您捡到的物品照片，以便发布者确认
+          </div>
+          <div class="form-tip" v-else>
+            请上传能够证明物品归属的文件（可选）
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditClaimDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitEditClaim" :loading="editClaimLoading">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -266,7 +427,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Location, Clock, Folder, View, Plus, Message } from '@element-plus/icons-vue'
-import { lostFoundApi, chatApi } from '@/api'
+import { lostFoundApi, chatApi, fileApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
@@ -280,6 +441,10 @@ const showClaimDialog = ref(false)
 const claimLoading = ref(false)
 const claimRecords = ref([])
 const claimRecordsLoading = ref(false)
+const myClaimRecord = ref(null)
+const myClaimLoading = ref(false)
+const showEditClaimDialog = ref(false)
+const editClaimLoading = ref(false)
 
 // 判断是否为发布者
 const isPublisher = computed(() => {
@@ -336,6 +501,11 @@ const fetchDetail = async () => {
       if (lostFound.value && userStore.userInfo && lostFound.value.userId === userStore.userInfo.id) {
         fetchClaimRecords()
       }
+      
+      // 如果不是发布者，获取我的申请
+      if (lostFound.value && userStore.userInfo && lostFound.value.userId !== userStore.userInfo.id) {
+        fetchMyClaim()
+      }
     }
   } catch (error) {
     console.error('获取失物详情失败:', error)
@@ -381,6 +551,14 @@ const parseImages = (imagesJson) => {
 }
 
 /**
+ * 判断是否为blob URL
+ */
+const isBlobUrl = (url) => {
+  if (!url) return false
+  return url.startsWith('blob:')
+}
+
+/**
  * 格式化日期时间
  */
 const formatDateTime = (time) => {
@@ -395,7 +573,7 @@ const formatDateTime = (time) => {
 }
 
 /**
- * 处理联系
+ * 处理联系（联系发布者）
  */
 const handleContact = async () => {
   if (!lostFound.value.userId) {
@@ -413,9 +591,9 @@ const handleContact = async () => {
     
     if (response.code === 200) {
       const sessionId = response.data.sessionId
-      // 跳转到消息页面，并传递会话ID
+      // 跳转到聊天页面，并传递会话ID
       router.push({
-        path: '/user/messages',
+        path: '/user/chat',
         query: { sessionId }
       })
     } else {
@@ -425,6 +603,84 @@ const handleContact = async () => {
     console.error('联系TA失败:', error)
     ElMessage.error('联系TA失败，请稍后重试')
   }
+}
+
+/**
+ * 处理联系申请者（提供线索的人）
+ */
+const handleContactClaimer = async (record) => {
+  // 获取申请者用户ID，优先使用user.id，如果没有则使用claimerId
+  const claimerId = record.user?.id || record.claimerId
+  
+  if (!record || !claimerId) {
+    ElMessage.warning('用户信息不存在')
+    return
+  }
+  
+  try {
+    // 创建或获取会话
+    const response = await chatApi.createOrGetSession({
+      targetUserId: claimerId,
+      relatedType: 'LOST_FOUND',
+      relatedId: lostFound.value.id
+    })
+    
+    if (response.code === 200) {
+      const sessionId = response.data.sessionId
+      // 跳转到聊天页面，并传递会话ID
+      router.push({
+        path: '/user/chat',
+        query: { sessionId }
+      })
+    } else {
+      ElMessage.error(response.message || '创建会话失败')
+    }
+  } catch (error) {
+    console.error('联系TA失败:', error)
+    ElMessage.error('联系TA失败，请稍后重试')
+  }
+}
+
+/**
+ * 上传证明图片
+ */
+const uploadProofImages = async () => {
+  const uploadedUrls = []
+  
+  for (const file of claimForm.value.proofImages) {
+    if (file.raw) {
+      // 需要上传的新文件
+      try {
+        const response = await fileApi.upload(file.raw, 'lost-found')
+        if (response.code === 200) {
+          uploadedUrls.push(response.data.url || response.data)
+        } else {
+          throw new Error(response.message || '图片上传失败')
+        }
+      } catch (error) {
+        console.error('图片上传失败:', error)
+        throw new Error(`图片上传失败：${file.name}`)
+      }
+    } else if (file.url) {
+      // 检查是否是服务器URL（不是blob URL）
+      if (file.url.startsWith('http://') || file.url.startsWith('https://') || file.url.startsWith('/')) {
+        // 已经是服务器URL，直接使用
+        uploadedUrls.push(file.url)
+      } else if (file.url.startsWith('blob:')) {
+        // blob URL需要先上传
+        ElMessage.warning(`图片 ${file.name} 需要重新上传`)
+        continue
+      } else {
+        // 其他情况，尝试使用
+        uploadedUrls.push(file.url)
+      }
+    } else if (file.response?.data?.url) {
+      // 如果有response中的URL，使用它
+      uploadedUrls.push(file.response.data.url)
+    }
+  }
+  
+  return uploadedUrls
 }
 
 /**
@@ -441,12 +697,24 @@ const handleSubmitClaim = async () => {
   
   claimLoading.value = true
   try {
+    // 先上传图片到服务器
+    let proofImageUrls = []
+    if (claimForm.value.proofImages && claimForm.value.proofImages.length > 0) {
+      try {
+        proofImageUrls = await uploadProofImages()
+      } catch (error) {
+        ElMessage.error(error.message || '图片上传失败，请重试')
+        claimLoading.value = false
+        return
+      }
+    }
+    
     const data = {
       lostFoundId: lostFound.value.id,
       description: claimForm.value.description,
       lostTime: claimForm.value.lostTime,
       otherInfo: claimForm.value.otherInfo,
-      proofImages: claimForm.value.proofImages.map(file => file.url || file.response?.data?.url)
+      proofImages: proofImageUrls.length > 0 ? proofImageUrls : null
     }
     
     const response = await lostFoundApi.applyClaim(data)
@@ -457,6 +725,13 @@ const handleSubmitClaim = async () => {
       ElMessage.success(successText)
       showClaimDialog.value = false
       resetClaimForm()
+      // 刷新认领记录列表
+      if (isPublisher.value) {
+        fetchClaimRecords()
+      } else {
+        // 刷新我的申请
+        await fetchMyClaim()
+      }
     }
   } catch (error) {
     console.error('提交认领失败:', error)
@@ -541,6 +816,218 @@ const handleRejectClaim = async (claimRecordId) => {
       console.error('拒绝认领失败:', error)
       ElMessage.error(error.message || '拒绝认领失败')
     }
+  }
+}
+
+/**
+ * 获取我的申请
+ */
+const fetchMyClaim = async () => {
+  if (!lostFound.value?.id) return
+  
+  myClaimLoading.value = true
+  try {
+    const response = await lostFoundApi.getMyClaim(lostFound.value.id)
+    if (response.code === 200) {
+      myClaimRecord.value = response.data || null
+    }
+  } catch (error) {
+    console.error('获取我的申请失败:', error)
+    // 如果接口返回404或申请不存在，设置为null
+    myClaimRecord.value = null
+  } finally {
+    myClaimLoading.value = false
+  }
+}
+
+/**
+ * 打开编辑申请对话框
+ */
+const openEditClaimDialog = () => {
+  if (!myClaimRecord.value) return
+  
+  // 填充编辑表单
+  editClaimForm.value = {
+    description: myClaimRecord.value.description || '',
+    lostTime: myClaimRecord.value.lostTime ? new Date(myClaimRecord.value.lostTime) : null,
+    otherInfo: myClaimRecord.value.otherInfo || '',
+    proofImages: []
+  }
+  
+  // 处理图片
+  if (myClaimRecord.value.proofImages) {
+    const images = parseImages(myClaimRecord.value.proofImages)
+    editClaimForm.value.proofImages = images.map((img, index) => {
+      if (typeof img === 'string' && !img.startsWith('blob:')) {
+        // 构建完整的图片URL用于显示
+        const fullUrl = getAvatarUrl(img)
+        // 保存原始路径用于提交
+        return {
+          uid: `existing-${index}-${Date.now()}`,
+          name: `image-${index}.jpg`,
+          url: fullUrl,
+          originalPath: img, // 保存原始路径
+          status: 'success'
+        }
+      }
+      return null
+    }).filter(Boolean)
+  }
+  
+  showEditClaimDialog.value = true
+}
+
+/**
+ * 编辑申请表单
+ */
+const editClaimForm = ref({
+  description: '',
+  lostTime: null,
+  otherInfo: '',
+  proofImages: []
+})
+
+/**
+ * 上传编辑申请中的证明图片
+ */
+const uploadEditProofImages = async () => {
+  const uploadedUrls = []
+  
+  for (const file of editClaimForm.value.proofImages) {
+    if (file.raw) {
+      // 需要上传的新文件
+      try {
+        const response = await fileApi.upload(file.raw, 'lost-found')
+        if (response.code === 200) {
+          uploadedUrls.push(response.data.url || response.data)
+        } else {
+          throw new Error(response.message || '图片上传失败')
+        }
+      } catch (error) {
+        console.error('图片上传失败:', error)
+        throw new Error(`图片上传失败：${file.name}`)
+      }
+    } else if (file.url) {
+      // 如果文件有originalPath（从服务器加载的现有图片），直接使用原始路径
+      if (file.originalPath) {
+        uploadedUrls.push(file.originalPath)
+      } else if (file.url.startsWith('http://') || file.url.startsWith('https://')) {
+        // 完整的HTTP URL，提取路径部分
+        try {
+          const urlObj = new URL(file.url)
+          uploadedUrls.push(urlObj.pathname + (urlObj.search || ''))
+        } catch {
+          // 解析失败，尝试直接使用
+          uploadedUrls.push(file.url)
+        }
+      } else if (file.url.startsWith('/')) {
+        // 已经是相对路径，直接使用
+        uploadedUrls.push(file.url)
+      } else if (file.url.startsWith('blob:')) {
+        // blob URL需要先上传
+        ElMessage.warning(`图片 ${file.name} 需要重新上传`)
+        continue
+      } else {
+        // 其他情况，尝试使用
+        uploadedUrls.push(file.url)
+      }
+    }
+  }
+  
+  return uploadedUrls
+}
+
+/**
+ * 提交编辑申请
+ */
+const handleSubmitEditClaim = async () => {
+  if (!editClaimForm.value.description.trim()) {
+    const warningText = lostFound.value?.type === 'LOST' 
+      ? '请填写拾取信息' 
+      : '请填写物品特征描述'
+    ElMessage.warning(warningText)
+    return
+  }
+  
+  if (!myClaimRecord.value) {
+    ElMessage.error('申请记录不存在')
+    return
+  }
+  
+  editClaimLoading.value = true
+  try {
+    // 先上传图片到服务器
+    let proofImageUrls = []
+    if (editClaimForm.value.proofImages && editClaimForm.value.proofImages.length > 0) {
+      try {
+        proofImageUrls = await uploadEditProofImages()
+      } catch (error) {
+        ElMessage.error(error.message || '图片上传失败，请重试')
+        editClaimLoading.value = false
+        return
+      }
+    }
+    
+    const data = {
+      description: editClaimForm.value.description,
+      lostTime: editClaimForm.value.lostTime,
+      otherInfo: editClaimForm.value.otherInfo,
+      proofImages: proofImageUrls.length > 0 ? proofImageUrls : null
+    }
+    
+    const response = await lostFoundApi.updateClaim(myClaimRecord.value.id, data)
+    if (response.code === 200) {
+      ElMessage.success('申请已更新')
+      showEditClaimDialog.value = false
+      // 重新获取我的申请
+      await fetchMyClaim()
+    }
+  } catch (error) {
+    console.error('更新申请失败:', error)
+    ElMessage.error(error.response?.data?.message || '更新申请失败')
+  } finally {
+    editClaimLoading.value = false
+  }
+}
+
+/**
+ * 删除申请
+ */
+const handleDeleteClaim = async () => {
+  if (!myClaimRecord.value) {
+    ElMessage.error('申请记录不存在')
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm('确定要删除这条申请吗？删除后无法恢复。', '确认删除', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const response = await lostFoundApi.deleteClaim(myClaimRecord.value.id)
+    if (response.code === 200) {
+      ElMessage.success('申请已删除')
+      myClaimRecord.value = null
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除申请失败:', error)
+      ElMessage.error(error.response?.data?.message || '删除申请失败')
+    }
+  }
+}
+
+/**
+ * 重置编辑申请表单
+ */
+const resetEditClaimForm = () => {
+  editClaimForm.value = {
+    description: '',
+    lostTime: null,
+    otherInfo: '',
+    proofImages: []
   }
 }
 
@@ -929,11 +1416,31 @@ onMounted(() => {
   gap: 8px;
 }
 
+.proof-image-wrapper {
+  position: relative;
+}
+
 .proof-image {
   width: 80px;
   height: 80px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.image-error {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  background-color: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 11px;
+  text-align: center;
+  padding: 4px;
+  border: 1px solid #E0E0E0;
+  box-sizing: border-box;
 }
 
 .claim-reject-reason {
@@ -955,6 +1462,12 @@ onMounted(() => {
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid #E0E0E0;
+}
+
+.my-claim-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #F0F0F0;
 }
 </style>
 

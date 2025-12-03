@@ -158,5 +158,47 @@ public class LostFoundController {
         lostFoundService.closeLostFound(id, userId);
         return Result.success("关闭成功", null);
     }
+    
+    @Operation(summary = "获取我的申请", description = "获取当前用户对某个失物提交的申请")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @GetMapping("/{id}/my-claim")
+    public Result<ClaimRecord> getMyClaimRecord(@Parameter(description = "失物ID") @PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        ClaimRecord record = lostFoundService.getMyClaimRecord(id, userId);
+        
+        // 为认领记录填充用户信息
+        if (record != null && record.getClaimerId() != null) {
+            User user = userService.getById(record.getClaimerId());
+            if (user != null) {
+                User simpleUser = new User();
+                simpleUser.setId(user.getId());
+                simpleUser.setNickname(user.getNickname());
+                simpleUser.setAvatar(user.getAvatar());
+                record.setUser(simpleUser);
+            }
+        }
+        
+        return Result.success("查询成功", record);
+    }
+    
+    @Operation(summary = "更新认领申请", description = "更新认领申请信息（仅申请者本人可操作）")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @PutMapping("/claim/{claimRecordId}")
+    public Result<Void> updateClaimRecord(
+            @Parameter(description = "认领记录ID") @PathVariable Long claimRecordId,
+            @Parameter(description = "认领信息") @RequestBody ClaimDTO dto) {
+        Long userId = getCurrentUserId();
+        lostFoundService.updateClaimRecord(claimRecordId, dto, userId);
+        return Result.success("更新成功", null);
+    }
+    
+    @Operation(summary = "删除认领申请", description = "删除认领申请（仅申请者本人可操作，仅待处理状态的可以删除）")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @DeleteMapping("/claim/{claimRecordId}")
+    public Result<Void> deleteClaimRecord(@Parameter(description = "认领记录ID") @PathVariable Long claimRecordId) {
+        Long userId = getCurrentUserId();
+        lostFoundService.deleteClaimRecord(claimRecordId, userId);
+        return Result.success("删除成功", null);
+    }
 }
 

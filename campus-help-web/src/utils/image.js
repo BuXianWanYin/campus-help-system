@@ -10,8 +10,8 @@
 export function getAvatarUrl(avatar) {
   if (!avatar) return ''
   
-  // 如果已经是完整URL，直接返回
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+  // 如果已经是完整URL（包括blob URL），直接返回
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('blob:')) {
     return avatar
   }
   

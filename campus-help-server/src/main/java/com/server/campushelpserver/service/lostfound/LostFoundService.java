@@ -93,5 +93,28 @@ public interface LostFoundService extends IService<LostFound> {
      * @param userId 用户ID
      */
     void closeLostFound(Long id, Long userId);
+    
+    /**
+     * 获取当前用户对某个失物的申请
+     * @param lostFoundId 失物ID
+     * @param userId 用户ID
+     * @return 认领记录，如果不存在返回null
+     */
+    ClaimRecord getMyClaimRecord(Long lostFoundId, Long userId);
+    
+    /**
+     * 更新认领申请
+     * @param claimRecordId 认领记录ID
+     * @param dto 认领信息（lostFoundId字段会被忽略，因为已有claimRecordId）
+     * @param userId 用户ID
+     */
+    void updateClaimRecord(Long claimRecordId, ClaimDTO dto, Long userId);
+    
+    /**
+     * 删除认领申请
+     * @param claimRecordId 认领记录ID
+     * @param userId 用户ID
+     */
+    void deleteClaimRecord(Long claimRecordId, Long userId);
 }
 

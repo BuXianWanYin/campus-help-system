@@ -11,7 +11,8 @@ class WebSocketManager {
     this.stompClient = null
     this.socket = null
     this.reconnectTimer = null
-    this.messageHandlers = []
+    this.systemMessageHandlers = [] // 区分系统消息处理器
+    this.chatMessageHandlers = [] // 新增聊天消息处理器
     this.subscriptions = [] // 存储订阅对象，用于取消订阅
     this.isConnected = false
     this.reconnectAttempts = 0
@@ -69,8 +70,10 @@ class WebSocketManager {
           this.isConnected = true
           this.reconnectAttempts = 0
           this.onConnect()
-          // 订阅消息
-          this.subscribeToMessages()
+          // 订阅系统消息
+          this.subscribeToSystemMessages()
+          // 订阅聊天消息 (如果需要，可以在这里或在Chat页面中订阅)
+          // this.subscribeChatMessages()
         },
         (error) => {
           console.error('WebSocket STOMP 连接失败:', error)
@@ -103,21 +106,99 @@ class WebSocketManager {
   }
   
   /**
-   * 订阅消息
+   * 订阅系统消息
    */
-  subscribeToMessages() {
+  subscribeToSystemMessages() {
     // 订阅系统消息队列（用户专属队列）
     // Spring会自动将 /user/queue/system 路由到当前用户
     const subscription = this.stompClient.subscribe('/user/queue/system', (message) => {
       try {
         const data = JSON.parse(message.body)
-        this.handleMessage(data)
+        this.systemMessageHandlers.forEach(handler => {
+          try {
+            handler(data)
+          } catch (e) {
+            console.error('系统消息处理器执行失败:', e)
+          }
+        })
       } catch (e) {
-        console.error('WebSocket消息解析失败:', e)
+        console.error('WebSocket系统消息解析失败:', e)
       }
     })
     
     this.subscriptions.push(subscription)
+  }
+  
+  /**
+   * 订阅聊天消息
+   */
+  subscribeChatMessages(handler) {
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.warn('WebSocket未连接，无法订阅聊天消息')
+      return null
+    }
+    
+    // 订阅聊天消息队列（用户专属队列）
+    // Spring会自动将 /user/queue/chat 路由到当前用户
+    const subscription = this.stompClient.subscribe('/user/queue/chat', (message) => {
+      try {
+        const data = JSON.parse(message.body)
+        if (handler && typeof handler === 'function') {
+          handler(data)
+        }
+      } catch (e) {
+        console.error('WebSocket聊天消息解析失败:', e)
+      }
+    })
+    
+    this.subscriptions.push(subscription)
+    return subscription
+  }
+  
+  /**
+   * 取消订阅聊天消息
+   */
+  unsubscribeChatMessages() {
+    // 找到聊天消息的订阅并取消
+    const chatSubscriptionIndex = this.subscriptions.findIndex(sub => sub.destination === '/user/queue/chat')
+    if (chatSubscriptionIndex > -1) {
+      this.subscriptions[chatSubscriptionIndex].unsubscribe()
+      this.subscriptions.splice(chatSubscriptionIndex, 1)
+    }
+  }
+  
+  /**
+   * 订阅聊天消息
+   */
+  subscribeChatMessages(handler) {
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.warn('WebSocket未连接，无法订阅聊天消息')
+      return null
+    }
+    
+    // 订阅聊天消息队列（用户专属队列）
+    // Spring会自动将 /user/queue/chat 路由到当前用户
+    const subscription = this.stompClient.subscribe('/user/queue/chat', (message) => {
+      try {
+        const data = JSON.parse(message.body)
+        if (handler && typeof handler === 'function') {
+          handler(data)
+        }
+      } catch (e) {
+        console.error('WebSocket聊天消息解析失败:', e)
+      }
+    })
+    
+    this.subscriptions.push(subscription)
+    return subscription
+  }
+  
+  /**
+   * 取消订阅聊天消息
+   */
+  unsubscribeChatMessages() {
+    // 这里可以通过标记来区分不同类型的订阅，目前先保留所有订阅
+    // 如果需要精确控制，可以改进订阅管理机制
   }
   
   /**
@@ -140,36 +221,36 @@ class WebSocketManager {
   }
   
   /**
-   * 处理消息
+   * 添加系统消息处理器
    */
-  handleMessage(message) {
-    // 调用所有注册的消息处理器
-    this.messageHandlers.forEach(handler => {
-      try {
-        handler(message)
-      } catch (e) {
-        console.error('消息处理器执行失败:', e)
-      }
-    })
+  addSystemMessageHandler(handler) {
+    if (typeof handler === 'function') {
+      this.systemMessageHandlers.push(handler)
+    }
   }
   
   /**
-   * 添加消息处理器
+   * 移除系统消息处理器
+   */
+  removeSystemMessageHandler(handler) {
+    const index = this.systemMessageHandlers.indexOf(handler)
+    if (index > -1) {
+      this.systemMessageHandlers.splice(index, 1)
+    }
+  }
+  
+  /**
+   * 添加消息处理器（向后兼容方法，等同于 addSystemMessageHandler）
    */
   addMessageHandler(handler) {
-    if (typeof handler === 'function') {
-      this.messageHandlers.push(handler)
-    }
+    this.addSystemMessageHandler(handler)
   }
   
   /**
-   * 移除消息处理器
+   * 移除消息处理器（向后兼容方法，等同于 removeSystemMessageHandler）
    */
   removeMessageHandler(handler) {
-    const index = this.messageHandlers.indexOf(handler)
-    if (index > -1) {
-      this.messageHandlers.splice(index, 1)
-    }
+    this.removeSystemMessageHandler(handler)
   }
   
   /**
@@ -225,7 +306,8 @@ class WebSocketManager {
     
     this.stompClient = null
     this.isConnected = false
-    this.messageHandlers = []
+    this.systemMessageHandlers = []
+    this.chatMessageHandlers = [] // 清理聊天消息处理器
     this.reconnectAttempts = 0
   }
   

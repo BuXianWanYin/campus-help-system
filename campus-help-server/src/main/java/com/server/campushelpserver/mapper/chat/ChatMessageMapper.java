@@ -3,6 +3,7 @@ package com.server.campushelpserver.mapper.chat;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.server.campushelpserver.entity.chat.ChatMessage;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
 /**
@@ -18,6 +19,6 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
      */
     @Update("UPDATE chat_message SET is_read = 1, update_time = NOW() " +
             "WHERE session_id = #{sessionId} AND receiver_id = #{receiverId} AND is_read = 0 AND delete_flag = 0")
-    void markAsRead(Long sessionId, Long receiverId);
+    void markAsRead(@Param("sessionId") Long sessionId, @Param("receiverId") Long receiverId);
 }
 

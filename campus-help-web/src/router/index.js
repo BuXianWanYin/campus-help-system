@@ -136,6 +136,15 @@ const routes = [
           title: '我的发布',
           requiresAuth: true
         }
+      },
+      {
+        path: 'user/chat',
+        name: 'UserChat',
+        component: () => import('../views/user/Chat.vue'),
+        meta: {
+          title: '聊天',
+          requiresAuth: true
+        }
       }
     ]
   },

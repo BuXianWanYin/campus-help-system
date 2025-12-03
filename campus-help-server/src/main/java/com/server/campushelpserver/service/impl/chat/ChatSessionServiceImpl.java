@@ -8,9 +8,11 @@ import com.server.campushelpserver.entity.chat.ChatMessage;
 import com.server.campushelpserver.entity.chat.ChatSession;
 import com.server.campushelpserver.entity.chat.dto.CreateSessionDTO;
 import com.server.campushelpserver.entity.chat.dto.SendMessageDTO;
+import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.chat.ChatMessageMapper;
 import com.server.campushelpserver.mapper.chat.ChatSessionMapper;
+import com.server.campushelpserver.mapper.user.UserMapper;
 import com.server.campushelpserver.service.chat.ChatSessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -39,6 +41,9 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
     
+    @Autowired
+    private UserMapper userMapper;
+    
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createOrGetSession(CreateSessionDTO dto, Long userId) {
@@ -56,26 +61,30 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         Long user1Id = userId < dto.getTargetUserId() ? userId : dto.getTargetUserId();
         Long user2Id = userId < dto.getTargetUserId() ? dto.getTargetUserId() : userId;
         
-        // 4. 查询是否已存在会话
+        // 4. 查询是否已存在会话（同一对用户只应该有一个会话，不考虑 related_id）
         LambdaQueryWrapper<ChatSession> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ChatSession::getUser1Id, user1Id)
-               .eq(ChatSession::getUser2Id, user2Id);
-        
-        // 如果有关联类型和ID，也作为查询条件
-        if (StringUtils.hasText(dto.getRelatedType()) && dto.getRelatedId() != null) {
-            wrapper.eq(ChatSession::getRelatedType, dto.getRelatedType())
-                   .eq(ChatSession::getRelatedId, dto.getRelatedId());
-        }
-        
-        wrapper.eq(ChatSession::getDeleteFlag, 0);
+               .eq(ChatSession::getUser2Id, user2Id)
+               .eq(ChatSession::getDeleteFlag, 0);
         
         ChatSession existingSession = chatSessionMapper.selectOne(wrapper);
         
         if (existingSession != null) {
+            // 如果现有会话没有关联信息，但新请求有，则更新关联信息
+            if (StringUtils.hasText(dto.getRelatedType()) && dto.getRelatedId() != null) {
+                if (!StringUtils.hasText(existingSession.getRelatedType()) || existingSession.getRelatedId() == null) {
+                    LambdaUpdateWrapper<ChatSession> updateWrapper = new LambdaUpdateWrapper<>();
+                    updateWrapper.eq(ChatSession::getId, existingSession.getId())
+                                .set(ChatSession::getRelatedType, dto.getRelatedType())
+                                .set(ChatSession::getRelatedId, dto.getRelatedId())
+                                .set(ChatSession::getUpdateTime, LocalDateTime.now());
+                    chatSessionMapper.update(null, updateWrapper);
+                }
+            }
             return existingSession.getId();
         }
         
-        // 4. 创建新会话
+        // 5. 创建新会话
         ChatSession session = new ChatSession();
         session.setUser1Id(user1Id);
         session.setUser2Id(user2Id);
@@ -100,7 +109,15 @@ public class ChatSessionServiceImpl implements ChatSessionService {
                .eq(ChatSession::getDeleteFlag, 0)
                .orderByDesc(ChatSession::getLastMessageTime, ChatSession::getCreateTime);
         
-        return chatSessionMapper.selectList(wrapper);
+        List<ChatSession> sessions = chatSessionMapper.selectList(wrapper);
+        
+        // 填充对方用户信息和未读数量
+        for (ChatSession session : sessions) {
+            fillOtherUserInfo(session, userId);
+            fillUnreadCount(session, userId);
+        }
+        
+        return sessions;
     }
     
     @Override
@@ -115,6 +132,10 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         if (!session.getUser1Id().equals(userId) && !session.getUser2Id().equals(userId)) {
             throw new BusinessException("无权查看该会话");
         }
+        
+        // 填充对方用户信息和未读数量
+        fillOtherUserInfo(session, userId);
+        fillUnreadCount(session, userId);
         
         return session;
     }
@@ -188,6 +209,13 @@ public class ChatSessionServiceImpl implements ChatSessionService {
             message
         );
         
+        // 8. 同时推送给发送者（用于实时确认消息已发送）
+        messagingTemplate.convertAndSendToUser(
+            senderId.toString(),
+            "/queue/chat",
+            message
+        );
+        
         return message.getId();
     }
     
@@ -209,6 +237,43 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         chatMessageMapper.markAsRead(sessionId, userId);
         
         return messages;
+    }
+    
+    /**
+     * 填充对方用户信息
+     */
+    private void fillOtherUserInfo(ChatSession session, Long currentUserId) {
+        // 确定对方用户ID
+        Long otherUserId = session.getUser1Id().equals(currentUserId) 
+            ? session.getUser2Id() 
+            : session.getUser1Id();
+        
+        if (otherUserId != null) {
+            User user = userMapper.selectById(otherUserId);
+            if (user != null) {
+                // 创建简化的用户对象（只包含必要字段，避免返回敏感信息）
+                User simpleUser = new User();
+                simpleUser.setId(user.getId());
+                simpleUser.setNickname(user.getNickname());
+                simpleUser.setAvatar(user.getAvatar());
+                session.setOtherUser(simpleUser);
+            }
+        }
+    }
+    
+    /**
+     * 填充未读消息数量
+     */
+    private void fillUnreadCount(ChatSession session, Long currentUserId) {
+        // 查询当前用户在该会话中的未读消息数量
+        LambdaQueryWrapper<ChatMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ChatMessage::getSessionId, session.getId())
+               .eq(ChatMessage::getReceiverId, currentUserId)
+               .eq(ChatMessage::getIsRead, 0)
+               .eq(ChatMessage::getDeleteFlag, 0);
+        
+        long count = chatMessageMapper.selectCount(wrapper);
+        session.setUnreadCount((int) count);
     }
 }
 

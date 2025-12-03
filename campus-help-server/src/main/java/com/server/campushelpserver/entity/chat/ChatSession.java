@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.server.campushelpserver.entity.user.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -63,5 +64,13 @@ public class ChatSession implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
+    
+    @TableField(exist = false)
+    @Schema(description = "对方用户信息（非数据库字段）")
+    private User otherUser;
+    
+    @TableField(exist = false)
+    @Schema(description = "未读消息数量（非数据库字段）")
+    private Integer unreadCount;
 }
 

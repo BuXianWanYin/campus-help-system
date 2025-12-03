@@ -542,9 +542,10 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
     
     @Override
     public java.util.List<ClaimRecord> getClaimRecords(Long lostFoundId) {
-        // 查询该失物的所有认领记录
+        // 查询该失物的所有认领记录（未删除的）
         LambdaQueryWrapper<ClaimRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClaimRecord::getLostFoundId, lostFoundId)
+               .eq(ClaimRecord::getDeleteFlag, 0)  // 只查询未删除的
                .orderByDesc(ClaimRecord::getCreateTime);
         
         return claimRecordMapper.selectList(wrapper);
@@ -648,6 +649,133 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         lostFound.setStatus("CLOSED");
         lostFound.setUpdateTime(LocalDateTime.now());
         lostFoundMapper.updateById(lostFound);
+    }
+    
+    /**
+     * 获取当前用户对某个失物的申请
+     */
+    @Override
+    public ClaimRecord getMyClaimRecord(Long lostFoundId, Long userId) {
+        LambdaQueryWrapper<ClaimRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClaimRecord::getLostFoundId, lostFoundId)
+               .eq(ClaimRecord::getClaimerId, userId)
+               .eq(ClaimRecord::getDeleteFlag, 0)  // 未删除的
+               .orderByDesc(ClaimRecord::getCreateTime)
+               .last("LIMIT 1");
+        
+        ClaimRecord record = claimRecordMapper.selectOne(wrapper);
+        
+        // 填充用户信息
+        if (record != null && record.getClaimerId() != null) {
+            User user = userMapper.selectById(record.getClaimerId());
+            if (user != null) {
+                User simpleUser = new User();
+                simpleUser.setId(user.getId());
+                simpleUser.setNickname(user.getNickname());
+                simpleUser.setAvatar(user.getAvatar());
+                record.setUser(simpleUser);
+            }
+        }
+        
+        return record;
+    }
+    
+    /**
+     * 更新认领申请
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateClaimRecord(Long claimRecordId, ClaimDTO dto, Long userId) {
+        // 1. 查询认领记录
+        ClaimRecord record = claimRecordMapper.selectById(claimRecordId);
+        if (record == null) {
+            throw new BusinessException("认领记录不存在");
+        }
+        
+        // 2. 验证权限（只有申请者本人可以编辑）
+        if (!record.getClaimerId().equals(userId)) {
+            throw new BusinessException("无权编辑此申请");
+        }
+        
+        // 3. 验证状态（只有待处理状态的可以编辑）
+        if (!"PENDING".equals(record.getStatus())) {
+            throw new BusinessException("只有待处理状态的申请可以编辑");
+        }
+        
+        // 4. 查询失物信息，验证失物状态
+        LostFound lostFound = lostFoundMapper.selectById(record.getLostFoundId());
+        if (lostFound == null) {
+            throw new BusinessException("失物信息不存在");
+        }
+        if (!"PENDING_CLAIM".equals(lostFound.getStatus()) && !"CLAIMING".equals(lostFound.getStatus())) {
+            throw new BusinessException("该失物当前不可认领，无法编辑申请");
+        }
+        
+        // 5. 更新认领记录
+        if (dto.getDescription() != null) {
+            record.setDescription(dto.getDescription());
+        }
+        if (dto.getLostTime() != null) {
+            record.setLostTime(dto.getLostTime());
+        }
+        if (dto.getOtherInfo() != null) {
+            record.setOtherInfo(dto.getOtherInfo());
+        }
+        if (dto.getProofImages() != null) {
+            try {
+                record.setProofImages(objectMapper.writeValueAsString(dto.getProofImages()));
+            } catch (JsonProcessingException e) {
+                throw new BusinessException("证明文件处理失败：" + e.getMessage());
+            }
+        }
+        
+        record.setUpdateTime(LocalDateTime.now());
+        claimRecordMapper.updateById(record);
+    }
+    
+    /**
+     * 删除认领申请
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteClaimRecord(Long claimRecordId, Long userId) {
+        // 1. 查询认领记录
+        ClaimRecord record = claimRecordMapper.selectById(claimRecordId);
+        if (record == null) {
+            throw new BusinessException("认领记录不存在");
+        }
+        
+        // 2. 验证权限（只有申请者本人可以删除）
+        if (!record.getClaimerId().equals(userId)) {
+            throw new BusinessException("无权删除此申请");
+        }
+        
+        // 3. 验证状态（只有待处理状态的可以删除）
+        if (!"PENDING".equals(record.getStatus())) {
+            throw new BusinessException("只有待处理状态的申请可以删除");
+        }
+        
+        // 4. 逻辑删除
+        record.setDeleteFlag(1);
+        record.setUpdateTime(LocalDateTime.now());
+        claimRecordMapper.updateById(record);
+        
+        // 5. 检查该失物是否还有其他待处理的申请
+        LambdaQueryWrapper<ClaimRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClaimRecord::getLostFoundId, record.getLostFoundId())
+               .eq(ClaimRecord::getStatus, "PENDING")
+               .eq(ClaimRecord::getDeleteFlag, 0);
+        long pendingCount = claimRecordMapper.selectCount(wrapper);
+        
+        // 6. 如果没有其他待处理的申请，且失物状态是CLAIMING，则改回PENDING_CLAIM
+        if (pendingCount == 0) {
+            LostFound lostFound = lostFoundMapper.selectById(record.getLostFoundId());
+            if (lostFound != null && "CLAIMING".equals(lostFound.getStatus())) {
+                lostFound.setStatus("PENDING_CLAIM");
+                lostFound.setUpdateTime(LocalDateTime.now());
+                lostFoundMapper.updateById(lostFound);
+            }
+        }
     }
     
     /**
