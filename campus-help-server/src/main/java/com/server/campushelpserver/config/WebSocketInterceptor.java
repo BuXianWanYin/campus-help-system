@@ -38,19 +38,21 @@ public class WebSocketInterceptor implements ChannelInterceptor {
             if (StringUtils.hasText(token) && jwtConfig.validateToken(token)) {
                 try {
                     Claims claims = jwtConfig.getClaimsFromToken(token);
-                    String email = (String) claims.get("email");
+                    Long userId = ((Number) claims.get("userId")).longValue();
                     String role = (String) claims.get("role");
                     
-                    if (email != null) {
+                    if (userId != null) {
                         // 构建权限列表
                         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                         if (role != null) {
-                            authorities.add(new SimpleGrantedAuthority(role));
+                            // 统一使用 ROLE_ 前缀的权限名称
+                            String roleWithPrefix = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                            authorities.add(new SimpleGrantedAuthority(roleWithPrefix));
                         }
                         
-                        // 设置认证信息
+                        // 设置认证信息，使用用户ID作为Principal名称，以便convertAndSendToUser能够正确路由
                         UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(email, null, authorities);
+                            new UsernamePasswordAuthenticationToken(userId.toString(), null, authorities);
                         accessor.setUser(authentication);
                     }
                 } catch (Exception e) {

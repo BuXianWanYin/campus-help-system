@@ -114,30 +114,32 @@
               <el-icon class="remove-image" @click="removeImage(index)"><Close /></el-icon>
             </div>
           </div>
-          <div class="input-toolbar">
-            <el-upload
-              :action="''"
-              :auto-upload="false"
-              :show-file-list="false"
-              :on-change="handleImageSelect"
-              accept="image/*"
-              :multiple="true"
-            >
-              <el-button text type="primary">
-                <el-icon><Picture /></el-icon>
-              </el-button>
-            </el-upload>
+          <div class="input-wrapper">
+            <div class="input-toolbar">
+              <el-upload
+                :action="''"
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-change="handleImageSelect"
+                accept="image/*"
+                :multiple="true"
+              >
+                <el-button text type="primary" class="image-upload-btn">
+                  <el-icon><Picture /></el-icon>
+                </el-button>
+              </el-upload>
+            </div>
+            <el-input
+              v-model="inputMessage"
+              type="textarea"
+              :rows="3"
+              :maxlength="500"
+              placeholder="输入消息...（Ctrl+Enter 发送）"
+              show-word-limit
+              @keydown.ctrl.enter="handleSendMessage"
+              @keydown.enter.exact.prevent="handleSendMessage"
+            />
           </div>
-          <el-input
-            v-model="inputMessage"
-            type="textarea"
-            :rows="3"
-            :maxlength="500"
-            placeholder="输入消息...（Ctrl+Enter 发送）"
-            show-word-limit
-            @keydown.ctrl.enter="handleSendMessage"
-            @keydown.enter.exact.prevent="handleSendMessage"
-          />
           <div class="input-actions">
             <el-button type="primary" @click="handleSendMessage" :loading="sending">
               发送
@@ -154,7 +156,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } f
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Picture, Close } from '@element-plus/icons-vue'
-import { chatApi, fileApi } from '@/api'
+import { chatApi, fileApi, messageApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 import wsManager from '@/utils/websocket'
@@ -264,23 +266,47 @@ const formatMessageTime = (timeStr) => {
 }
 
 // 获取会话列表
-const fetchSessions = async () => {
+const fetchSessions = async (autoSelectFromUrl = false, forceRefresh = false) => {
+  // 如果正在加载且不是强制刷新，避免重复请求
+  if (sessionsLoading.value && !forceRefresh) {
+    return
+  }
+  
   sessionsLoading.value = true
   try {
     const response = await chatApi.getSessionList()
     if (response.code === 200) {
       sessions.value = response.data || []
-      // 如果URL中有sessionId参数，自动选中
-      const sessionId = route.query.sessionId
-      if (sessionId) {
-        const session = sessions.value.find(s => s.id === parseInt(sessionId))
-        if (session) {
-          selectSession(session)
+      
+      console.log('加载会话列表成功，会话数量:', sessions.value.length)
+      
+      // 如果URL中有sessionId参数且需要自动选中，自动选中
+      if (autoSelectFromUrl) {
+        const sessionId = route.query.sessionId
+        if (sessionId && !currentSessionId.value) {
+          const session = sessions.value.find(s => s.id === parseInt(sessionId))
+          if (session) {
+            // 立即更新本地会话的未读数量为0
+            session.unreadCount = 0
+            // 直接设置会话ID并加载消息，避免触发 watch 和 selectSession 的循环
+            currentSessionId.value = session.id
+            await fetchMessages(session.id)
+            // 标记系统消息为已读
+            try {
+              await messageApi.markChatMessagesAsRead(session.id)
+            } catch (error) {
+              console.error('标记聊天系统消息为已读失败:', error)
+            }
+          }
         }
       }
+    } else {
+      console.error('获取会话列表失败，响应码:', response.code, response.message)
+      ElMessage.error(response.message || '获取会话列表失败')
     }
   } catch (error) {
-    ElMessage.error('获取会话列表失败')
+    console.error('获取会话列表异常:', error)
+    ElMessage.error(error.message || '获取会话列表失败')
   } finally {
     sessionsLoading.value = false
   }
@@ -288,10 +314,33 @@ const fetchSessions = async () => {
 
 // 选择会话
 const selectSession = async (session) => {
+  // 如果选择的会话就是当前会话，不需要重复加载
+  if (currentSessionId.value === session.id) {
+    return
+  }
+  
   currentSessionId.value = session.id
+  
+  // 立即更新本地会话的未读数量为0（优化用户体验，避免延迟显示）
+  const currentSession = sessions.value.find(s => s.id === session.id)
+  if (currentSession) {
+    currentSession.unreadCount = 0
+  }
+  
   await fetchMessages(session.id)
+  
+  // 标记该会话相关的系统消息为已读
+  try {
+    await messageApi.markChatMessagesAsRead(session.id)
+  } catch (error) {
+    console.error('标记聊天系统消息为已读失败:', error)
+  }
+  
   // 更新URL但不刷新页面
   router.replace({ query: { sessionId: session.id } })
+  
+  // 使用防抖更新会话列表以更新未读数量（从服务器获取最新数据）
+  debouncedUpdateSessions()
 }
 
 // 获取消息列表
@@ -302,6 +351,11 @@ const fetchMessages = async (sessionId) => {
     const response = await chatApi.getMessageList(sessionId)
     if (response.code === 200) {
       messages.value = response.data || []
+      // 加载消息后，确保当前会话的未读数量为0（后端会标记消息为已读）
+      const currentSession = sessions.value.find(s => s.id === sessionId)
+      if (currentSession) {
+        currentSession.unreadCount = 0
+      }
       // 滚动到底部
       nextTick(() => {
         scrollToBottom()
@@ -418,26 +472,40 @@ const handleSendMessage = async () => {
     })
     
     if (response.code === 200) {
+      // 获取新发送的消息ID
+      const messageId = response.data?.messageId
+      
+      // 立即创建临时消息对象显示在界面上（优化用户体验）
+      const tempMessage = {
+        id: messageId || Date.now(), // 使用后端返回的ID或临时ID
+        sessionId: currentSessionId.value,
+        senderId: userStore.userInfo.id,
+        receiverId: currentOtherUser.value?.id,
+        messageType: messageType,
+        content: content,
+        images: images ? JSON.stringify(images) : null,
+        isRead: 0,
+        createTime: new Date().toISOString()
+      }
+      
+      // 检查消息是否已存在（避免重复）
+      const exists = messages.value.find(m => m.id === messageId || (m.id === tempMessage.id && m.senderId === tempMessage.senderId))
+      if (!exists) {
+        // 添加到消息列表（立即显示）
+        messages.value.push(tempMessage)
+        nextTick(() => {
+          scrollToBottom()
+        })
+      }
+      
       // 清空输入框和图片
       inputMessage.value = ''
       selectedImages.value = []
       
-      // 获取新发送的消息ID
-      const messageId = response.data?.messageId
+      // 更新会话列表（更新最后消息时间和内容）- 使用防抖
+      debouncedUpdateSessions()
       
-      // 等待 WebSocket 推送消息（后端会同时推送给发送者和接收者）
-      // 如果 WebSocket 没有及时推送，延迟后重新获取消息列表
-      setTimeout(async () => {
-        // 检查消息是否已通过 WebSocket 添加到列表
-        const messageExists = messages.value.find(m => m.id === messageId)
-        if (!messageExists) {
-          // 如果 WebSocket 没有推送，重新获取消息列表
-          await fetchMessages(currentSessionId.value)
-        }
-      }, 500)
-      
-      // 更新会话列表（更新最后消息时间和内容）
-      await fetchSessions()
+      // 不需要延迟重新获取消息，WebSocket 会推送消息并更新临时消息
     }
   } catch (error) {
     ElMessage.error('发送消息失败')
@@ -453,13 +521,79 @@ const scrollToBottom = () => {
   }
 }
 
+// 防抖更新会话列表
+let sessionUpdateTimer = null
+const debouncedUpdateSessions = () => {
+  if (sessionUpdateTimer) {
+    clearTimeout(sessionUpdateTimer)
+  }
+  sessionUpdateTimer = setTimeout(async () => {
+    await fetchSessions()
+    // 更新会话列表后，确保当前会话的未读数量为0（用户正在查看）
+    if (currentSessionId.value) {
+      const currentSession = sessions.value.find(s => s.id === currentSessionId.value)
+      if (currentSession) {
+        currentSession.unreadCount = 0
+      }
+    }
+    sessionUpdateTimer = null
+  }, 500) // 500ms 防抖
+}
+
+// 防重复通知机制：使用会话ID+消息ID的组合键
+const notificationCache = new Map()
+const NOTIFICATION_CACHE_DURATION = 5000 // 5秒内同一消息不重复显示
+
+const debouncedShowNotification = (sessionName, sessionId, messageId) => {
+  // 使用会话ID+消息ID作为唯一键
+  const cacheKey = `${sessionId}-${messageId}`
+  
+  // 检查是否在缓存期内
+  const cached = notificationCache.get(cacheKey)
+  const now = Date.now()
+  
+  if (cached && (now - cached) < NOTIFICATION_CACHE_DURATION) {
+    // 在缓存期内，不重复显示
+    return
+  }
+  
+  // 记录当前时间
+  notificationCache.set(cacheKey, now)
+  
+  // 显示通知
+  ElMessage.success({
+    message: `收到来自 ${sessionName || '用户'} 的新消息`,
+    duration: 3000,
+    showClose: true
+  })
+  
+  // 清理过期的缓存（每10条消息清理一次，避免内存泄漏）
+  if (notificationCache.size > 100) {
+    const expiredKeys = []
+    notificationCache.forEach((timestamp, key) => {
+      if (now - timestamp > NOTIFICATION_CACHE_DURATION) {
+        expiredKeys.push(key)
+      }
+    })
+    expiredKeys.forEach(key => notificationCache.delete(key))
+  }
+}
+
 // WebSocket消息处理
 const handleChatMessage = (message) => {
+  console.log('收到WebSocket聊天消息:', message)
+  
   // 检查消息是否已存在（避免重复）
   const exists = messages.value.find(m => m.id === message.id)
   
   // 如果是当前会话的消息
   if (message.sessionId === currentSessionId.value) {
+    // 当前会话的消息，确保未读数量为0（用户正在查看）
+    const currentSession = sessions.value.find(s => s.id === currentSessionId.value)
+    if (currentSession) {
+      currentSession.unreadCount = 0
+    }
+    
     // 如果消息不存在，添加到消息列表
     if (!exists) {
       messages.value.push(message)
@@ -471,49 +605,68 @@ const handleChatMessage = (message) => {
       const index = messages.value.findIndex(m => m.id === message.id || (m.id === message.id && m.senderId === message.senderId))
       if (index !== -1) {
         messages.value[index] = message
+        nextTick(() => {
+          scrollToBottom()
+        })
       }
     }
   } else {
     // 其他会话的新消息
     const session = sessions.value.find(s => s.id === message.sessionId)
     if (session && message.senderId !== userStore.userInfo?.id) {
-      // 只对接收到的消息显示通知，不显示自己发送的
-      ElMessage.info({
-        message: `收到来自 ${session.otherUser?.nickname || '用户'} 的新消息`,
-        duration: 3000,
-        showClose: true
-      })
+      // 只对接收到的消息显示通知，不显示自己发送的（使用防重复机制）
+      debouncedShowNotification(
+        session.otherUser?.nickname || '用户',
+        message.sessionId,
+        message.id
+      )
     }
   }
   
-  // 更新会话列表（刷新未读数量等）
-  fetchSessions()
+  // 使用防抖更新会话列表（避免频繁请求）
+  debouncedUpdateSessions()
 }
 
-// 监听会话ID变化
-watch(currentSessionId, (newId) => {
-  if (newId) {
+// 监听会话ID变化（避免重复调用）
+watch(currentSessionId, (newId, oldId) => {
+  if (newId && newId !== oldId) {
     fetchMessages(newId)
   }
 })
 
 // 监听 WebSocket 连接状态，自动订阅/重新订阅聊天消息
 watchEffect(() => {
-  if (wsManager.isConnected && userStore.isLoggedIn && !chatSubscription.value) {
+  // 只在连接状态或登录状态真正变化时才处理
+  const isConnected = wsManager.isConnected
+  const isLoggedIn = userStore.isLoggedIn
+  const hasSubscription = !!chatSubscription.value
+  
+  if (isConnected && isLoggedIn && !hasSubscription) {
     // WebSocket 已连接且用户已登录，但未订阅，则订阅
     chatSubscription.value = wsManager.subscribeChatMessages(handleChatMessage)
-  } else if (!wsManager.isConnected && chatSubscription.value) {
-    // WebSocket 断开，清理订阅
-    chatSubscription.value = null
+  } else if ((!isConnected || !isLoggedIn) && hasSubscription) {
+    // WebSocket 断开或未登录，清理订阅
+    if (chatSubscription.value) {
+      wsManager.unsubscribeChatMessages()
+      chatSubscription.value = null
+    }
   }
 })
 
-onMounted(async () => {
-  await fetchSessions()
+// 初始化聊天页面
+const initChat = async () => {
+  // 确保用户已登录
+  if (!userStore.isLoggedIn) {
+    console.warn('用户未登录，无法加载聊天会话')
+    return
+  }
+  
+  // 总是加载会话列表（无论是否有会话），强制刷新
+  await fetchSessions(true, true)
   
   // 连接WebSocket
   const token = getToken()
-  if (token && userStore.isLoggedIn) {
+  if (token) {
     // 如果 WebSocket 未连接，则连接
     if (!wsManager.isConnected) {
       wsManager.connect(token)
@@ -522,9 +675,37 @@ onMounted(async () => {
       chatSubscription.value = wsManager.subscribeChatMessages(handleChatMessage)
     }
   }
+}
+
+onMounted(async () => {
+  // 初始化聊天页面，加载历史会话
+  await initChat()
 })
 
+// 监听路由变化，如果路由变化到聊天页面，确保加载会话列表
+watch(() => route.path, (newPath, oldPath) => {
+  if (newPath === '/user/chat' && oldPath !== '/user/chat') {
+    // 路由变化到聊天页面，如果会话列表为空且未在加载中，则加载
+    if (sessions.value.length === 0 && !sessionsLoading.value) {
+      console.log('路由变化到聊天页面，重新加载会话列表')
+      fetchSessions(true)
+    }
+  }
+}, { immediate: false })
+
 onUnmounted(() => {
+  // 清理防抖定时器
+  if (sessionUpdateTimer) {
+    clearTimeout(sessionUpdateTimer)
+    sessionUpdateTimer = null
+  }
+  
+  // 清理通知定时器
+  if (notificationTimer) {
+    clearTimeout(notificationTimer)
+    notificationTimer = null
+  }
+  
   // 取消订阅聊天消息
   if (chatSubscription.value) {
     wsManager.unsubscribeChatMessages()
@@ -625,6 +806,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background-color: var(--color-bg-white);
+  min-height: 0; /* 确保 flex 子元素可以缩小 */
+  overflow: hidden; /* 防止整体溢出 */
 }
 
 .no-session {
@@ -632,12 +815,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
 }
 
 .chat-window {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* 确保 flex 子元素可以缩小 */
+  overflow: hidden; /* 防止整体溢出 */
 }
 
 .chat-header {
@@ -646,6 +832,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0; /* 头部不缩小 */
 }
 
 .chat-user-info {
@@ -677,6 +864,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0; /* 确保 flex 子元素可以缩小 */
+  /* 隐藏滚动条但保持滚动功能 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 和 Edge */
+}
+
+/* 隐藏 WebKit 浏览器的滚动条 */
+.messages-container::-webkit-scrollbar {
+  display: none;
 }
 
 .empty-messages {
@@ -790,11 +986,29 @@ onUnmounted(() => {
 .chat-input-area {
   padding: 16px 20px;
   border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0; /* 输入区域不缩小 */
+  background-color: var(--color-bg-white);
+}
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .input-toolbar {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0;
+}
+
+.image-upload-btn {
+  padding: 4px 8px;
+  font-size: 18px;
 }
 
 .image-preview-list {
@@ -803,6 +1017,9 @@ onUnmounted(() => {
   padding: 8px;
   flex-wrap: wrap;
   border-bottom: 1px solid var(--color-border);
+  max-height: 200px; /* 限制最大高度 */
+  overflow-y: auto; /* 如果图片太多可以滚动 */
+  flex-shrink: 0; /* 不缩小 */
 }
 
 .image-preview-item {

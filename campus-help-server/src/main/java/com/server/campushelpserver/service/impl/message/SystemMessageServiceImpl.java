@@ -115,6 +115,21 @@ public class SystemMessageServiceImpl extends ServiceImpl<SystemMessageMapper, S
     
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void markRelatedMessagesAsRead(Long userId, String relatedType, Long relatedId) {
+        LambdaUpdateWrapper<SystemMessage> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(SystemMessage::getUserId, userId);
+        wrapper.eq(SystemMessage::getRelatedType, relatedType);
+        wrapper.eq(SystemMessage::getRelatedId, relatedId);
+        wrapper.eq(SystemMessage::getIsRead, 0);
+        wrapper.eq(SystemMessage::getDeleteFlag, 0);
+        wrapper.set(SystemMessage::getIsRead, 1);
+        wrapper.set(SystemMessage::getUpdateTime, LocalDateTime.now());
+        
+        this.update(wrapper);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteMessage(Long messageId, Long userId) {
         SystemMessage message = this.getById(messageId);
         if (message == null) {

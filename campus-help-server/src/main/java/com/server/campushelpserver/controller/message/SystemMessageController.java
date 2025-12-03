@@ -91,6 +91,22 @@ public class SystemMessageController {
         return Result.success("全部标记为已读", null);
     }
     
+    @Operation(summary = "标记聊天相关消息为已读", description = "标记指定会话的聊天相关系统消息为已读")
+    @PutMapping("/read-chat/{sessionId}")
+    public Result<Void> markChatMessagesAsRead(@Parameter(description = "会话ID") @PathVariable Long sessionId) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return Result.error("未登录");
+        }
+        com.server.campushelpserver.entity.user.User user = userService.getUserByEmail(email);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        Long userId = user.getId();
+        systemMessageService.markRelatedMessagesAsRead(userId, "CHAT", sessionId);
+        return Result.success("标记成功", null);
+    }
+    
     @Operation(summary = "删除消息", description = "删除单条消息（逻辑删除）")
     @DeleteMapping("/{id}")
     public Result<Void> deleteMessage(@Parameter(description = "消息ID") @PathVariable Long id) {

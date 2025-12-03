@@ -81,6 +81,10 @@
                     消息通知
                     <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" />
                   </el-dropdown-item>
+                  <el-dropdown-item command="chat">
+                    <el-icon><ChatDotRound /></el-icon>
+                    聊天
+                  </el-dropdown-item>
                   <el-dropdown-item command="settings">
                     <el-icon><Setting /></el-icon>
                     设置
@@ -560,6 +564,9 @@ const handleCommand = (command) => {
     case 'messages':
       showNotificationPanel.value = true
       break
+    case 'chat':
+      router.push('/user/chat')
+      break
     case 'settings':
       router.push('/user/settings')
       break
@@ -714,14 +721,13 @@ const getMessageIcon = (type) => {
   return iconMap[type] || markRaw(InfoFilled)
 }
 
-// WebSocket消息处理
+// WebSocket消息处理（只处理系统消息，显示绿色通知）
 const handleWebSocketMessage = (message) => {
   // STOMP发送的是SystemMessage对象，直接处理
   if (message && message.id) {
-    // 收到新的系统消息
-    ElMessage.info('您有新的消息')
-    // 刷新消息列表和未读数量
-    fetchRecentMessages()
+    // 收到新的系统消息（使用绿色提示）
+    ElMessage.success('您有新的消息')
+    // 只刷新未读数量，不刷新消息列表（聊天消息不再创建系统消息）
     fetchUnreadCount()
   }
 }

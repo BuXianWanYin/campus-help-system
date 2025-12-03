@@ -14,6 +14,7 @@ class WebSocketManager {
     this.systemMessageHandlers = [] // 区分系统消息处理器
     this.chatMessageHandlers = [] // 新增聊天消息处理器
     this.subscriptions = [] // 存储订阅对象，用于取消订阅
+    this.chatSubscription = null // 存储聊天消息订阅，用于精确取消
     this.isConnected = false
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
@@ -138,42 +139,17 @@ class WebSocketManager {
       return null
     }
     
-    // 订阅聊天消息队列（用户专属队列）
-    // Spring会自动将 /user/queue/chat 路由到当前用户
-    const subscription = this.stompClient.subscribe('/user/queue/chat', (message) => {
+    // 如果已经存在聊天订阅，先取消
+    if (this.chatSubscription) {
       try {
-        const data = JSON.parse(message.body)
-        if (handler && typeof handler === 'function') {
-          handler(data)
+        this.chatSubscription.unsubscribe()
+        const index = this.subscriptions.indexOf(this.chatSubscription)
+        if (index > -1) {
+          this.subscriptions.splice(index, 1)
         }
       } catch (e) {
-        console.error('WebSocket聊天消息解析失败:', e)
+        console.error('取消旧聊天订阅失败:', e)
       }
-    })
-    
-    this.subscriptions.push(subscription)
-    return subscription
-  }
-  
-  /**
-   * 取消订阅聊天消息
-   */
-  unsubscribeChatMessages() {
-    // 找到聊天消息的订阅并取消
-    const chatSubscriptionIndex = this.subscriptions.findIndex(sub => sub.destination === '/user/queue/chat')
-    if (chatSubscriptionIndex > -1) {
-      this.subscriptions[chatSubscriptionIndex].unsubscribe()
-      this.subscriptions.splice(chatSubscriptionIndex, 1)
-    }
-  }
-  
-  /**
-   * 订阅聊天消息
-   */
-  subscribeChatMessages(handler) {
-    if (!this.stompClient || !this.stompClient.connected) {
-      console.warn('WebSocket未连接，无法订阅聊天消息')
-      return null
     }
     
     // 订阅聊天消息队列（用户专属队列）
@@ -189,6 +165,7 @@ class WebSocketManager {
       }
     })
     
+    this.chatSubscription = subscription // 保存引用用于后续取消
     this.subscriptions.push(subscription)
     return subscription
   }
@@ -197,8 +174,20 @@ class WebSocketManager {
    * 取消订阅聊天消息
    */
   unsubscribeChatMessages() {
-    // 这里可以通过标记来区分不同类型的订阅，目前先保留所有订阅
-    // 如果需要精确控制，可以改进订阅管理机制
+    // 使用保存的聊天订阅引用来取消订阅
+    if (this.chatSubscription) {
+      try {
+        this.chatSubscription.unsubscribe()
+      } catch (e) {
+        console.error('取消聊天消息订阅失败:', e)
+      }
+      // 从订阅列表中移除
+      const index = this.subscriptions.indexOf(this.chatSubscription)
+      if (index > -1) {
+        this.subscriptions.splice(index, 1)
+      }
+      this.chatSubscription = null
+    }
   }
   
   /**
@@ -308,6 +297,7 @@ class WebSocketManager {
     this.isConnected = false
     this.systemMessageHandlers = []
     this.chatMessageHandlers = [] // 清理聊天消息处理器
+    this.chatSubscription = null // 清理聊天订阅引用
     this.reconnectAttempts = 0
   }
   

@@ -71,16 +71,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Bell, Check, Close, Warning, InfoFilled, 
   Document, ShoppingBag, TrendCharts, ChatDotRound
 } from '@element-plus/icons-vue'
 import { messageApi } from '@/api'
-import wsManager from '@/utils/websocket'
-import { useUserStore } from '@/stores/user'
-import { getToken } from '@/utils/auth'
 
 const userStore = useUserStore()
 
@@ -246,33 +243,9 @@ const formatTime = (timeStr) => {
   }
 }
 
-// WebSocket消息处理
-const handleWebSocketMessage = (message) => {
-  // STOMP发送的是SystemMessage对象，直接处理
-  if (message && message.id) {
-    // 收到新的系统消息
-    ElMessage.info('您有新的消息')
-    // 刷新消息列表和未读数量
-    fetchMessages()
-    fetchUnreadCount()
-  }
-}
-
 onMounted(async () => {
   await fetchMessages()
   await fetchUnreadCount()
-  
-  // 连接WebSocket
-  const token = getToken()
-  if (token && userStore.isLoggedIn) {
-    wsManager.connect(token)
-    wsManager.addMessageHandler(handleWebSocketMessage)
-  }
-})
-
-onUnmounted(() => {
-  // 移除消息处理器（但不关闭WebSocket，因为可能其他页面也在使用）
-  wsManager.removeMessageHandler(handleWebSocketMessage)
 })
 </script>
 

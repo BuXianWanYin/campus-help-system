@@ -203,18 +203,28 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         chatSessionMapper.update(null, updateWrapper);
         
         // 7. 通过WebSocket实时推送给接收者
-        messagingTemplate.convertAndSendToUser(
-            receiverId.toString(),
-            "/queue/chat",
-            message
-        );
+        try {
+            messagingTemplate.convertAndSendToUser(
+                receiverId.toString(),
+                "/queue/chat",
+                message
+            );
+        } catch (Exception e) {
+            // WebSocket推送失败不影响消息保存，只记录日志
+            System.err.println("WebSocket推送聊天消息失败: " + e.getMessage());
+        }
         
-        // 8. 同时推送给发送者（用于实时确认消息已发送）
-        messagingTemplate.convertAndSendToUser(
-            senderId.toString(),
-            "/queue/chat",
-            message
-        );
+        // 9. 同时推送给发送者（用于实时确认消息已发送）
+        try {
+            messagingTemplate.convertAndSendToUser(
+                senderId.toString(),
+                "/queue/chat",
+                message
+            );
+        } catch (Exception e) {
+            // WebSocket推送失败不影响消息保存，只记录日志
+            System.err.println("WebSocket推送聊天消息给发送者失败: " + e.getMessage());
+        }
         
         return message.getId();
     }

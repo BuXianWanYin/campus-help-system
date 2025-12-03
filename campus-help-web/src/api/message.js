@@ -39,6 +39,15 @@ export const messageApi = {
   },
   
   /**
+   * 标记聊天相关消息为已读
+   * @param {Number} sessionId 会话ID
+   * @returns {Promise} 标记结果
+   */
+  markChatMessagesAsRead(sessionId) {
+    return request.put(`/message/read-chat/${sessionId}`)
+  },
+  
+  /**
    * 删除消息
    * @param {Number} messageId 消息ID
    * @returns {Promise} 删除结果

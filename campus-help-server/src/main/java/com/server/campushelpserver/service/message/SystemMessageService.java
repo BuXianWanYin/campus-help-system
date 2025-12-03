@@ -51,6 +51,14 @@ public interface SystemMessageService extends IService<SystemMessage> {
     void markAllAsRead(Long userId);
     
     /**
+     * 标记指定关联类型和关联ID的消息为已读（用于标记聊天相关消息）
+     * @param userId 用户ID
+     * @param relatedType 关联类型
+     * @param relatedId 关联ID
+     */
+    void markRelatedMessagesAsRead(Long userId, String relatedType, Long relatedId);
+    
+    /**
      * 删除消息（逻辑删除）
      * @param messageId 消息ID
      * @param userId 用户ID
