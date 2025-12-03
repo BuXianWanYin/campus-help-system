@@ -27,5 +27,55 @@ public interface EmailService {
      * @param reason 拒绝原因
      */
     void sendVerificationRejectedEmail(String to, String realName, String reason);
+    
+    /**
+     * 发送认领申请邮件（通知发布者）
+     * @param to 收件人邮箱（发布者邮箱）
+     * @param nickname 发布者昵称
+     * @param itemTitle 失物标题
+     */
+    void sendClaimApplyEmail(String to, String nickname, String itemTitle);
+    
+    /**
+     * 发送认领确认邮件（通知认领者）
+     * @param to 收件人邮箱（认领者邮箱）
+     * @param nickname 认领者昵称
+     * @param itemTitle 失物标题
+     */
+    void sendClaimConfirmedEmail(String to, String nickname, String itemTitle);
+    
+    /**
+     * 发送认领拒绝邮件（通知认领者）
+     * @param to 收件人邮箱（认领者邮箱）
+     * @param nickname 认领者昵称
+     * @param itemTitle 失物标题
+     * @param reason 拒绝原因
+     */
+    void sendClaimRejectedEmail(String to, String nickname, String itemTitle, String reason);
+    
+    /**
+     * 异步发送认领申请邮件（通知发布者）
+     * @param to 收件人邮箱（发布者邮箱）
+     * @param nickname 发布者昵称
+     * @param itemTitle 失物标题
+     */
+    void sendClaimApplyEmailAsync(String to, String nickname, String itemTitle);
+    
+    /**
+     * 异步发送认领确认邮件（通知认领者）
+     * @param to 收件人邮箱（认领者邮箱）
+     * @param nickname 认领者昵称
+     * @param itemTitle 失物标题
+     */
+    void sendClaimConfirmedEmailAsync(String to, String nickname, String itemTitle);
+    
+    /**
+     * 异步发送认领拒绝邮件（通知认领者）
+     * @param to 收件人邮箱（认领者邮箱）
+     * @param nickname 认领者昵称
+     * @param itemTitle 失物标题
+     * @param reason 拒绝原因
+     */
+    void sendClaimRejectedEmailAsync(String to, String nickname, String itemTitle, String reason);
 }
 

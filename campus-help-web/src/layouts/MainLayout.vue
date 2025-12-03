@@ -592,9 +592,9 @@ const markAllAsRead = async () => {
   try {
     await messageApi.markAllAsRead()
     ElMessage.success('已全部标记为已读')
-    notifications.value.forEach(item => {
-      item.read = true
-    })
+  notifications.value.forEach(item => {
+    item.read = true
+  })
     unreadCount.value = 0
   } catch (error) {
     ElMessage.error(error.message || '操作失败')

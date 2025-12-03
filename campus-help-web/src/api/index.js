@@ -16,7 +16,7 @@ export { fileApi } from './file'
 export { adminApi } from './admin'
 
 // 系统消息相关 API
-export { messageApi } from './message'
+export { messageApi, chatApi } from './message'
 
 // 失物招领相关 API
 export { lostFoundApi } from './lostFound'

@@ -266,7 +266,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Location, Clock, Folder, View, Plus, Message } from '@element-plus/icons-vue'
-import { lostFoundApi } from '@/api'
+import { lostFoundApi, chatApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
@@ -397,8 +397,34 @@ const formatDateTime = (time) => {
 /**
  * 处理联系
  */
-const handleContact = () => {
-  ElMessage.info(`联系 ${lostFound.value.userName}`)
+const handleContact = async () => {
+  if (!lostFound.value.userId) {
+    ElMessage.warning('用户信息不存在')
+    return
+  }
+  
+  try {
+    // 创建或获取会话
+    const response = await chatApi.createOrGetSession({
+      targetUserId: lostFound.value.userId,
+      relatedType: 'LOST_FOUND',
+      relatedId: lostFound.value.id
+    })
+    
+    if (response.code === 200) {
+      const sessionId = response.data.sessionId
+      // 跳转到消息页面，并传递会话ID
+      router.push({
+        path: '/user/messages',
+        query: { sessionId }
+      })
+    } else {
+      ElMessage.error(response.message || '创建会话失败')
+    }
+  } catch (error) {
+    console.error('联系TA失败:', error)
+    ElMessage.error('联系TA失败，请稍后重试')
+  }
 }
 
 /**

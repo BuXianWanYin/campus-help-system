@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 /**
@@ -72,6 +73,79 @@ public class EmailServiceImpl implements EmailService {
             realName, reason
         );
         sendEmail(to, subject, content);
+    }
+    
+    @Override
+    public void sendClaimApplyEmail(String to, String nickname, String itemTitle) {
+        String subject = "收到失物认领申请通知";
+        String content = String.format(
+            "尊敬的%s，\n\n" +
+            "您发布的失物《%s》收到了认领申请。\n\n" +
+            "请及时登录校园帮系统查看认领申请详情，并根据认领信息进行确认。\n\n" +
+            "认领流程：\n" +
+            "1. 登录系统，进入\"我的发布\"页面\n" +
+            "2. 查看失物详情和认领申请\n" +
+            "3. 核对认领信息后选择确认或拒绝\n\n" +
+            "感谢您使用校园帮系统！\n\n" +
+            "此邮件由系统自动发送，请勿回复。",
+            nickname, itemTitle
+        );
+        sendEmail(to, subject, content);
+    }
+    
+    @Override
+    public void sendClaimConfirmedEmail(String to, String nickname, String itemTitle) {
+        String subject = "失物认领成功通知";
+        String content = String.format(
+            "尊敬的%s，\n\n" +
+            "恭喜您！您认领的失物《%s》已被发布者确认。\n\n" +
+            "请及时联系发布者沟通取回物品的相关事宜。\n\n" +
+            "建议：\n" +
+            "1. 通过系统私信功能与发布者沟通\n" +
+            "2. 约定合适的取物时间和地点\n" +
+            "3. 确认物品信息无误后再取回\n\n" +
+            "感谢您使用校园帮系统！\n\n" +
+            "此邮件由系统自动发送，请勿回复。",
+            nickname, itemTitle
+        );
+        sendEmail(to, subject, content);
+    }
+    
+    @Override
+    public void sendClaimRejectedEmail(String to, String nickname, String itemTitle, String reason) {
+        String subject = "失物认领未通过通知";
+        String content = String.format(
+            "尊敬的%s，\n\n" +
+            "很抱歉，您认领的失物《%s》未能通过发布者的确认。\n\n" +
+            "拒绝原因：%s\n\n" +
+            "您可以：\n" +
+            "1. 查看失物详情，核对物品信息\n" +
+            "2. 如果确认是您的物品，可以联系发布者进一步沟通\n" +
+            "3. 继续关注其他失物信息\n\n" +
+            "如有疑问，可以通过系统私信功能联系发布者。\n\n" +
+            "感谢您使用校园帮系统！\n\n" +
+            "此邮件由系统自动发送，请勿回复。",
+            nickname, itemTitle, reason != null ? reason : "未提供原因"
+        );
+        sendEmail(to, subject, content);
+    }
+    
+    @Override
+    @Async("emailExecutor")
+    public void sendClaimApplyEmailAsync(String to, String nickname, String itemTitle) {
+        sendClaimApplyEmail(to, nickname, itemTitle);
+    }
+    
+    @Override
+    @Async("emailExecutor")
+    public void sendClaimConfirmedEmailAsync(String to, String nickname, String itemTitle) {
+        sendClaimConfirmedEmail(to, nickname, itemTitle);
+    }
+    
+    @Override
+    @Async("emailExecutor")
+    public void sendClaimRejectedEmailAsync(String to, String nickname, String itemTitle, String reason) {
+        sendClaimRejectedEmail(to, nickname, itemTitle, reason);
     }
 }
 

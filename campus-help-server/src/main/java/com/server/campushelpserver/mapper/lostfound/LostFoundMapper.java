@@ -3,6 +3,7 @@ package com.server.campushelpserver.mapper.lostfound;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.server.campushelpserver.entity.lostfound.LostFound;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
 /**
@@ -21,7 +22,8 @@ public interface LostFoundMapper extends BaseMapper<LostFound> {
      */
     @Update("UPDATE lost_found SET status = #{newStatus}, version = version + 1, update_time = NOW() " +
             "WHERE id = #{id} AND status = #{oldStatus} AND version = #{version} AND delete_flag = 0")
-    int updateStatusWithVersion(Long id, String oldStatus, String newStatus, Integer version);
+    int updateStatusWithVersion(@Param("id") Long id, @Param("oldStatus") String oldStatus, 
+                                 @Param("newStatus") String newStatus, @Param("version") Integer version);
     
     /**
      * 增加浏览次数

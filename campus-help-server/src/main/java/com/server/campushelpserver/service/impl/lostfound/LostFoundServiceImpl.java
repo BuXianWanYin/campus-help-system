@@ -15,9 +15,13 @@ import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.lostfound.ClaimRecordMapper;
 import com.server.campushelpserver.mapper.lostfound.LostFoundMapper;
 import com.server.campushelpserver.mapper.user.UserMapper;
+import com.server.campushelpserver.service.chat.ChatSessionService;
 import com.server.campushelpserver.service.common.PublishFrequencyService;
 import com.server.campushelpserver.service.lostfound.LostFoundService;
+import com.server.campushelpserver.service.message.EmailService;
+import com.server.campushelpserver.service.message.SystemMessageService;
 import com.server.campushelpserver.service.sensitive.SensitiveWordService;
+import com.server.campushelpserver.entity.chat.dto.CreateSessionDTO;
 import com.server.campushelpserver.util.SensitiveWordCheckResult;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +55,15 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private ChatSessionService chatSessionService;
+    
+    @Autowired
+    private SystemMessageService systemMessageService;
+    
+    @Autowired
+    private EmailService emailService;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -106,7 +119,13 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         }
         
         // 5. 判断审核状态
-        if (checkResult.isPass() && frequencyOk && !newUser) {
+        if (!checkResult.isPass() && !checkResult.isNeedManualReview()) {
+            // 包含严重敏感词，自动拒绝
+            lostFound.setStatus("REJECTED");
+            lostFound.setAuditStatus("REJECTED");
+            lostFound.setAuditReason(checkResult.getMessage()); // 自动填充拒绝原因
+            lostFound.setAuditTime(LocalDateTime.now());
+        } else if (checkResult.isPass() && frequencyOk && !newUser) {
             // 自动审核通过
             lostFound.setStatus("PENDING_CLAIM");
             lostFound.setAuditStatus("APPROVED");
@@ -134,6 +153,11 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         
         // 6. 保存到数据库
         lostFoundMapper.insert(lostFound);
+        
+        // 7. 如果被自动拒绝，抛出异常提示用户
+        if ("REJECTED".equals(lostFound.getStatus())) {
+            throw new BusinessException(checkResult.getMessage());
+        }
         
         return lostFound.getId();
     }
@@ -278,6 +302,49 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         record.setStatus("PENDING");
         record.setCreateTime(LocalDateTime.now());
         claimRecordMapper.insert(record);
+        
+        // 7. 创建私信会话
+        try {
+            CreateSessionDTO createSessionDTO = new CreateSessionDTO();
+            createSessionDTO.setTargetUserId(lostFound.getUserId());
+            createSessionDTO.setRelatedType("LOST_FOUND");
+            createSessionDTO.setRelatedId(lostFound.getId());
+            chatSessionService.createOrGetSession(createSessionDTO, userId);
+        } catch (Exception e) {
+            // 创建会话失败不影响认领记录的创建，只记录日志
+            System.err.println("创建私信会话失败: " + e.getMessage());
+        }
+        
+        // 8. 发送系统消息通知给发布者
+        try {
+            systemMessageService.sendMessage(
+                lostFound.getUserId(),
+                "CLAIM_APPLY",
+                "收到认领申请",
+                "您发布的失物《" + lostFound.getTitle() + "》收到了认领申请，请及时查看",
+                "LOST_FOUND",
+                lostFound.getId()
+            );
+        } catch (Exception e) {
+            // 发送通知失败不影响认领记录的创建，只记录日志
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+        
+        // 9. 异步发送邮件通知给发布者
+        try {
+            User publisher = userMapper.selectById(lostFound.getUserId());
+            if (publisher != null && publisher.getEmail() != null) {
+                String publisherNickname = publisher.getNickname() != null ? publisher.getNickname() : "用户";
+                emailService.sendClaimApplyEmailAsync(
+                    publisher.getEmail(),
+                    publisherNickname,
+                    lostFound.getTitle()
+                );
+            }
+        } catch (Exception e) {
+            // 发送邮件失败不影响认领记录的创建，只记录日志
+            System.err.println("发送邮件通知失败: " + e.getMessage());
+        }
     }
     
     @Override
@@ -313,6 +380,37 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         // 6. 更新失物状态
         lostFound.setStatus("CLAIMED");
         lostFoundMapper.updateById(lostFound);
+        
+        // 7. 发送系统消息通知给认领者
+        try {
+            systemMessageService.sendMessage(
+                record.getClaimerId(),
+                "CLAIM_CONFIRMED",
+                "认领成功",
+                "您认领的失物《" + lostFound.getTitle() + "》已被确认，请联系发布者取回物品",
+                "LOST_FOUND",
+                lostFound.getId()
+            );
+        } catch (Exception e) {
+            // 发送通知失败不影响业务逻辑，只记录日志
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+        
+        // 8. 异步发送邮件通知给认领者
+        try {
+            User claimer = userMapper.selectById(record.getClaimerId());
+            if (claimer != null && claimer.getEmail() != null) {
+                String claimerNickname = claimer.getNickname() != null ? claimer.getNickname() : "用户";
+                emailService.sendClaimConfirmedEmailAsync(
+                    claimer.getEmail(),
+                    claimerNickname,
+                    lostFound.getTitle()
+                );
+            }
+        } catch (Exception e) {
+            // 发送邮件失败不影响业务逻辑，只记录日志
+            System.err.println("发送邮件通知失败: " + e.getMessage());
+        }
     }
     
     @Override
@@ -349,6 +447,38 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         // 6. 失物状态恢复为待认领
         lostFound.setStatus("PENDING_CLAIM");
         lostFoundMapper.updateById(lostFound);
+        
+        // 7. 发送系统消息通知给认领者
+        try {
+            systemMessageService.sendMessage(
+                record.getClaimerId(),
+                "CLAIM_REJECTED",
+                "认领被拒绝",
+                "很抱歉，您认领的失物《" + lostFound.getTitle() + "》被拒绝。原因：" + reason,
+                "LOST_FOUND",
+                lostFound.getId()
+            );
+        } catch (Exception e) {
+            // 发送通知失败不影响业务逻辑，只记录日志
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+        
+        // 8. 异步发送邮件通知给认领者
+        try {
+            User claimer = userMapper.selectById(record.getClaimerId());
+            if (claimer != null && claimer.getEmail() != null) {
+                String claimerNickname = claimer.getNickname() != null ? claimer.getNickname() : "用户";
+                emailService.sendClaimRejectedEmailAsync(
+                    claimer.getEmail(),
+                    claimerNickname,
+                    lostFound.getTitle(),
+                    reason
+                );
+            }
+        } catch (Exception e) {
+            // 发送邮件失败不影响业务逻辑，只记录日志
+            System.err.println("发送邮件通知失败: " + e.getMessage());
+        }
     }
     
     @Override
