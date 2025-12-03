@@ -104,7 +104,7 @@ const routes = [
       {
         path: 'user/profile',
         name: 'UserProfile',
-        component: () => import('../views/user/Profile.vue'),
+        component: () => import('../views/profile/Profile.vue'),
         meta: {
           title: '个人中心',
           requiresAuth: true
@@ -113,7 +113,7 @@ const routes = [
       {
         path: 'user/verification',
         name: 'UserVerification',
-        component: () => import('../views/user/Verification.vue'),
+        component: () => import('../views/verification/Verification.vue'),
         meta: {
           title: '实名认证',
           requiresAuth: true
@@ -122,7 +122,7 @@ const routes = [
       {
         path: 'user/messages',
         name: 'UserMessages',
-        component: () => import('../views/user/Messages.vue'),
+        component: () => import('../views/message/Messages.vue'),
         meta: {
           title: '消息通知',
           requiresAuth: true
@@ -131,7 +131,7 @@ const routes = [
       {
         path: 'user/posts',
         name: 'UserPosts',
-        component: () => import('../views/user/Posts.vue'),
+        component: () => import('../views/post/Posts.vue'),
         meta: {
           title: '我的发布',
           requiresAuth: true
@@ -140,7 +140,7 @@ const routes = [
       {
         path: 'user/chat',
         name: 'UserChat',
-        component: () => import('../views/user/Chat.vue'),
+        component: () => import('../views/chat/Chat.vue'),
         meta: {
           title: '聊天',
           requiresAuth: true
@@ -191,7 +191,7 @@ const routes = [
       {
         path: 'profile',
         name: 'AdminProfile',
-        component: () => import('../views/user/Profile.vue'),
+        component: () => import('../views/profile/Profile.vue'),
         meta: {
           title: '个人中心',
           requiresAuth: true,

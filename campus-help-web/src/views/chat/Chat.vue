@@ -91,8 +91,13 @@
               </div>
               <div class="message-time">
                 {{ formatMessageTime(message.createTime) }}
-                <span v-if="isSentMessage(message) && message.isRead === 1" class="read-status">✓ 已读</span>
-                <span v-else-if="isSentMessage(message)" class="read-status unread">✓</span>
+                <span v-if="isSentMessage(message) && message.isRead === 1" class="read-status">
+                  <el-icon class="read-icon"><CircleCheck /></el-icon>
+                  <span class="read-text">已读</span>
+                </span>
+                <span v-else-if="isSentMessage(message)" class="read-status unread">
+                  <el-icon class="read-icon unread-icon"><CircleCheck /></el-icon>
+                </span>
               </div>
             </div>
             <el-avatar
@@ -153,7 +158,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Picture, Close, Promotion } from '@element-plus/icons-vue'
+import { Picture, Close, Promotion, CircleCheck } from '@element-plus/icons-vue'
 import { chatApi, fileApi, messageApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
@@ -348,6 +353,7 @@ const fetchMessages = async (sessionId) => {
   try {
     const response = await chatApi.getMessageList(sessionId)
     if (response.code === 200) {
+      // 直接替换消息列表（切换会话时）
       messages.value = response.data || []
       // 加载消息后，确保当前会话的未读数量为0（后端会标记消息为已读）
       const currentSession = sessions.value.find(s => s.id === sessionId)
@@ -363,6 +369,30 @@ const fetchMessages = async (sessionId) => {
     ElMessage.error('获取消息列表失败')
   } finally {
     messagesLoading.value = false
+  }
+}
+
+// 定期检查已读状态（用于实时更新）
+let readStatusCheckTimer = null
+const checkReadStatus = async () => {
+  if (!currentSessionId.value) return
+  
+  try {
+    const response = await chatApi.getMessageList(currentSessionId.value)
+    if (response.code === 200) {
+      const newMessages = response.data || []
+      // 更新已读状态
+      newMessages.forEach(newMsg => {
+        const existingIndex = messages.value.findIndex(m => m.id === newMsg.id)
+        if (existingIndex !== -1 && messages.value[existingIndex].isRead !== newMsg.isRead) {
+          // 只更新isRead状态，避免影响其他响应式数据
+          messages.value[existingIndex].isRead = newMsg.isRead
+        }
+      })
+    }
+  } catch (error) {
+    // 静默失败，不影响用户体验
+    console.error('检查已读状态失败:', error)
   }
 }
 
@@ -629,7 +659,14 @@ const handleChatMessage = (message) => {
       // 如果消息已存在（可能是自己发送的临时消息），更新为完整消息
       const index = messages.value.findIndex(m => m.id === message.id || (m.id === message.id && m.senderId === message.senderId))
       if (index !== -1) {
-        messages.value[index] = message
+        // 保留原有的消息对象，只更新关键字段（特别是isRead状态）
+        const existingMessage = messages.value[index]
+        messages.value[index] = {
+          ...existingMessage,
+          ...message,
+          // 确保isRead状态实时更新
+          isRead: message.isRead !== undefined ? message.isRead : existingMessage.isRead
+        }
         nextTick(() => {
           scrollToBottom()
         })
@@ -646,6 +683,19 @@ const handleChatMessage = (message) => {
         message.id
       )
     }
+  }
+  
+  // 检查是否有已读状态更新（用于更新自己发送的消息的已读状态）
+  if (message.senderId === userStore.userInfo?.id && message.isRead !== undefined) {
+    // 更新所有相同ID的消息的已读状态
+    messages.value.forEach((msg, index) => {
+      if (msg.id === message.id && msg.senderId === message.senderId) {
+        messages.value[index] = {
+          ...msg,
+          isRead: message.isRead
+        }
+      }
+    })
   }
   
   // 使用防抖更新会话列表（避免频繁请求）
@@ -705,6 +755,13 @@ const initChat = async () => {
 onMounted(async () => {
   // 初始化聊天页面，加载历史会话
   await initChat()
+  
+  // 启动定期检查已读状态（每5秒检查一次）
+  readStatusCheckTimer = setInterval(() => {
+    if (currentSessionId.value) {
+      checkReadStatus()
+    }
+  }, 5000)
 })
 
 // 监听路由变化，如果路由变化到聊天页面，确保加载会话列表
@@ -729,6 +786,12 @@ onUnmounted(() => {
   if (notificationTimer) {
     clearTimeout(notificationTimer)
     notificationTimer = null
+  }
+  
+  // 清理已读状态检查定时器
+  if (readStatusCheckTimer) {
+    clearInterval(readStatusCheckTimer)
+    readStatusCheckTimer = null
   }
   
   // 取消订阅聊天消息
@@ -914,7 +977,7 @@ onUnmounted(() => {
 }
 
 .message-item.message-sent {
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
 .message-content-wrapper {
@@ -999,11 +1062,26 @@ onUnmounted(() => {
 }
 
 .read-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   color: #67c23a;
-  font-size: 10px;
+  font-size: 12px;
+}
+
+.read-icon {
+  font-size: 14px;
+}
+
+.read-text {
+  font-size: 11px;
 }
 
 .read-status.unread {
+  color: #909399;
+}
+
+.read-status.unread .unread-icon {
   color: #909399;
 }
 
@@ -1028,8 +1106,8 @@ onUnmounted(() => {
   background-color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 8px 12px;
-  min-height: 40px;
+  padding: 6px 10px;
+  min-height: 36px;
 }
 
 .chat-textarea {
@@ -1077,7 +1155,7 @@ onUnmounted(() => {
 }
 
 .input-icon {
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   color: var(--color-text-secondary);
   transition: color 0.2s;
