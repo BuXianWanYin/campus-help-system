@@ -182,11 +182,11 @@
           <!-- 认领记录列表（仅发布者可见） -->
           <div v-if="isPublisher" class="claim-records-section">
             <h3 class="section-title">
-              {{ lostFound.type === 'LOST' ? '其他申请' : '失主认领申请' }}
+              {{ lostFound.type === 'LOST' ? '线索提供' : '失主认领申请' }}
             </h3>
             <div class="section-tip">
               <template v-if="lostFound.type === 'LOST'">
-                您丢失了物品，以下是其他用户提交的申请（声称他们也丢失了同样的物品或找到了您的物品），请仔细核对信息后处理。
+                您丢失了物品，以下是其他用户提供的线索，请仔细核对信息后处理。
               </template>
               <template v-else>
                 您拾到了物品，以下是失主申请认领该物品，请仔细核对信息后确认认领。
@@ -195,7 +195,7 @@
             <div v-loading="claimRecordsLoading">
               <div v-if="claimRecords.length === 0" class="empty-claims">
                 <el-empty 
-                  :description="lostFound.type === 'LOST' ? '暂无相关申请记录' : '暂无失主认领申请'" 
+                  :description="lostFound.type === 'LOST' ? '暂无线索提供' : '暂无失主认领申请'" 
                   :image-size="100" 
                 />
               </div>
@@ -223,7 +223,7 @@
                     </div>
                     <div v-if="record.lostTime" class="claim-meta">
                       <el-icon><Clock /></el-icon>
-                      <span>丢失时间：{{ formatDateTime(record.lostTime) }}</span>
+                      <span>{{ lostFound.type === 'LOST' ? '拾取时间：' : '丢失时间：' }}{{ formatDateTime(record.lostTime) }}</span>
                     </div>
                     <div v-if="record.otherInfo" class="claim-meta">
                       <span>其他信息：{{ record.otherInfo }}</span>
@@ -266,7 +266,7 @@
                       联系TA
                     </el-button>
                     <el-button 
-                      v-if="record.status === 'PENDING'" 
+                      v-if="lostFound.type === 'FOUND' && record.status === 'PENDING'" 
                       type="success" 
                       size="small" 
                       @click="handleConfirmClaim(record.id)"
@@ -274,7 +274,7 @@
                       确认认领
                     </el-button>
                     <el-button 
-                      v-if="record.status === 'PENDING'" 
+                      v-if="lostFound.type === 'FOUND' && record.status === 'PENDING'" 
                       type="danger" 
                       size="small" 
                       @click="handleRejectClaim(record.id)"
