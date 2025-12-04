@@ -215,7 +215,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Clock, Money, Truck, CircleCheck, Close } from '@element-plus/icons-vue'
+import { ArrowLeft, Clock, Money, CircleCheck, Close } from '@element-plus/icons-vue'
 import { orderApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'

@@ -253,14 +253,18 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         
         // 权限检查
         boolean canView = false;
+        
         try {
             String email = com.server.campushelpserver.util.SecurityUtils.getCurrentUserEmail();
             if (email != null) {
                 User currentUser = userMapper.selectUserByEmail(email);
                 if (currentUser != null) {
+                    // 检查是否是发布者 - 发布者可以查看自己的商品（包括待审核和已拒绝的）
                     if (goods.getUserId().equals(currentUser.getId())) {
                         canView = true;
-                    } else if ("ADMIN".equals(currentUser.getRole())) {
+                    }
+                    // 检查是否是管理员 - 管理员可以查看所有商品
+                    if ("ADMIN".equals(currentUser.getRole())) {
                         canView = true;
                     }
                 }
@@ -269,6 +273,8 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             // 未登录用户继续检查
         }
         
+        // 如果不是发布者和管理员，检查商品状态
+        // 只有审核通过的商品（ON_SALE、SOLD_OUT、CLOSED等）才允许普通用户查看
         if (!canView && !"PENDING_REVIEW".equals(goods.getStatus()) && !"REJECTED".equals(goods.getStatus())) {
             canView = true;
         }
@@ -277,7 +283,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             throw new BusinessException("无权查看此商品");
         }
         
-        // 只有审核通过的商品才增加浏览量
+        // 只有审核通过的商品才增加浏览量（发布者和管理员查看待审核/已拒绝的商品不增加浏览量）
         if (!"PENDING_REVIEW".equals(goods.getStatus()) && !"REJECTED".equals(goods.getStatus())) {
             goodsMapper.incrementViewCount(id);
         }

@@ -357,13 +357,10 @@ const handleSubmit = async () => {
     const imageUrls = []
     for (const fileItem of imageList.value) {
       if (fileItem.raw) {
-        const formData = new FormData()
-        formData.append('file', fileItem.raw)
-        formData.append('type', 'goods')
-        
-        const uploadResponse = await fileApi.upload(formData)
+        // 直接传入文件对象和模块名称
+        const uploadResponse = await fileApi.upload(fileItem.raw, 'goods')
         if (uploadResponse.code === 200) {
-          imageUrls.push(uploadResponse.data.url)
+          imageUrls.push(uploadResponse.data)
         }
       } else if (fileItem.url) {
         // 保留原有图片（提取URL）

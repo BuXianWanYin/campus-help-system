@@ -301,8 +301,8 @@ const handleSubmit = async () => {
       ElMessage.success('发布成功！审核通过后将显示在失物招领列表中')
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
-        router.push('/lost-found/list')
-      }, 1500)
+        router.push(`/lost-found/detail/${response.data}`)
+      }, 1000)
     }
   } catch (error) {
     console.error('发布失败:', error)

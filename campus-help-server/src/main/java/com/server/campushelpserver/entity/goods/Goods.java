@@ -48,7 +48,7 @@ public class Goods implements Serializable {
     @Schema(description = "售价")
     private BigDecimal currentPrice;
     
-    @TableField("condition")
+    @TableField("`condition`")
     @Schema(description = "商品成色：全新、几乎全新、轻微使用痕迹、明显使用痕迹")
     private String condition;
     

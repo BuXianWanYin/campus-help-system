@@ -30,6 +30,13 @@
                 <el-tag v-show="userInfo.role === 'ADMIN'" type="warning" size="small">管理员</el-tag>
                 <template v-if="userInfo.role !== 'ADMIN'">
                   <el-tag v-show="userInfo.isVerified === 1" type="success" size="small">已认证</el-tag>
+                  <el-tag 
+                    v-show="userInfo.isVerified === 1 && userInfo.userType" 
+                    type="primary" 
+                    size="small"
+                  >
+                    {{ userInfo.userType === '学生' ? '学生' : userInfo.userType === '教师' ? '教师' : userInfo.userType }}
+                  </el-tag>
                   <el-tag v-show="userInfo.isVerified !== 1 && userInfo.isVerified !== undefined" type="info" size="small">未认证</el-tag>
                 </template>
               </div>

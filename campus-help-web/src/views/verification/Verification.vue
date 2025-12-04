@@ -144,22 +144,39 @@ import { userApi } from '@/api'
 import VerificationForm from './components/VerificationForm.vue'
 
 const userStore = useUserStore()
+// 初始化用户信息，使用 store 中的信息或默认值
 const userInfo = ref({
-  isVerified: 0,
-  role: 'USER',
-  verificationStatus: null
+  isVerified: userStore.userInfo?.isVerified || 0,
+  role: userStore.userInfo?.role || 'USER',
+  verificationStatus: userStore.userInfo?.verificationStatus || null
 })
 const showForm = ref(false)
 
 // 获取用户信息
 const fetchUserInfo = async () => {
   try {
+    // 优先使用 store 中的用户信息
+    if (userStore.userInfo) {
+      userInfo.value = { ...userStore.userInfo }
+    }
+    
+    // 从 API 获取最新信息
     const response = await userApi.getCurrentUser()
-    if (response.code === 200) {
+    if (response.code === 200 && response.data) {
       userInfo.value = response.data
+      // 更新 store 中的用户信息
+      if (userStore.setUserInfo) {
+        userStore.setUserInfo(response.data)
+      }
     }
   } catch (error) {
-    ElMessage.error(error.message || '获取用户信息失败')
+    console.error('获取用户信息失败:', error)
+    // 如果 API 失败，使用 store 中的信息
+    if (userStore.userInfo) {
+      userInfo.value = { ...userStore.userInfo }
+    } else {
+      ElMessage.error('获取用户信息失败，请刷新页面重试')
+    }
   }
 }
 

@@ -94,6 +94,7 @@
             :on-preview="handlePreview"
             :on-remove="handleRemove"
             :on-exceed="handleExceed"
+            :on-change="handleImageChange"
             accept="image/*"
             :before-upload="beforeUpload"
           >
@@ -213,8 +214,16 @@ const rules = {
     { type: 'number', min: 1, message: '库存数量至少1件', trigger: 'blur' }
   ],
   images: [
-    { required: true, message: '请至少上传1张商品图片', trigger: 'change' },
-    { type: 'array', min: 1, message: '请至少上传1张商品图片', trigger: 'change' }
+    { 
+      validator: (rule, value, callback) => {
+        if (imageList.value.length === 0) {
+          callback(new Error('请至少上传1张商品图片'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'change' 
+    }
   ],
   tradeMethod: [
     { required: true, message: '请选择交易方式', trigger: 'change' }
@@ -281,10 +290,28 @@ const handlePreview = (file) => {
 }
 
 /**
+ * 处理图片变化（添加或移除）
+ */
+const handleImageChange = (file, fileList) => {
+  // 同步更新 imageList
+  imageList.value = fileList
+  // 更新 form.images 以触发验证
+  updateImagesField()
+  // 手动触发验证
+  if (formRef.value) {
+    formRef.value.validateField('images')
+  }
+}
+
+/**
  * 处理图片移除
  */
 const handleRemove = () => {
   updateImagesField()
+  // 手动触发验证
+  if (formRef.value) {
+    formRef.value.validateField('images')
+  }
 }
 
 /**
@@ -329,13 +356,10 @@ const handleSubmit = async () => {
     const imageUrls = []
     for (const fileItem of imageList.value) {
       if (fileItem.raw) {
-        const formData = new FormData()
-        formData.append('file', fileItem.raw)
-        formData.append('type', 'goods')
-        
-        const uploadResponse = await fileApi.upload(formData)
+        // 直接传入文件对象和模块名称
+        const uploadResponse = await fileApi.upload(fileItem.raw, 'goods')
         if (uploadResponse.code === 200) {
-          imageUrls.push(uploadResponse.data.url)
+          imageUrls.push(uploadResponse.data)
         }
       } else if (fileItem.url) {
         imageUrls.push(fileItem.url)
@@ -357,7 +381,10 @@ const handleSubmit = async () => {
     const response = await goodsApi.publish(submitData)
     if (response.code === 200) {
       ElMessage.success('发布成功')
-      router.push(`/goods/detail/${response.data}`)
+      // 延迟跳转，让用户看到成功提示
+      setTimeout(() => {
+        router.push(`/goods/detail/${response.data}`)
+      }, 1000)
     }
   } catch (error) {
     if (error !== false) {

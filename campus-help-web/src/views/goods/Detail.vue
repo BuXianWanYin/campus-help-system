@@ -69,7 +69,7 @@
               <span>浏览：{{ goods.viewCount || 0 }}次</span>
             </div>
             <div class="meta-item">
-              <el-icon><Truck /></el-icon>
+              <el-icon><Box /></el-icon>
               <span>交易方式：{{ goods.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}</span>
             </div>
             <div v-if="goods.tradeMethod === 'MAIL' && goods.shippingFee" class="meta-item">
@@ -131,7 +131,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Location, Clock, Folder, View, Box, ShoppingCart, Truck, Money } from '@element-plus/icons-vue'
+import { ArrowLeft, Location, Clock, Folder, View, Box, ShoppingCart, Money } from '@element-plus/icons-vue'
 import { goodsApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
