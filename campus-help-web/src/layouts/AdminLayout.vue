@@ -13,6 +13,8 @@
             :width="350"
             trigger="click"
             v-model:visible="messagePanelVisible"
+            :teleported="true"
+            :hide-after="0"
           >
             <template #reference>
               <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notification-badge">

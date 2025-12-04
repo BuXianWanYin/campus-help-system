@@ -367,7 +367,12 @@
     </nav>
     
     <!-- 消息通知面板 -->
-    <div class="notification-panel" v-if="showNotificationPanel">
+    <div 
+      class="notification-panel" 
+      v-if="showNotificationPanel" 
+      v-click-outside:notification-btn-wrapper="() => showNotificationPanel = false"
+      @click.stop
+    >
       <div class="notification-header">
         <h3>消息通知</h3>
         <el-button text @click="markAllAsRead">全部标记为已读</el-button>

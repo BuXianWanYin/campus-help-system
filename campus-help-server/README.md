@@ -13,7 +13,7 @@
 - **实时通信**: WebSocket (STOMP)
 - **API文档**: SpringDoc OpenAPI 3 (Swagger)
 - **连接池**: Druid 1.2.18
-- **缓存**: Redis (可选)
+- **缓存**: Redis 
 - **邮件服务**: JavaMail
 - **构建工具**: Maven
 
