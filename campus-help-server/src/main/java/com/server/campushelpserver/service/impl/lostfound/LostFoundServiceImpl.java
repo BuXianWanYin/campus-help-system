@@ -31,6 +31,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 失物招领服务实现类
@@ -261,25 +262,23 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             throw new BusinessException("不能认领自己发布的失物");
         }
         
-        // 4. 检查是否已经申请过
+        // 4. 检查是否已经申请过（只检查未删除的）
         LambdaQueryWrapper<ClaimRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClaimRecord::getLostFoundId, dto.getLostFoundId())
-               .eq(ClaimRecord::getClaimerId, userId);
+               .eq(ClaimRecord::getClaimerId, userId)
+               .eq(ClaimRecord::getDeleteFlag, 0); // 只检查未删除的
         ClaimRecord existRecord = claimRecordMapper.selectOne(wrapper);
         if (existRecord != null) {
             throw new BusinessException("您已申请认领过该失物");
         }
         
-        // 5. 使用乐观锁更新失物状态
-        int rows = lostFoundMapper.updateStatusWithVersion(
-                dto.getLostFoundId(),
-                "PENDING_CLAIM",
-                "CLAIMING",
-                lostFound.getVersion()
-        );
-        
-        if (rows == 0) {
-            throw new BusinessException("认领失败，请重试");
+        // 5. 如果当前状态是PENDING_CLAIM，更新为CLAIMING（表示有认领申请）
+        // 如果已经是CLAIMING，说明已有其他用户申请，不需要更新状态
+        // 允许多个用户申请认领，所以不需要使用乐观锁强制更新
+        if ("PENDING_CLAIM".equals(lostFound.getStatus())) {
+            lostFound.setStatus("CLAIMING");
+            lostFound.setUpdateTime(LocalDateTime.now());
+            lostFoundMapper.updateById(lostFound);
         }
         
         // 6. 创建认领记录
@@ -377,8 +376,39 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         record.setConfirmTime(LocalDateTime.now());
         claimRecordMapper.updateById(record);
         
-        // 6. 更新失物状态
+        // 6. 拒绝其他所有待处理的认领申请
+        LambdaQueryWrapper<ClaimRecord> otherWrapper = new LambdaQueryWrapper<>();
+        otherWrapper.eq(ClaimRecord::getLostFoundId, lostFound.getId())
+                   .eq(ClaimRecord::getStatus, "PENDING")
+                   .ne(ClaimRecord::getId, claimRecordId)
+                   .eq(ClaimRecord::getDeleteFlag, 0);
+        List<ClaimRecord> otherRecords = claimRecordMapper.selectList(otherWrapper);
+        if (otherRecords != null && !otherRecords.isEmpty()) {
+            for (ClaimRecord otherRecord : otherRecords) {
+                otherRecord.setStatus("REJECTED");
+                otherRecord.setRejectReason("物品已被其他用户认领");
+                otherRecord.setRejectTime(LocalDateTime.now());
+                claimRecordMapper.updateById(otherRecord);
+                
+                // 发送系统消息通知给被拒绝的认领者
+                try {
+                    systemMessageService.sendMessage(
+                        otherRecord.getClaimerId(),
+                        "CLAIM_REJECTED",
+                        "认领被拒绝",
+                        "很抱歉，您认领的失物《" + lostFound.getTitle() + "》已被其他用户认领",
+                        "LOST_FOUND",
+                        lostFound.getId()
+                    );
+                } catch (Exception e) {
+                    System.err.println("发送系统消息失败: " + e.getMessage());
+                }
+            }
+        }
+        
+        // 7. 更新失物状态
         lostFound.setStatus("CLAIMED");
+        lostFound.setUpdateTime(LocalDateTime.now());
         lostFoundMapper.updateById(lostFound);
         
         // 7. 发送系统消息通知给认领者
@@ -444,8 +474,21 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         record.setRejectTime(LocalDateTime.now());
         claimRecordMapper.updateById(record);
         
-        // 6. 失物状态恢复为待认领
-        lostFound.setStatus("PENDING_CLAIM");
+        // 6. 检查是否还有其他待处理的认领申请
+        LambdaQueryWrapper<ClaimRecord> checkWrapper = new LambdaQueryWrapper<>();
+        checkWrapper.eq(ClaimRecord::getLostFoundId, lostFound.getId())
+                   .eq(ClaimRecord::getStatus, "PENDING")
+                   .eq(ClaimRecord::getDeleteFlag, 0);
+        long pendingCount = claimRecordMapper.selectCount(checkWrapper);
+        
+        // 如果没有其他待处理的申请，状态恢复为待认领；否则保持认领中状态
+        if (pendingCount == 0) {
+            lostFound.setStatus("PENDING_CLAIM");
+        } else {
+            // 还有其他待处理的申请，保持认领中状态
+            lostFound.setStatus("CLAIMING");
+        }
+        lostFound.setUpdateTime(LocalDateTime.now());
         lostFoundMapper.updateById(lostFound);
         
         // 7. 发送系统消息通知给认领者

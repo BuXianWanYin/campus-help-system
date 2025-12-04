@@ -57,9 +57,9 @@
       :default-sort="{ prop: 'createTime', order: 'descending' }"
     >
       <el-table-column prop="id" label="ID" min-width="80" sortable />
-      <el-table-column prop="type" label="类型" min-width="80">
+      <el-table-column prop="type" label="类型" min-width="100">
         <template #default="{ row }">
-          <el-tag :type="row.type === 'LOST' ? 'danger' : 'success'" size="small">
+          <el-tag :type="row.type === 'LOST' ? 'danger' : 'success'" size="small" style="white-space: nowrap;">
             {{ row.type === 'LOST' ? '失物' : '招领' }}
           </el-tag>
         </template>
