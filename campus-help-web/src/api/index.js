@@ -24,7 +24,14 @@ export { lostFoundApi } from './lostFound'
 // 搜索历史相关 API
 export { searchHistoryApi } from './searchHistory'
 
+// 商品相关 API
+export { goodsApi } from './goods'
+
+// 订单相关 API
+export { orderApi } from './order'
+
+// 收货地址相关 API
+export { addressApi } from './address'
+
 // 可以继续添加其他模块的 API
-// export { goodsApi } from './goods'
 // export { taskApi } from './task'
-// export { chatApi } from './chat'

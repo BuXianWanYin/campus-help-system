@@ -50,6 +50,11 @@
           </div>
         </div>
 
+        <!-- 订单卡片（仅在GOODS类型会话且存在订单时显示） -->
+        <div v-if="currentOrder" class="order-card-wrapper">
+          <OrderCard :order="currentOrder" @update-order="handleOrderUpdate" />
+        </div>
+
         <!-- 消息列表 -->
         <div class="messages-container" ref="messagesContainer" v-loading="messagesLoading">
           <div v-if="messages.length === 0 && !messagesLoading" class="empty-messages">
@@ -159,7 +164,8 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } f
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Picture, Close, Promotion, CircleCheck } from '@element-plus/icons-vue'
-import { chatApi, fileApi, messageApi } from '@/api'
+import { chatApi, fileApi, messageApi, orderApi } from '@/api'
+import OrderCard from './components/OrderCard.vue'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 import wsManager from '@/utils/websocket'
@@ -179,6 +185,8 @@ const inputMessage = ref('')
 const messagesContainer = ref(null)
 const selectedImages = ref([])
 const chatSubscription = ref(null)
+const currentOrder = ref(null)
+const orderLoading = ref(false)
 
 // 获取对方用户信息
 const getOtherUser = (session) => {
@@ -328,6 +336,13 @@ const selectSession = async (session) => {
   const currentSession = sessions.value.find(s => s.id === session.id)
   if (currentSession) {
     currentSession.unreadCount = 0
+  }
+  
+  // 如果是商品类型会话，尝试获取关联订单
+  if (session.relatedType === 'GOODS' && session.id) {
+    fetchOrderBySessionId(session.id)
+  } else {
+    currentOrder.value = null
   }
   
   await fetchMessages(session.id)
@@ -702,10 +717,52 @@ const handleChatMessage = (message) => {
   debouncedUpdateSessions()
 }
 
+/**
+ * 根据会话ID获取订单信息
+ */
+const fetchOrderBySessionId = async (sessionId) => {
+  if (!sessionId) {
+    currentOrder.value = null
+    return
+  }
+  
+  orderLoading.value = true
+  try {
+    const response = await orderApi.getBySessionId(sessionId)
+    if (response.code === 200 && response.data) {
+      currentOrder.value = response.data
+    } else {
+      currentOrder.value = null
+    }
+  } catch (error) {
+    // 订单不存在或无权查看，不显示订单卡片
+    currentOrder.value = null
+  } finally {
+    orderLoading.value = false
+  }
+}
+
+/**
+ * 处理订单更新
+ */
+const handleOrderUpdate = () => {
+  // 重新获取订单信息
+  if (currentSessionId.value) {
+    fetchOrderBySessionId(currentSessionId.value)
+  }
+}
+
 // 监听会话ID变化（避免重复调用）
 watch(currentSessionId, (newId, oldId) => {
   if (newId && newId !== oldId) {
     fetchMessages(newId)
+    // 如果是商品类型会话，获取订单信息
+    const session = sessions.value.find(s => s.id === newId)
+    if (session && session.relatedType === 'GOODS') {
+      fetchOrderBySessionId(newId)
+    } else {
+      currentOrder.value = null
+    }
   }
 })
 
@@ -1215,6 +1272,14 @@ onUnmounted(() => {
 
 .remove-image:hover {
   background-color: rgba(0, 0, 0, 0.7);
+}
+
+.order-card-wrapper {
+  padding: 16px;
+  background-color: #F5F5F5;
+  border-bottom: 1px solid var(--color-border);
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 </style>

@@ -93,6 +93,60 @@ const routes = [
         }
       },
       {
+        path: 'goods/detail/:id',
+        name: 'GoodsDetail',
+        component: () => import('../views/goods/Detail.vue'),
+        meta: {
+          title: '商品详情',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'goods/publish',
+        name: 'GoodsPublish',
+        component: () => import('../views/goods/Publish.vue'),
+        meta: {
+          title: '发布商品',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'goods/edit/:id',
+        name: 'GoodsEdit',
+        component: () => import('../views/goods/Edit.vue'),
+        meta: {
+          title: '编辑商品',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'order/list',
+        name: 'OrderList',
+        component: () => import('../views/order/List.vue'),
+        meta: {
+          title: '我的交易',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'order/detail/:id',
+        name: 'OrderDetail',
+        component: () => import('../views/order/Detail.vue'),
+        meta: {
+          title: '订单详情',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'address/list',
+        name: 'AddressList',
+        component: () => import('../views/address/List.vue'),
+        meta: {
+          title: '收货地址',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'task/list',
         name: 'TaskList',
         component: () => import('../views/task/List.vue'),

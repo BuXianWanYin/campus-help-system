@@ -36,6 +36,9 @@ public class AdminController {
     @Autowired
     private LostFoundService lostFoundService;
     
+    @Autowired
+    private com.server.campushelpserver.service.goods.GoodsService goodsService;
+    
     /**
      * 获取待审核的实名认证列表
      */
@@ -210,9 +213,72 @@ public class AdminController {
     }
     
     /**
+     * 获取待审核的商品列表
+     */
+    @Operation(summary = "获取待审核的商品列表", description = "分页查询待审核的商品")
+    @GetMapping("/goods/pending")
+    public Result<Page<com.server.campushelpserver.entity.goods.Goods>> getPendingGoodsList(
+            @Parameter(description = "分页参数") Page<com.server.campushelpserver.entity.goods.Goods> page,
+            @Parameter(description = "搜索条件") com.server.campushelpserver.entity.goods.dto.GoodsSearchDTO searchDTO) {
+        searchDTO.setPageNum((int) page.getCurrent());
+        searchDTO.setPageSize((int) page.getSize());
+        Page<com.server.campushelpserver.entity.goods.Goods> result = goodsService.getPendingAuditList(searchDTO);
+        return Result.success("查询成功", result);
+    }
+    
+    /**
+     * 审核商品
+     */
+    @Operation(summary = "审核商品", description = "管理员审核商品")
+    @PostMapping("/goods/{id}/audit")
+    public Result<Void> auditGoods(
+            @Parameter(description = "商品ID") @PathVariable Long id,
+            @Parameter(description = "审核信息") @Validated @RequestBody GoodsAuditRequest request) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return Result.error("未登录");
+        }
+        User admin = userService.getUserByEmail(email);
+        if (admin == null) {
+            return Result.error("管理员不存在");
+        }
+        
+        goodsService.auditGoods(id, request.getAuditResult(), request.getAuditReason(), admin.getId());
+        String message = request.getAuditResult() == 1 ? "审核通过" : "审核拒绝";
+        return Result.success(message, null);
+    }
+    
+    /**
      * 失物招领审核请求DTO
      */
     public static class LostFoundAuditRequest {
+        @NotNull(message = "审核结果不能为空")
+        private Integer auditResult; // 1-通过，0-拒绝
+        
+        private String auditReason; // 拒绝原因（拒绝时必填）
+        
+        // Getters and Setters
+        public Integer getAuditResult() {
+            return auditResult;
+        }
+        
+        public void setAuditResult(Integer auditResult) {
+            this.auditResult = auditResult;
+        }
+        
+        public String getAuditReason() {
+            return auditReason;
+        }
+        
+        public void setAuditReason(String auditReason) {
+            this.auditReason = auditReason;
+        }
+    }
+    
+    /**
+     * 商品审核请求DTO
+     */
+    public static class GoodsAuditRequest {
         @NotNull(message = "审核结果不能为空")
         private Integer auditResult; // 1-通过，0-拒绝
         

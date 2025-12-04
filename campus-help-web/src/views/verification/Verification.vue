@@ -144,7 +144,11 @@ import { userApi } from '@/api'
 import VerificationForm from './components/VerificationForm.vue'
 
 const userStore = useUserStore()
-const userInfo = ref({})
+const userInfo = ref({
+  isVerified: 0,
+  role: 'USER',
+  verificationStatus: null
+})
 const showForm = ref(false)
 
 // 获取用户信息
