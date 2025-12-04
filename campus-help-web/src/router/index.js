@@ -189,6 +189,16 @@ const routes = [
         }
       },
       {
+        path: 'lost-found-audit',
+        name: 'AdminLostFoundAudit',
+        component: () => import('../views/admin/LostFoundAudit.vue'),
+        meta: {
+          title: '失物招领审核',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
         path: 'profile',
         name: 'AdminProfile',
         component: () => import('../views/profile/Profile.vue'),

@@ -56,6 +56,25 @@ export const adminApi = {
    */
   deleteUser(userId) {
     return request.delete(`/admin/user/${userId}`)
+  },
+  
+  /**
+   * 获取待审核的失物招领列表
+   * @param {Object} params 查询参数
+   * @returns {Promise} 失物招领列表
+   */
+  getPendingLostFoundList(params) {
+    return request.get('/admin/lost-found/pending', { params })
+  },
+  
+  /**
+   * 审核失物招领
+   * @param {Number} id 失物ID
+   * @param {Object} data 审核信息
+   * @returns {Promise} 审核结果
+   */
+  auditLostFound(id, data) {
+    return request.post(`/admin/lost-found/${id}/audit`, data)
   }
 }
 

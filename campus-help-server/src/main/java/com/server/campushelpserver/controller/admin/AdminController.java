@@ -3,7 +3,10 @@ package com.server.campushelpserver.controller.admin;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.server.campushelpserver.common.Result;
+import com.server.campushelpserver.entity.lostfound.LostFound;
+import com.server.campushelpserver.entity.lostfound.dto.LostFoundSearchDTO;
 import com.server.campushelpserver.entity.user.User;
+import com.server.campushelpserver.service.lostfound.LostFoundService;
 import com.server.campushelpserver.service.user.UserService;
 import com.server.campushelpserver.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +32,9 @@ public class AdminController {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private LostFoundService lostFoundService;
     
     /**
      * 获取待审核的实名认证列表
@@ -119,6 +125,42 @@ public class AdminController {
     }
     
     /**
+     * 获取待审核的失物招领列表
+     */
+    @Operation(summary = "获取待审核的失物招领列表", description = "分页查询待审核的失物招领")
+    @GetMapping("/lost-found/pending")
+    public Result<Page<LostFound>> getPendingLostFoundList(
+            @Parameter(description = "分页参数") Page<LostFound> page,
+            @Parameter(description = "搜索条件") LostFoundSearchDTO searchDTO) {
+        searchDTO.setPageNum((int) page.getCurrent());
+        searchDTO.setPageSize((int) page.getSize());
+        Page<LostFound> result = lostFoundService.getPendingAuditList(searchDTO);
+        return Result.success("查询成功", result);
+    }
+    
+    /**
+     * 审核失物招领
+     */
+    @Operation(summary = "审核失物招领", description = "管理员审核失物招领")
+    @PostMapping("/lost-found/{id}/audit")
+    public Result<Void> auditLostFound(
+            @Parameter(description = "失物ID") @PathVariable Long id,
+            @Parameter(description = "审核信息") @Validated @RequestBody LostFoundAuditRequest request) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return Result.error("未登录");
+        }
+        User admin = userService.getUserByEmail(email);
+        if (admin == null) {
+            return Result.error("管理员不存在");
+        }
+        
+        lostFoundService.auditLostFound(id, request.getAuditResult(), request.getAuditReason(), admin.getId());
+        String message = request.getAuditResult() == 1 ? "审核通过" : "审核拒绝";
+        return Result.success(message, null);
+    }
+    
+    /**
      * 封禁用户请求DTO
      */
     public static class BanUserRequest {
@@ -164,6 +206,33 @@ public class AdminController {
         
         public void setBanDays(Integer banDays) {
             this.banDays = banDays;
+        }
+    }
+    
+    /**
+     * 失物招领审核请求DTO
+     */
+    public static class LostFoundAuditRequest {
+        @NotNull(message = "审核结果不能为空")
+        private Integer auditResult; // 1-通过，0-拒绝
+        
+        private String auditReason; // 拒绝原因（拒绝时必填）
+        
+        // Getters and Setters
+        public Integer getAuditResult() {
+            return auditResult;
+        }
+        
+        public void setAuditResult(Integer auditResult) {
+            this.auditResult = auditResult;
+        }
+        
+        public String getAuditReason() {
+            return auditReason;
+        }
+        
+        public void setAuditReason(String auditReason) {
+            this.auditReason = auditReason;
         }
     }
 }

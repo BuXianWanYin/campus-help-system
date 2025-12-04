@@ -212,9 +212,18 @@
                       </div>
                     </div>
                     <div class="claim-status">
-                      <el-tag v-if="record.status === 'PENDING'" type="warning">待处理</el-tag>
-                      <el-tag v-else-if="record.status === 'CONFIRMED'" type="success">已确认</el-tag>
-                      <el-tag v-else-if="record.status === 'REJECTED'" type="danger">已拒绝</el-tag>
+                      <template v-if="lostFound.type === 'LOST'">
+                        <!-- 丢失物品：拾取人提供线索 -->
+                        <el-tag v-if="record.status === 'PENDING'" type="warning">待确认</el-tag>
+                        <el-tag v-else-if="record.status === 'CONFIRMED'" type="success">已认领</el-tag>
+                        <el-tag v-else-if="record.status === 'REJECTED'" type="info">已忽略</el-tag>
+                      </template>
+                      <template v-else>
+                        <!-- 招领物品：失主申请认领 -->
+                        <el-tag v-if="record.status === 'PENDING'" type="warning">待处理</el-tag>
+                        <el-tag v-else-if="record.status === 'CONFIRMED'" type="success">已确认</el-tag>
+                        <el-tag v-else-if="record.status === 'REJECTED'" type="danger">已拒绝</el-tag>
+                      </template>
                     </div>
                   </div>
                   <div class="claim-content">

@@ -779,6 +779,117 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
     }
     
     /**
+     * 管理员审核失物招领
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditLostFound(Long id, Integer auditResult, String auditReason, Long adminId) {
+        // 1. 查询失物信息
+        LostFound lostFound = lostFoundMapper.selectById(id);
+        if (lostFound == null) {
+            throw new BusinessException("失物信息不存在");
+        }
+        
+        // 2. 验证状态（只有待审核状态的可以审核）
+        if (!"PENDING_REVIEW".equals(lostFound.getStatus()) || !"PENDING".equals(lostFound.getAuditStatus())) {
+            throw new BusinessException("该失物不在待审核状态");
+        }
+        
+        // 3. 验证拒绝原因
+        if (auditResult == 0 && (auditReason == null || auditReason.trim().isEmpty())) {
+            throw new BusinessException("拒绝审核必须填写拒绝原因");
+        }
+        
+        // 4. 更新审核状态
+        lostFound.setAuditStatus(auditResult == 1 ? "APPROVED" : "REJECTED");
+        lostFound.setAuditReason(auditResult == 0 ? auditReason : null);
+        lostFound.setAuditTime(LocalDateTime.now());
+        lostFound.setAuditAdminId(adminId);
+        
+        if (auditResult == 1) {
+            // 审核通过，状态改为待认领
+            lostFound.setStatus("PENDING_CLAIM");
+        } else {
+            // 审核拒绝，状态改为已拒绝
+            lostFound.setStatus("REJECTED");
+        }
+        
+        lostFound.setUpdateTime(LocalDateTime.now());
+        lostFoundMapper.updateById(lostFound);
+        
+        // 5. 发送系统消息通知发布者
+        try {
+            String messageTitle = auditResult == 1 ? "失物审核通过" : "失物审核被拒绝";
+            String messageContent = auditResult == 1 
+                ? "您发布的失物《" + lostFound.getTitle() + "》已通过审核，现已上线。"
+                : "很抱歉，您发布的失物《" + lostFound.getTitle() + "》未通过审核。原因：" + auditReason;
+            
+            systemMessageService.sendMessage(
+                lostFound.getUserId(),
+                auditResult == 1 ? "LOST_FOUND_APPROVED" : "LOST_FOUND_REJECTED",
+                messageTitle,
+                messageContent,
+                "LOST_FOUND",
+                lostFound.getId()
+            );
+        } catch (Exception e) {
+            // 发送通知失败不影响业务逻辑，只记录日志
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取待审核的失物招领列表（管理员）
+     */
+    @Override
+    public Page<LostFound> getPendingAuditList(LostFoundSearchDTO searchDTO) {
+        Page<LostFound> page = new Page<>(searchDTO.getPageNum(), searchDTO.getPageSize());
+        
+        LambdaQueryWrapper<LostFound> wrapper = new LambdaQueryWrapper<>();
+        
+        // 只查询待审核的
+        wrapper.eq(LostFound::getStatus, "PENDING_REVIEW")
+               .eq(LostFound::getAuditStatus, "PENDING")
+               .eq(LostFound::getDeleteFlag, 0);
+        
+        // 类型筛选
+        if (searchDTO.getType() != null && !searchDTO.getType().isEmpty()) {
+            wrapper.eq(LostFound::getType, searchDTO.getType());
+        }
+        
+        // 分类筛选
+        if (searchDTO.getCategory() != null && !searchDTO.getCategory().isEmpty()) {
+            wrapper.eq(LostFound::getCategory, searchDTO.getCategory());
+        }
+        
+        // 关键词搜索
+        if (searchDTO.getKeyword() != null && !searchDTO.getKeyword().trim().isEmpty()) {
+            String keyword = searchDTO.getKeyword().trim();
+            wrapper.and(w -> w.like(LostFound::getTitle, keyword)
+                             .or()
+                             .like(LostFound::getDescription, keyword));
+        }
+        
+        // 排序
+        if ("time".equals(searchDTO.getSortBy())) {
+            wrapper.orderByAsc(LostFound::getCreateTime);
+        } else {
+            wrapper.orderByDesc(LostFound::getCreateTime);
+        }
+        
+        Page<LostFound> resultPage = lostFoundMapper.selectPage(page, wrapper);
+        
+        // 为每个失物填充用户信息
+        if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+            for (LostFound lostFound : resultPage.getRecords()) {
+                fillUserInfo(lostFound);
+            }
+        }
+        
+        return resultPage;
+    }
+    
+    /**
      * 填充用户信息
      */
     private void fillUserInfo(LostFound lostFound) {

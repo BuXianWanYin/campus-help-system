@@ -116,5 +116,21 @@ public interface LostFoundService extends IService<LostFound> {
      * @param userId 用户ID
      */
     void deleteClaimRecord(Long claimRecordId, Long userId);
+    
+    /**
+     * 管理员审核失物招领
+     * @param id 失物ID
+     * @param auditResult 审核结果：1-通过，0-拒绝
+     * @param auditReason 拒绝原因（拒绝时必填）
+     * @param adminId 管理员ID
+     */
+    void auditLostFound(Long id, Integer auditResult, String auditReason, Long adminId);
+    
+    /**
+     * 获取待审核的失物招领列表（管理员）
+     * @param searchDTO 搜索条件
+     * @return 分页结果
+     */
+    Page<LostFound> getPendingAuditList(LostFoundSearchDTO searchDTO);
 }
 
