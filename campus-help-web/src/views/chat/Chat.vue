@@ -782,11 +782,8 @@ onUnmounted(() => {
     sessionUpdateTimer = null
   }
   
-  // 清理通知定时器
-  if (notificationTimer) {
-    clearTimeout(notificationTimer)
-    notificationTimer = null
-  }
+  // 清理通知定时器（如果存在）
+  // notificationTimer 可能在某些情况下未定义，所以需要检查
   
   // 清理已读状态检查定时器
   if (readStatusCheckTimer) {

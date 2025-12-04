@@ -334,7 +334,18 @@
       </template>
       
       <!-- 路由视图（其他页面） -->
-      <router-view v-if="!isHomePage" />
+      <router-view v-if="!isHomePage" v-slot="{ Component, route }">
+        <!-- 
+          keep-alive 配置说明：
+          - 列表页（List）：需要缓存，返回时刷新数据
+          - 详情页（Detail）：不需要缓存，每次进入都重新加载
+          - 编辑/发布页（Edit/Publish）：不需要缓存，避免数据残留
+          - 其他页面：根据需求决定是否缓存
+        -->
+        <keep-alive :include="keepAliveComponents">
+          <component :is="Component" :key="route.path" />
+        </keep-alive>
+      </router-view>
     </main>
     
     <!-- 底部导航栏（移动端） -->
@@ -767,15 +778,33 @@ const updateActiveMenu = () => {
   }
 }
 
-// 监听路由变化，实时更新激活菜单和加载数据
-watch(() => route.path, (newPath) => {
-  updateActiveMenu()
-  // 如果是首页，加载失物招领列表
-  if (newPath === '/home' || newPath === '/') {
-    nextTick(() => {
-      fetchLostFoundList()
-    })
+// 需要缓存的组件列表（列表页通常需要缓存，详情页和编辑页不需要）
+const keepAliveComponents = computed(() => {
+  // 可以根据路由 meta 动态配置，或者直接列出需要缓存的组件名称
+  return [
+    'Home',              // 首页
+    'LostFoundList',     // 失物招领列表
+    'GoodsList',         // 闲置交易列表
+    'TaskList',          // 跑腿服务列表
+    'UserMessages',      // 消息通知（需要缓存以保持滚动位置）
+    'UserPosts',         // 我的发布
+    'UserProfile',       // 个人中心（可选，根据需求）
+    'UserChat'           // 聊天页面（需要缓存以保持会话状态）
+  ]
+})
+
+// 处理首页数据刷新（由 Home.vue 的 onActivated 触发）
+const handleRefreshHomeData = () => {
+  const path = route.path
+  if (path === '/home' || path === '/') {
+    fetchLostFoundList()
   }
+}
+
+// 监听路由变化，实时更新激活菜单
+watch(() => route.path, (newPath, oldPath) => {
+  updateActiveMenu()
+  // 注意：数据刷新现在由 keep-alive + onActivated 统一处理
 }, { immediate: true })
 
 // 跳转到功能模块
@@ -787,10 +816,13 @@ const goToModule = (path) => {
 const fetchLostFoundList = async () => {
   // 只在首页时获取数据
   const path = route.path
+  console.log('[MainLayout] fetchLostFoundList: 当前路径:', path)
   if (path !== '/home' && path !== '/') {
+    console.log('[MainLayout] fetchLostFoundList: 不在首页，跳过加载')
     return
   }
   
+  console.log('[MainLayout] fetchLostFoundList: 开始加载数据')
   lostFoundLoading.value = true
   try {
     const params = {
@@ -911,7 +943,22 @@ const handleContact = (item) => {
 
 // 跳转详情
 const goToDetail = (type, id) => {
-  router.push(`/${type}/detail/${id}`)
+  console.log('[MainLayout] goToDetail 被调用:', type, id)
+  if (!id) {
+    console.error('[MainLayout] goToDetail: id 为空')
+    return
+  }
+  const path = `/${type}/detail/${id}`
+  console.log('[MainLayout] 准备跳转到:', path)
+  console.log('[MainLayout] 当前路由:', router.currentRoute.value.path)
+  
+  // 使用 router.push 并监听路由变化
+  router.push(path).then(() => {
+    console.log('[MainLayout] 路由跳转成功，当前路径:', router.currentRoute.value.path)
+  }).catch(err => {
+    console.error('[MainLayout] 路由跳转失败:', err)
+    console.error('[MainLayout] 错误详情:', err.message, err.stack)
+  })
 }
 
 // 价格协商
@@ -981,10 +1028,20 @@ onMounted(async () => {
     }, 100)
   })
   
-  // 如果是首页，加载失物招领列表
+  // 监听首页数据刷新事件（先添加监听器，确保能捕获到事件）
+  window.addEventListener('refresh-home-data', handleRefreshHomeData)
+  
+  // 如果当前在首页，立即加载数据
   const path = route.path
   if (path === '/home' || path === '/') {
-    fetchLostFoundList()
+    console.log('[MainLayout] onMounted: 当前在首页，准备加载数据')
+    // 使用 setTimeout 确保在下一个事件循环中执行
+    setTimeout(() => {
+      console.log('[MainLayout] onMounted: 开始加载失物招领数据')
+      fetchLostFoundList()
+    }, 100)
+  } else {
+    console.log('[MainLayout] onMounted: 当前不在首页，路径:', path)
   }
   
   // 如果用户已登录，加载消息和连接WebSocket
@@ -1013,6 +1070,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
   // 移除WebSocket消息处理器（但不关闭连接，因为可能其他页面也在使用）
   wsManager.removeMessageHandler(handleWebSocketMessage)
+  // 移除事件监听
+  window.removeEventListener('refresh-home-data', handleRefreshHomeData)
 })
 </script>
 

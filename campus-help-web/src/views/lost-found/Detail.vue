@@ -482,17 +482,23 @@ const mainImage = ref('')
  * 获取失物详情
  */
 const fetchDetail = async () => {
+  console.log('[Detail.vue] fetchDetail 被调用')
   const id = route.params.id
+  console.log('[Detail.vue] 路由参数 id:', id)
   if (!id) {
+    console.error('[Detail.vue] 失物ID不存在')
     ElMessage.error('失物ID不存在')
     return
   }
   
   loading.value = true
   try {
+    console.log('[Detail.vue] 开始请求失物详情，id:', id)
     const response = await lostFoundApi.getDetail(id)
+    console.log('[Detail.vue] API 响应:', response)
     if (response.code === 200) {
       lostFound.value = response.data
+      console.log('[Detail.vue] 失物详情数据:', lostFound.value)
       const images = lostFound.value.images 
         ? (typeof lostFound.value.images === 'string' ? JSON.parse(lostFound.value.images) : lostFound.value.images)
         : []
@@ -508,16 +514,22 @@ const fetchDetail = async () => {
       // 如果是发布者，获取认领记录列表
       // 需要等待lostFound设置后再判断
       if (lostFound.value && userStore.userInfo && lostFound.value.userId === userStore.userInfo.id) {
+        console.log('[Detail.vue] 是发布者，获取认领记录列表')
         fetchClaimRecords()
       }
       
       // 如果不是发布者，获取我的申请
       if (lostFound.value && userStore.userInfo && lostFound.value.userId !== userStore.userInfo.id) {
+        console.log('[Detail.vue] 不是发布者，获取我的申请')
         fetchMyClaim()
       }
+    } else {
+      console.error('[Detail.vue] API 返回错误:', response)
+      ElMessage.error(response.message || '获取失物详情失败')
     }
   } catch (error) {
-    console.error('获取失物详情失败:', error)
+    console.error('[Detail.vue] 获取失物详情失败:', error)
+    console.error('[Detail.vue] 错误详情:', error.message, error.stack)
     ElMessage.error('获取失物详情失败')
   } finally {
     loading.value = false
@@ -1048,6 +1060,9 @@ const goBack = () => {
 }
 
 onMounted(() => {
+  console.log('[Detail.vue] onMounted 被调用，当前路径:', route.path)
+  console.log('[Detail.vue] 路由参数:', route.params)
+  console.log('[Detail.vue] 用户信息:', userStore.userInfo)
   fetchDetail()
 })
 </script>

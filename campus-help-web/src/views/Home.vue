@@ -35,13 +35,31 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { onMounted, onActivated } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { Search, ShoppingBag, Box } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 
+// 定义组件名称，用于 keep-alive
+defineOptions({
+  name: 'Home'
+})
+
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
+
+// 组件激活时（从其他页面返回时），通知 MainLayout 刷新数据
+onActivated(() => {
+  // 通知 MainLayout 刷新首页的失物招领数据
+  window.dispatchEvent(new CustomEvent('refresh-home-data'))
+})
+
+onMounted(() => {
+  // 首次加载时也通知刷新
+  window.dispatchEvent(new CustomEvent('refresh-home-data'))
+})
 
 const goToLostFound = () => {
   router.push('/lost-found/list')

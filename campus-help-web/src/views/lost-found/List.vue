@@ -118,20 +118,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Location, Clock, Folder, View } from '@element-plus/icons-vue'
 import { lostFoundApi } from '@/api'
+
+// 定义组件名称，用于 keep-alive
+defineOptions({
+  name: 'LostFoundList'
+})
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-
-// 标记是否已初始化
-const isInitialized = ref(false)
 
 const loading = ref(false)
 const lostFoundList = ref([])
@@ -154,6 +156,7 @@ const pagination = reactive({
  * 获取失物列表
  */
 const fetchLostFoundList = async () => {
+  console.log('[List.vue] fetchLostFoundList 被调用')
   loading.value = true
   try {
     const params = {
@@ -166,7 +169,9 @@ const fetchLostFoundList = async () => {
       sortBy: filters.sortBy || 'latest'
     }
     
+    console.log('[List.vue] 请求参数:', params)
     const response = await lostFoundApi.getList(params)
+    console.log('[List.vue] API 响应:', response)
     if (response.code === 200) {
       const pageData = response.data
       lostFoundList.value = (pageData.records || []).map(item => ({
@@ -177,9 +182,12 @@ const fetchLostFoundList = async () => {
         userId: item.userId // 保存userId用于判断是否为发布者
       }))
       total.value = pageData.total || 0
+      console.log('[List.vue] 数据加载成功，共', total.value, '条，当前显示', lostFoundList.value.length, '条')
+    } else {
+      console.warn('[List.vue] API 返回错误:', response)
     }
   } catch (error) {
-    console.error('获取失物列表失败:', error)
+    console.error('[List.vue] 获取失物列表失败:', error)
     ElMessage.error('获取失物列表失败')
   } finally {
     loading.value = false
@@ -286,17 +294,14 @@ const handlePageChange = (page) => {
   fetchLostFoundList()
 }
 
-// 监听路由名称变化，当从其他页面跳转回来时刷新数据
-watch(() => route.name, (newName, oldName) => {
-  // 当路由名称是 LostFoundList 且从其他路由跳转过来时，刷新数据
-  if (newName === 'LostFoundList' && oldName && oldName !== 'LostFoundList' && isInitialized.value) {
-    fetchLostFoundList()
-  }
+// 组件激活时（从其他页面返回时），刷新数据
+onActivated(() => {
+  fetchLostFoundList()
 })
 
 onMounted(() => {
+  // 首次加载时获取数据
   fetchLostFoundList()
-  isInitialized.value = true
 })
 </script>
 

@@ -11,6 +11,7 @@ const whiteList = ['/login', '/register', '/forgot-password'] // 白名单，不
 export function setupRouterGuard(router) {
   // 前置守卫
   router.beforeEach(async (to, from, next) => {
+    console.log('[Router Guard] beforeEach:', from.path, '->', to.path)
     const token = getToken()
     const userStore = useUserStore()
 
@@ -18,16 +19,20 @@ export function setupRouterGuard(router) {
     if (token) {
       // 如果已登录，访问登录页、注册页或忘记密码页，重定向到首页
       if (to.path === '/login' || to.path === '/register' || to.path === '/forgot-password') {
+        console.log('[Router Guard] 已登录，重定向到首页')
         next({ path: '/' })
       } else {
         // 检查是否需要认证
         if (to.meta.requiresAuth !== false) {
           // 如果用户信息不存在，尝试获取用户信息
           if (!userStore.userInfo) {
+            console.log('[Router Guard] 用户信息不存在，尝试获取')
             try {
               await userStore.fetchCurrentUser()
+              console.log('[Router Guard] 用户信息获取成功')
             } catch (error) {
               // 获取用户信息失败，清除token，跳转到登录页
+              console.error('[Router Guard] 用户信息获取失败:', error)
               userStore.logout()
               ElMessage.error('登录已过期，请重新登录')
               next({ path: '/login', query: { redirect: to.fullPath } })
@@ -37,13 +42,16 @@ export function setupRouterGuard(router) {
           
           // 检查是否需要管理员权限
           if (to.meta.requiresAdmin && !userStore.isAdmin) {
+            console.log('[Router Guard] 需要管理员权限，但用户不是管理员')
             ElMessage.error('您没有权限访问该页面')
             next({ path: '/home' })
             return
           }
           
+          console.log('[Router Guard] 允许访问:', to.path)
           next()
         } else {
+          console.log('[Router Guard] 不需要认证，允许访问:', to.path)
           next()
         }
       }
@@ -51,9 +59,11 @@ export function setupRouterGuard(router) {
       // 没有 token
       if (whiteList.includes(to.path)) {
         // 在白名单中，直接访问
+        console.log('[Router Guard] 在白名单中，允许访问:', to.path)
         next()
       } else {
         // 不在白名单中，跳转到登录页
+        console.log('[Router Guard] 不在白名单中，跳转到登录页')
         next({ path: '/login', query: { redirect: to.fullPath } })
       }
     }
@@ -61,9 +71,12 @@ export function setupRouterGuard(router) {
 
   // 后置守卫
   router.afterEach((to, from) => {
+    console.log('[Router Guard] afterEach:', from.path, '->', to.path)
     // 设置页面标题
     const title = to.meta.title ? `${to.meta.title} - ${appConfig.title}` : appConfig.title
     document.title = title || '校园帮助系统'
+    
+    // 注意：数据刷新现在由 keep-alive + onActivated 统一处理，不再需要手动触发事件
   })
 }
 
