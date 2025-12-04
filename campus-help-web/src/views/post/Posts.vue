@@ -236,15 +236,30 @@ const formatTime = (time) => {
  * 获取状态文本
  */
 const getStatusText = (status, type) => {
-  const statusMap = {
-    'PENDING_REVIEW': '待审核',
-    'PENDING_CLAIM': type === 'LOST' ? '寻找中' : '等待失主',
-    'CLAIMING': '认领中',
-    'CLAIMED': '已认领',
-    'CLOSED': '已关闭',
-    'REJECTED': '已拒绝'
+  // 根据类型显示不同的状态文本
+  if (type === 'LOST') {
+    // 失物类型：寻找中、确认中、已找到
+    const lostStatusMap = {
+      'PENDING_REVIEW': '待审核',
+      'PENDING_CLAIM': '寻找中',
+      'CLAIMING': '确认中',  // 有人提供线索，正在确认
+      'CLAIMED': '已找到',
+      'CLOSED': '已关闭',
+      'REJECTED': '已拒绝'
+    }
+    return lostStatusMap[status] || status
+  } else {
+    // 招领类型：等待失主、认领中、已认领
+    const foundStatusMap = {
+      'PENDING_REVIEW': '待审核',
+      'PENDING_CLAIM': '等待失主',
+      'CLAIMING': '认领中',
+      'CLAIMED': '已认领',
+      'CLOSED': '已关闭',
+      'REJECTED': '已拒绝'
+    }
+    return foundStatusMap[status] || status
   }
-  return statusMap[status] || status
 }
 
 /**

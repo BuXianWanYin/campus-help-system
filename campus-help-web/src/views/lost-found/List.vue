@@ -27,9 +27,9 @@
         <el-form-item label="状态：">
           <el-select v-model="filters.status" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
             <el-option label="全部" value="" />
-            <el-option label="待认领" value="PENDING_CLAIM" />
-            <el-option label="认领中" value="CLAIMING" />
-            <el-option label="已认领" value="CLAIMED" />
+            <el-option :label="filters.type === 'LOST' ? '寻找中' : '等待失主'" value="PENDING_CLAIM" />
+            <el-option :label="filters.type === 'LOST' ? '确认中' : '认领中'" value="CLAIMING" />
+            <el-option :label="filters.type === 'LOST' ? '已找到' : '已认领'" value="CLAIMED" />
           </el-select>
         </el-form-item>
         <el-form-item label="地点：">
@@ -156,7 +156,6 @@ const pagination = reactive({
  * 获取失物列表
  */
 const fetchLostFoundList = async () => {
-  console.log('[List.vue] fetchLostFoundList 被调用')
   loading.value = true
   try {
     const params = {
@@ -169,9 +168,7 @@ const fetchLostFoundList = async () => {
       sortBy: filters.sortBy || 'latest'
     }
     
-    console.log('[List.vue] 请求参数:', params)
     const response = await lostFoundApi.getList(params)
-    console.log('[List.vue] API 响应:', response)
     if (response.code === 200) {
       const pageData = response.data
       lostFoundList.value = (pageData.records || []).map(item => ({
@@ -179,15 +176,11 @@ const fetchLostFoundList = async () => {
         images: parseImages(item.images),
         userAvatar: item.user?.avatar,
         userName: item.user?.nickname || '未知用户',
-        userId: item.userId // 保存userId用于判断是否为发布者
+        userId: item.userId
       }))
       total.value = pageData.total || 0
-      console.log('[List.vue] 数据加载成功，共', total.value, '条，当前显示', lostFoundList.value.length, '条')
-    } else {
-      console.warn('[List.vue] API 返回错误:', response)
     }
   } catch (error) {
-    console.error('[List.vue] 获取失物列表失败:', error)
     ElMessage.error('获取失物列表失败')
   } finally {
     loading.value = false

@@ -646,14 +646,23 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             }
         }
         
-        // 6. 如果包含敏感词，需要重新审核
+        // 6. 如果之前是被拒绝状态，编辑后需要重新审核
+        boolean wasRejected = "REJECTED".equals(lostFound.getStatus());
+        
+        // 7. 如果包含敏感词，需要重新审核
         if (!checkResult.isPass()) {
             lostFound.setStatus("PENDING_REVIEW");
             lostFound.setAuditStatus("PENDING");
             lostFound.setAuditTriggerReason("包含敏感词");
+            lostFound.setAuditReason(null); // 清除之前的拒绝原因
+        } else if (wasRejected) {
+            // 如果之前是被拒绝状态，编辑后需要重新审核
+            lostFound.setStatus("PENDING_REVIEW");
+            lostFound.setAuditStatus("PENDING");
+            lostFound.setAuditTriggerReason("编辑被拒绝的失物，需要重新审核");
+            lostFound.setAuditReason(null); // 清除之前的拒绝原因
         } else if ("PENDING_REVIEW".equals(lostFound.getStatus())) {
             // 如果之前是待审核，编辑后仍然保持待审核
-            // 如果需要可以触发重新审核
         }
         
         lostFound.setUpdateTime(LocalDateTime.now());
@@ -879,10 +888,11 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         
         // 5. 发送系统消息通知发布者
         try {
-            String messageTitle = auditResult == 1 ? "失物审核通过" : "失物审核被拒绝";
+            String typeText = "LOST".equals(lostFound.getType()) ? "失物" : "招领";
+            String messageTitle = auditResult == 1 ? typeText + "审核通过" : typeText + "审核被拒绝";
             String messageContent = auditResult == 1 
-                ? "您发布的失物《" + lostFound.getTitle() + "》已通过审核，现已上线。"
-                : "很抱歉，您发布的失物《" + lostFound.getTitle() + "》未通过审核。原因：" + auditReason;
+                ? "您发布的" + typeText + "《" + lostFound.getTitle() + "》已通过审核，现已上线。"
+                : "很抱歉，您发布的" + typeText + "《" + lostFound.getTitle() + "》未通过审核。原因：" + auditReason + "。您可以修改后重新提交审核。";
             
             systemMessageService.sendMessage(
                 lostFound.getUserId(),

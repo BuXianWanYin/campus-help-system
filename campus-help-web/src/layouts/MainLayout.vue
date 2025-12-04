@@ -335,13 +335,6 @@
       
       <!-- 路由视图（其他页面） -->
       <router-view v-if="!isHomePage" v-slot="{ Component, route }">
-        <!-- 
-          keep-alive 配置说明：
-          - 列表页（List）：需要缓存，返回时刷新数据
-          - 详情页（Detail）：不需要缓存，每次进入都重新加载
-          - 编辑/发布页（Edit/Publish）：不需要缓存，避免数据残留
-          - 其他页面：根据需求决定是否缓存
-        -->
         <keep-alive :include="keepAliveComponents">
           <component :is="Component" :key="route.path" />
         </keep-alive>
@@ -816,13 +809,10 @@ const goToModule = (path) => {
 const fetchLostFoundList = async () => {
   // 只在首页时获取数据
   const path = route.path
-  console.log('[MainLayout] fetchLostFoundList: 当前路径:', path)
   if (path !== '/home' && path !== '/') {
-    console.log('[MainLayout] fetchLostFoundList: 不在首页，跳过加载')
     return
   }
   
-  console.log('[MainLayout] fetchLostFoundList: 开始加载数据')
   lostFoundLoading.value = true
   try {
     const params = {
@@ -838,7 +828,6 @@ const fetchLostFoundList = async () => {
     const response = await lostFoundApi.getList(params)
     if (response.code === 200) {
       const pageData = response.data
-      console.log('首页失物招领数据:', pageData) // 调试日志
       
       // MyBatis-Plus的Page对象可能直接是数组，或者有records字段
       let records = []
@@ -869,8 +858,6 @@ const fetchLostFoundList = async () => {
           userId: item.userId // 保存userId用于判断是否为发布者
         }
       })
-      
-      console.log('处理后的失物列表:', lostFoundList.value) // 调试日志
     } else {
       console.error('获取失物招领列表失败，响应码:', response.code, response.message)
     }
@@ -943,21 +930,12 @@ const handleContact = (item) => {
 
 // 跳转详情
 const goToDetail = (type, id) => {
-  console.log('[MainLayout] goToDetail 被调用:', type, id)
   if (!id) {
-    console.error('[MainLayout] goToDetail: id 为空')
     return
   }
   const path = `/${type}/detail/${id}`
-  console.log('[MainLayout] 准备跳转到:', path)
-  console.log('[MainLayout] 当前路由:', router.currentRoute.value.path)
-  
-  // 使用 router.push 并监听路由变化
-  router.push(path).then(() => {
-    console.log('[MainLayout] 路由跳转成功，当前路径:', router.currentRoute.value.path)
-  }).catch(err => {
+  router.push(path).catch(err => {
     console.error('[MainLayout] 路由跳转失败:', err)
-    console.error('[MainLayout] 错误详情:', err.message, err.stack)
   })
 }
 
@@ -1034,14 +1012,9 @@ onMounted(async () => {
   // 如果当前在首页，立即加载数据
   const path = route.path
   if (path === '/home' || path === '/') {
-    console.log('[MainLayout] onMounted: 当前在首页，准备加载数据')
-    // 使用 setTimeout 确保在下一个事件循环中执行
     setTimeout(() => {
-      console.log('[MainLayout] onMounted: 开始加载失物招领数据')
       fetchLostFoundList()
     }, 100)
-  } else {
-    console.log('[MainLayout] onMounted: 当前不在首页，路径:', path)
   }
   
   // 如果用户已登录，加载消息和连接WebSocket

@@ -215,7 +215,7 @@
                       <template v-if="lostFound.type === 'LOST'">
                         <!-- 丢失物品：拾取人提供线索 -->
                         <el-tag v-if="record.status === 'PENDING'" type="warning">待确认</el-tag>
-                        <el-tag v-else-if="record.status === 'CONFIRMED'" type="success">已认领</el-tag>
+                        <el-tag v-else-if="record.status === 'CONFIRMED'" type="success">已找到</el-tag>
                         <el-tag v-else-if="record.status === 'REJECTED'" type="info">已忽略</el-tag>
                       </template>
                       <template v-else>
@@ -482,23 +482,17 @@ const mainImage = ref('')
  * 获取失物详情
  */
 const fetchDetail = async () => {
-  console.log('[Detail.vue] fetchDetail 被调用')
   const id = route.params.id
-  console.log('[Detail.vue] 路由参数 id:', id)
   if (!id) {
-    console.error('[Detail.vue] 失物ID不存在')
     ElMessage.error('失物ID不存在')
     return
   }
   
   loading.value = true
   try {
-    console.log('[Detail.vue] 开始请求失物详情，id:', id)
     const response = await lostFoundApi.getDetail(id)
-    console.log('[Detail.vue] API 响应:', response)
     if (response.code === 200) {
       lostFound.value = response.data
-      console.log('[Detail.vue] 失物详情数据:', lostFound.value)
       const images = lostFound.value.images 
         ? (typeof lostFound.value.images === 'string' ? JSON.parse(lostFound.value.images) : lostFound.value.images)
         : []
@@ -512,15 +506,12 @@ const fetchDetail = async () => {
       }
       
       // 如果是发布者，获取认领记录列表
-      // 需要等待lostFound设置后再判断
       if (lostFound.value && userStore.userInfo && lostFound.value.userId === userStore.userInfo.id) {
-        console.log('[Detail.vue] 是发布者，获取认领记录列表')
         fetchClaimRecords()
       }
       
       // 如果不是发布者，获取我的申请
       if (lostFound.value && userStore.userInfo && lostFound.value.userId !== userStore.userInfo.id) {
-        console.log('[Detail.vue] 不是发布者，获取我的申请')
         fetchMyClaim()
       }
     } else {
@@ -1060,9 +1051,6 @@ const goBack = () => {
 }
 
 onMounted(() => {
-  console.log('[Detail.vue] onMounted 被调用，当前路径:', route.path)
-  console.log('[Detail.vue] 路由参数:', route.params)
-  console.log('[Detail.vue] 用户信息:', userStore.userInfo)
   fetchDetail()
 })
 </script>
