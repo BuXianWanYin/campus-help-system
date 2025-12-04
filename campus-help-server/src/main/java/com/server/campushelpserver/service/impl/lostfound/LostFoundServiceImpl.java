@@ -651,6 +651,7 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         
         // 6. 如果之前是被拒绝状态，编辑后需要重新审核
         boolean wasRejected = "REJECTED".equals(lostFound.getStatus());
+        boolean needReaudit = false; // 标记是否需要重新审核
         
         // 7. 如果包含敏感词，需要重新审核
         if (!checkResult.isPass()) {
@@ -658,18 +659,38 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             lostFound.setAuditStatus("PENDING");
             lostFound.setAuditTriggerReason("包含敏感词");
             lostFound.setAuditReason(null); // 清除之前的拒绝原因
+            needReaudit = true;
         } else if (wasRejected) {
             // 如果之前是被拒绝状态，编辑后需要重新审核
             lostFound.setStatus("PENDING_REVIEW");
             lostFound.setAuditStatus("PENDING");
             lostFound.setAuditTriggerReason("编辑被拒绝的失物，需要重新审核");
             lostFound.setAuditReason(null); // 清除之前的拒绝原因
+            needReaudit = true;
         } else if ("PENDING_REVIEW".equals(lostFound.getStatus())) {
             // 如果之前是待审核，编辑后仍然保持待审核
+            needReaudit = true;
         }
         
         lostFound.setUpdateTime(LocalDateTime.now());
         lostFoundMapper.updateById(lostFound);
+        
+        // 8. 如果需要重新审核，发送消息给所有管理员
+        if (needReaudit && "PENDING_REVIEW".equals(lostFound.getStatus())) {
+            try {
+                String typeText = "LOST".equals(lostFound.getType()) ? "失物" : "招领";
+                systemMessageService.sendMessageToAllAdmins(
+                    "ADMIN_AUDIT_REQUIRED",
+                    "新的" + typeText + "待审核",
+                    "有一条新的" + typeText + "《" + lostFound.getTitle() + "》需要审核，触发原因：" + lostFound.getAuditTriggerReason(),
+                    "LOST_FOUND",
+                    lostFound.getId()
+                );
+            } catch (Exception e) {
+                // 发送通知失败不影响业务逻辑，只记录日志
+                System.err.println("发送管理员通知失败: " + e.getMessage());
+            }
+        }
     }
     
     @Override

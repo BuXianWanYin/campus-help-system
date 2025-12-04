@@ -21,7 +21,6 @@
                 <el-button
                   text
                   class="notification-btn"
-                  @click="messagePanelVisible = !messagePanelVisible"
                 >
                   <el-icon><Bell /></el-icon>
                 </el-button>
@@ -246,7 +245,9 @@ const fetchRecentMessages = async () => {
         time: formatMessageTime(msg.createTime),
         isRead: msg.isRead,
         type: getMessageTypeClass(msg.type),
-        icon: getMessageIcon(msg.type)
+        icon: getMessageIcon(msg.type),
+        relatedType: msg.relatedType,
+        relatedId: msg.relatedId
       }))
     }
   } catch (error) {
@@ -339,7 +340,7 @@ const handleMarkAllAsRead = async () => {
 
 // 前往消息页面
 const goToMessages = () => {
-  router.push('/user/messages')
+  router.push('/admin/messages')
   messagePanelVisible.value = false
 }
 
@@ -354,7 +355,20 @@ const handleMessageClick = async (item) => {
       console.error('标记已读失败:', error)
     }
   }
-  goToMessages()
+  
+  // 根据消息类型跳转到相应页面
+  if (item.relatedType === 'LOST_FOUND' && item.relatedId) {
+    // 失物招领相关消息，跳转到审核页面
+    router.push(`/admin/lost-found-audit`)
+    messagePanelVisible.value = false
+  } else if (item.relatedType === 'VERIFICATION' && item.relatedId) {
+    // 实名认证相关消息，跳转到认证审核页面
+    router.push(`/admin/verification`)
+    messagePanelVisible.value = false
+  } else {
+    // 其他消息，跳转到消息列表页面
+    goToMessages()
+  }
 }
 
 // WebSocket消息处理
@@ -363,6 +377,9 @@ const handleWebSocketMessage = (message) => {
     ElMessage.success('您有新的消息')
     fetchUnreadCount()
     if (messagePanelVisible.value) {
+      fetchRecentMessages()
+    } else {
+      // 即使面板未打开，也刷新消息列表，以便下次打开时显示最新消息
       fetchRecentMessages()
     }
   }

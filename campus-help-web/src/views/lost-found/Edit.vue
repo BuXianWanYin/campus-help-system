@@ -124,7 +124,7 @@
         <!-- 提交按钮 -->
         <el-form-item class="form-item-block">
           <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting">
-            保存修改
+            {{ submitButtonText }}
           </el-button>
           <el-button size="large" @click="goBack">取消</el-button>
         </el-form-item>
@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -157,6 +157,11 @@ const previewImageUrl = ref('')
 const imageList = ref([])
 const lostFoundId = ref(null)
 const originalStatus = ref(null) // 保存原始状态，用于判断是否为被拒绝状态
+
+// 计算按钮文本
+const submitButtonText = computed(() => {
+  return originalStatus.value === 'REJECTED' ? '重新发布' : '保存修改'
+})
 
 const form = reactive({
   type: 'LOST',
@@ -207,7 +212,7 @@ const loadLostFoundDetail = async () => {
       const data = response.data
       
       // 保存原始状态，用于判断是否为被拒绝状态
-      originalStatus.value = data.status
+      originalStatus.value = data.status || null
       
       // 填充表单
       form.type = data.type || 'LOST'
