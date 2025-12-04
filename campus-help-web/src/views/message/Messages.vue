@@ -72,13 +72,16 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Bell, Check, Close, Warning, InfoFilled, 
   Document, ShoppingBag, TrendCharts, ChatDotRound
 } from '@element-plus/icons-vue'
 import { messageApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(false)
@@ -134,6 +137,29 @@ const handleMessageClick = async (message) => {
       unreadCount.value = Math.max(0, unreadCount.value - 1)
     } catch (error) {
       console.error('标记已读失败:', error)
+    }
+  }
+  
+  // 根据消息类型跳转到相关页面
+  if (message.relatedType && message.relatedId) {
+    if (message.relatedType === 'LOST_FOUND') {
+      // 失物招领相关消息
+      if (userStore.isAdmin && (message.type === 'ADMIN_AUDIT_REQUIRED')) {
+        // 管理员审核消息，跳转到审核页面
+        router.push('/admin/lost-found-audit')
+      } else {
+        // 普通用户，跳转到失物详情
+        router.push(`/lost-found/detail/${message.relatedId}`)
+      }
+    } else if (message.relatedType === 'VERIFICATION') {
+      // 实名认证相关消息
+      if (userStore.isAdmin && (message.type === 'ADMIN_VERIFICATION_REQUIRED')) {
+        // 管理员审核消息，跳转到审核页面
+        router.push('/admin/verification')
+      } else {
+        // 普通用户，跳转到实名认证页面
+        router.push('/user/verification')
+      }
     }
   }
 }
@@ -194,6 +220,13 @@ const getMessageTypeClass = (type) => {
   const typeMap = {
     'VERIFICATION_APPROVED': 'type-success',
     'VERIFICATION_REJECTED': 'type-error',
+    'LOST_FOUND_APPROVED': 'type-success',
+    'LOST_FOUND_REJECTED': 'type-error',
+    'CLAIM_APPLY': 'type-info',
+    'CLAIM_CONFIRMED': 'type-success',
+    'CLAIM_REJECTED': 'type-error',
+    'ADMIN_AUDIT_REQUIRED': 'type-warning',
+    'ADMIN_VERIFICATION_REQUIRED': 'type-warning',
     'ORDER_STATUS': 'type-info',
     'TASK_STATUS': 'type-warning',
     'ANNOUNCEMENT': 'type-primary'
@@ -206,6 +239,13 @@ const getMessageIcon = (type) => {
   const iconMap = {
     'VERIFICATION_APPROVED': Check,
     'VERIFICATION_REJECTED': Close,
+    'LOST_FOUND_APPROVED': Check,
+    'LOST_FOUND_REJECTED': Close,
+    'CLAIM_APPLY': InfoFilled,
+    'CLAIM_CONFIRMED': Check,
+    'CLAIM_REJECTED': Close,
+    'ADMIN_AUDIT_REQUIRED': Warning,
+    'ADMIN_VERIFICATION_REQUIRED': Warning,
     'ORDER_STATUS': ShoppingBag,
     'TASK_STATUS': TrendCharts,
     'ANNOUNCEMENT': Bell

@@ -124,7 +124,7 @@
     <el-dialog
       v-model="auditDialogVisible"
       title="审核失物招领"
-      width="750px"
+      width="900px"
       class="audit-dialog"
     >
       <div v-if="currentItem" class="item-detail-card">
@@ -194,7 +194,7 @@
     <el-dialog
       v-model="detailDialogVisible"
       title="失物详情"
-      width="850px"
+      width="1000px"
       class="detail-dialog"
     >
       <div v-if="currentItem" class="item-detail-card">
@@ -465,10 +465,14 @@ onMounted(() => {
   font-weight: 600;
   color: #606266;
   background-color: #fafafa;
+  white-space: nowrap;
+  min-width: 120px;
 }
 
 .item-descriptions :deep(.el-descriptions__content) {
   color: #303133;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .item-descriptions :deep(.el-descriptions__table) {

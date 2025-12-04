@@ -126,6 +126,10 @@
             <el-icon><DocumentChecked /></el-icon>
             <span>失物招领审核</span>
           </el-menu-item>
+          <el-menu-item index="/admin/messages">
+            <el-icon><Message /></el-icon>
+            <span>消息通知</span>
+          </el-menu-item>
           <el-menu-item index="/admin/profile">
             <el-icon><User /></el-icon>
             <span>个人中心</span>
@@ -191,8 +195,8 @@ const handleCommand = (command) => {
       window.open('/user/posts', '_blank')
       break
     case 'messages':
-      // 在新标签页打开消息通知
-      window.open('/user/messages', '_blank')
+      // 跳转到管理员消息通知页面
+      router.push('/admin/messages')
       break
     case 'settings':
       // 在新标签页打开设置
@@ -285,7 +289,11 @@ const getMessageTypeClass = (type) => {
     'VERIFICATION_REJECTED': 'type-error',
     'LOST_FOUND_APPROVED': 'type-success',
     'LOST_FOUND_REJECTED': 'type-error',
+    'CLAIM_APPLY': 'type-info',
+    'CLAIM_CONFIRMED': 'type-success',
     'CLAIM_REJECTED': 'type-error',
+    'ADMIN_AUDIT_REQUIRED': 'type-warning',
+    'ADMIN_VERIFICATION_REQUIRED': 'type-warning',
     'ORDER_STATUS': 'type-info',
     'TASK_STATUS': 'type-warning',
     'ANNOUNCEMENT': 'type-primary'
@@ -300,7 +308,11 @@ const getMessageIcon = (type) => {
     'VERIFICATION_REJECTED': markRaw(Close),
     'LOST_FOUND_APPROVED': markRaw(Check),
     'LOST_FOUND_REJECTED': markRaw(Close),
+    'CLAIM_APPLY': markRaw(InfoFilled),
+    'CLAIM_CONFIRMED': markRaw(Check),
     'CLAIM_REJECTED': markRaw(Close),
+    'ADMIN_AUDIT_REQUIRED': markRaw(Warning),
+    'ADMIN_VERIFICATION_REQUIRED': markRaw(Warning),
     'ORDER_STATUS': markRaw(InfoFilled),
     'TASK_STATUS': markRaw(Warning),
     'ANNOUNCEMENT': markRaw(Bell)

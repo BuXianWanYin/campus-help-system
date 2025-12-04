@@ -266,6 +266,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // is_verified 保持为 0，等待管理员审核
         
         this.updateById(user);
+        
+        // 发送消息给所有管理员
+        try {
+            systemMessageService.sendMessageToAllAdmins(
+                "ADMIN_VERIFICATION_REQUIRED",
+                "新的实名认证待审核",
+                "用户" + user.getNickname() + "（" + user.getEmail() + "）提交了实名认证申请，请及时审核",
+                "VERIFICATION",
+                userId
+            );
+        } catch (Exception e) {
+            // 发送通知失败不影响业务逻辑，只记录日志
+            System.err.println("发送管理员通知失败: " + e.getMessage());
+        }
+        
         return user;
     }
     

@@ -199,6 +199,16 @@ const routes = [
         }
       },
       {
+        path: 'messages',
+        name: 'AdminMessages',
+        component: () => import('../views/message/Messages.vue'),
+        meta: {
+          title: '消息通知',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
         path: 'profile',
         name: 'AdminProfile',
         component: () => import('../views/profile/Profile.vue'),

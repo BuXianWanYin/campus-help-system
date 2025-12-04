@@ -155,6 +155,23 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         // 6. 保存到数据库
         lostFoundMapper.insert(lostFound);
         
+        // 7. 如果需要人工审核，发送消息给所有管理员
+        if ("PENDING_REVIEW".equals(lostFound.getStatus())) {
+            try {
+                String typeText = "LOST".equals(lostFound.getType()) ? "失物" : "招领";
+                systemMessageService.sendMessageToAllAdmins(
+                    "ADMIN_AUDIT_REQUIRED",
+                    "新的" + typeText + "待审核",
+                    "有一条新的" + typeText + "《" + lostFound.getTitle() + "》需要审核，触发原因：" + lostFound.getAuditTriggerReason(),
+                    "LOST_FOUND",
+                    lostFound.getId()
+                );
+            } catch (Exception e) {
+                // 发送通知失败不影响业务逻辑，只记录日志
+                System.err.println("发送管理员通知失败: " + e.getMessage());
+            }
+        }
+        
         // 7. 如果被自动拒绝，抛出异常提示用户
         if ("REJECTED".equals(lostFound.getStatus())) {
             throw new BusinessException(checkResult.getMessage());

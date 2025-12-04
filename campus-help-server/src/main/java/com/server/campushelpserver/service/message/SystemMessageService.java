@@ -64,5 +64,15 @@ public interface SystemMessageService extends IService<SystemMessage> {
      * @param userId 用户ID
      */
     void deleteMessage(Long messageId, Long userId);
+    
+    /**
+     * 发送消息给所有管理员
+     * @param type 消息类型
+     * @param title 消息标题
+     * @param content 消息内容
+     * @param relatedType 关联类型
+     * @param relatedId 关联ID
+     */
+    void sendMessageToAllAdmins(String type, String title, String content, String relatedType, Long relatedId);
 }
 

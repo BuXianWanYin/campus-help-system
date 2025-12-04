@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.server.campushelpserver.entity.message.SystemMessage;
+import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.message.SystemMessageMapper;
+import com.server.campushelpserver.mapper.user.UserMapper;
 import com.server.campushelpserver.service.message.SystemMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 系统消息Service实现类
@@ -23,6 +26,9 @@ public class SystemMessageServiceImpl extends ServiceImpl<SystemMessageMapper, S
     
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+    
+    @Autowired
+    private UserMapper userMapper;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -141,6 +147,32 @@ public class SystemMessageServiceImpl extends ServiceImpl<SystemMessageMapper, S
         
         // 使用MyBatis Plus逻辑删除
         this.removeById(messageId);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void sendMessageToAllAdmins(String type, String title, String content, String relatedType, Long relatedId) {
+        // 查询所有管理员
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getRole, "ADMIN")
+               .eq(User::getDeleteFlag, 0)
+               .eq(User::getStatus, 1); // 只发送给正常状态的管理员
+        
+        List<User> admins = userMapper.selectList(wrapper);
+        
+        if (admins == null || admins.isEmpty()) {
+            return; // 没有管理员，直接返回
+        }
+        
+        // 给每个管理员发送消息
+        for (User admin : admins) {
+            try {
+                sendMessage(admin.getId(), type, title, content, relatedType, relatedId);
+            } catch (Exception e) {
+                // 单个消息发送失败不影响其他管理员，只记录日志
+                System.err.println("发送消息给管理员失败 (ID: " + admin.getId() + "): " + e.getMessage());
+            }
+        }
     }
 }
 
