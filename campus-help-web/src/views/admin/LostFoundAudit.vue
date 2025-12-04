@@ -24,6 +24,15 @@
             <el-option label="其他" value="其他" />
           </el-select>
         </el-form-item>
+        <el-form-item label="地点：">
+          <el-input
+            v-model="filters.location"
+            placeholder="搜索地点"
+            style="width: 150px"
+            clearable
+            @keyup.enter="handleFilter"
+          />
+        </el-form-item>
         <el-form-item label="关键词：">
           <el-input
             v-model="filters.keyword"
@@ -57,7 +66,11 @@
       </el-table-column>
       <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
       <el-table-column prop="category" label="分类" min-width="100" />
-      <el-table-column prop="location" label="地点" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="lostLocation" label="地点" min-width="150" show-overflow-tooltip>
+        <template #default="{ row }">
+          {{ row.lostLocation || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column prop="user" label="发布者" min-width="120">
         <template #default="{ row }">
           {{ row.user?.nickname || '未知用户' }}
@@ -111,10 +124,11 @@
     <el-dialog
       v-model="auditDialogVisible"
       title="审核失物招领"
-      width="700px"
+      width="750px"
+      class="audit-dialog"
     >
-      <div v-if="currentItem" class="item-detail">
-        <el-descriptions :column="2" border>
+      <div v-if="currentItem" class="item-detail-card">
+        <el-descriptions :column="2" border class="item-descriptions">
           <el-descriptions-item label="类型">
             <el-tag :type="currentItem.type === 'LOST' ? 'danger' : 'success'">
               {{ currentItem.type === 'LOST' ? '失物' : '招领' }}
@@ -122,7 +136,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="标题">{{ currentItem.title }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ currentItem.category }}</el-descriptions-item>
-          <el-descriptions-item label="地点">{{ currentItem.location }}</el-descriptions-item>
+          <el-descriptions-item label="地点">{{ currentItem.lostLocation || '-' }}</el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
           <el-descriptions-item label="触发原因" :span="2">
@@ -180,10 +194,11 @@
     <el-dialog
       v-model="detailDialogVisible"
       title="失物详情"
-      width="800px"
+      width="850px"
+      class="detail-dialog"
     >
-      <div v-if="currentItem" class="item-detail">
-        <el-descriptions :column="2" border>
+      <div v-if="currentItem" class="item-detail-card">
+        <el-descriptions :column="2" border class="item-descriptions">
           <el-descriptions-item label="类型">
             <el-tag :type="currentItem.type === 'LOST' ? 'danger' : 'success'">
               {{ currentItem.type === 'LOST' ? '失物' : '招领' }}
@@ -191,7 +206,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="标题">{{ currentItem.title }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ currentItem.category }}</el-descriptions-item>
-          <el-descriptions-item label="地点">{{ currentItem.location }}</el-descriptions-item>
+          <el-descriptions-item label="地点">{{ currentItem.lostLocation || '-' }}</el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
           <el-descriptions-item label="触发原因" :span="2">
@@ -233,7 +248,7 @@ import { ElMessage } from 'element-plus'
 import { DocumentChecked, View } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 import { useUserStore } from '@/stores/user'
-import { getAvatarUrl } from '@/utils'
+import { getAvatarUrl } from '@/utils/image'
 
 const userStore = useUserStore()
 
@@ -248,6 +263,7 @@ const itemImages = ref([])
 const filters = reactive({
   type: '',
   category: '',
+  location: '',
   keyword: ''
 })
 
@@ -271,6 +287,7 @@ const fetchLostFoundList = async () => {
       size: pagination.size,
       type: filters.type || undefined,
       category: filters.category || undefined,
+      location: filters.location || undefined,
       keyword: filters.keyword || undefined
     })
     if (response.code === 200) {
@@ -353,6 +370,7 @@ const handleFilter = () => {
 const handleReset = () => {
   filters.type = ''
   filters.category = ''
+  filters.location = ''
   filters.keyword = ''
   pagination.current = 1
   fetchLostFoundList()
@@ -427,6 +445,40 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* 对话框美化 */
+.audit-dialog :deep(.el-dialog__body),
+.detail-dialog :deep(.el-dialog__body) {
+  padding: 20px 24px;
+}
+
+.item-detail-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.item-descriptions :deep(.el-descriptions__label) {
+  font-weight: 600;
+  color: #606266;
+  background-color: #fafafa;
+}
+
+.item-descriptions :deep(.el-descriptions__content) {
+  color: #303133;
+}
+
+.item-descriptions :deep(.el-descriptions__table) {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.item-descriptions :deep(.el-descriptions__table td),
+.item-descriptions :deep(.el-descriptions__table th) {
+  padding: 12px 16px;
 }
 </style>
 

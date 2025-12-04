@@ -15,11 +15,13 @@
       >
         <!-- 类型选择 -->
         <el-form-item label="类型" prop="type" class="form-item-block">
-          <el-radio-group v-model="form.type">
-            <el-radio label="LOST">失物</el-radio>
-            <el-radio label="FOUND">招领</el-radio>
-          </el-radio-group>
-          <div class="form-tip">选择您是要寻找失物，还是要发布拾到的物品</div>
+          <div class="type-select-wrapper">
+            <el-radio-group v-model="form.type">
+              <el-radio label="LOST">失物</el-radio>
+              <el-radio label="FOUND">招领</el-radio>
+            </el-radio-group>
+            <div class="form-tip type-tip">选择您是要寻找失物，还是要发布拾到的物品</div>
+          </div>
         </el-form-item>
 
         <!-- 物品名称 -->
@@ -419,6 +421,17 @@ onMounted(() => {
   color: #909399;
   margin-top: 4px;
   line-height: 1.5;
+}
+
+.type-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.type-tip {
+  margin-top: 0;
+  padding-left: 0;
 }
 
 :deep(.el-upload--picture-card) {

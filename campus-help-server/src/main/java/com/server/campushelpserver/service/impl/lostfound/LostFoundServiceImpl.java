@@ -862,6 +862,11 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             wrapper.eq(LostFound::getCategory, searchDTO.getCategory());
         }
         
+        // 地点筛选
+        if (searchDTO.getLocation() != null && !searchDTO.getLocation().trim().isEmpty()) {
+            wrapper.like(LostFound::getLostLocation, searchDTO.getLocation().trim());
+        }
+        
         // 关键词搜索
         if (searchDTO.getKeyword() != null && !searchDTO.getKeyword().trim().isEmpty()) {
             String keyword = searchDTO.getKeyword().trim();

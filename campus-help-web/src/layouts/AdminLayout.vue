@@ -163,7 +163,7 @@ import {
 } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils/image'
 import { messageApi } from '@/api'
-import { wsManager } from '@/utils/websocket'
+import wsManager from '@/utils/websocket'
 
 const router = useRouter()
 const route = useRoute()
@@ -360,7 +360,7 @@ onMounted(async () => {
     await fetchRecentMessages()
     
     // 连接WebSocket并订阅系统消息
-    if (wsManager.isConnected()) {
+    if (wsManager.isConnected) {
       wsManager.addMessageHandler(handleWebSocketMessage)
     } else {
       wsManager.connect(userStore.token).then(() => {
