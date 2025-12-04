@@ -5,7 +5,7 @@ import com.server.campushelpserver.entity.search.SearchHistory;
 import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.service.search.SearchHistoryService;
 import com.server.campushelpserver.service.user.UserService;
-import com.server.campushelpserver.utils.SecurityUtils;
+import com.server.campushelpserver.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,9 +56,7 @@ public class SearchHistoryServiceImpl extends ServiceImpl<SearchHistoryMapper, S
         history.setKeyword(keyword);
         history.setModuleType(moduleType);
         history.setSearchTime(LocalDateTime.now());
-        history.setDeleteFlag(0);
-        history.setCreateTime(LocalDateTime.now());
-        history.setUpdateTime(LocalDateTime.now());
+        // deleteFlag 由 MyBatis Plus 自动处理，无需手动设置
         
         this.save(history);
         
@@ -65,25 +64,26 @@ public class SearchHistoryServiceImpl extends ServiceImpl<SearchHistoryMapper, S
         LambdaQueryWrapper<SearchHistory> countWrapper = new LambdaQueryWrapper<>();
         countWrapper.eq(SearchHistory::getUserId, userId)
                    .eq(SearchHistory::getModuleType, moduleType)
-                   .eq(SearchHistory::getDeleteFlag, 0)
                    .orderByDesc(SearchHistory::getSearchTime);
         
         List<SearchHistory> allHistory = this.list(countWrapper);
         if (allHistory.size() > 20) {
-            // 删除最旧的记录
+            // 删除最旧的记录（使用MyBatis Plus逻辑删除）
             List<SearchHistory> toDelete = allHistory.subList(20, allHistory.size());
+            List<Long> idsToDelete = new ArrayList<>();
             for (SearchHistory h : toDelete) {
-                h.setDeleteFlag(1);
-                h.setUpdateTime(LocalDateTime.now());
+                idsToDelete.add(h.getId());
             }
-            this.updateBatchById(toDelete);
+            if (!idsToDelete.isEmpty()) {
+                this.removeByIds(idsToDelete);
+            }
         }
     }
     
     @Override
     public List<SearchHistory> getSearchHistoryList(Long userId, String moduleType, Integer limit) {
         if (userId == null) {
-            return List.of();
+            return new ArrayList<>();
         }
         
         LambdaQueryWrapper<SearchHistory> wrapper = new LambdaQueryWrapper<>();
@@ -116,31 +116,22 @@ public class SearchHistoryServiceImpl extends ServiceImpl<SearchHistoryMapper, S
             throw new BusinessException("无权删除此搜索历史");
         }
         
-        history.setDeleteFlag(1);
-        history.setUpdateTime(LocalDateTime.now());
-        this.updateById(history);
+        // 使用MyBatis Plus逻辑删除，自动更新delete_flag为1
+        this.removeById(historyId);
     }
     
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void clearSearchHistory(Long userId, String moduleType) {
         LambdaQueryWrapper<SearchHistory> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SearchHistory::getUserId, userId)
-               .eq(SearchHistory::getDeleteFlag, 0);
+        wrapper.eq(SearchHistory::getUserId, userId);
         
         if (StringUtils.hasText(moduleType)) {
             wrapper.eq(SearchHistory::getModuleType, moduleType);
         }
         
-        List<SearchHistory> histories = this.list(wrapper);
-        for (SearchHistory history : histories) {
-            history.setDeleteFlag(1);
-            history.setUpdateTime(LocalDateTime.now());
-        }
-        
-        if (!histories.isEmpty()) {
-            this.updateBatchById(histories);
-        }
+        // 使用MyBatis Plus逻辑删除，自动更新delete_flag为1
+        this.remove(wrapper);
     }
 }
 
