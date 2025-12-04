@@ -1,6 +1,6 @@
 package com.server.campushelpserver.config;
 
-import com.server.campushelpserver.config.JwtConfig;
+
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;

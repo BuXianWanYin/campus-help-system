@@ -298,7 +298,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         // 获取当前管理员ID（从SecurityContext中获取）
-        Long adminId = getCurrentAdminId(); // TODO: 需要实现获取当前管理员ID的方法
+        Long adminId = getCurrentAdminId(); 
         
         if (auditResult == 1) {
             // 审核通过

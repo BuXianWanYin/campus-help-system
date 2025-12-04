@@ -107,7 +107,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
                          .or()
                          .eq(ChatSession::getUser2Id, userId))
                .eq(ChatSession::getDeleteFlag, 0)
-               .orderByDesc(ChatSession::getLastMessageTime, ChatSession::getCreateTime);
+               .orderByDesc(ChatSession::getLastMessageTime)
+               .orderByDesc(ChatSession::getCreateTime);
         
         List<ChatSession> sessions = chatSessionMapper.selectList(wrapper);
         
