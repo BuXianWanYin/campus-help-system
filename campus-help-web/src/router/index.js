@@ -253,6 +253,16 @@ const routes = [
         }
       },
       {
+        path: 'goods-audit',
+        name: 'AdminGoodsAudit',
+        component: () => import('../views/admin/GoodsAudit.vue'),
+        meta: {
+          title: '商品审核',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
         path: 'messages',
         name: 'AdminMessages',
         component: () => import('../views/message/Messages.vue'),

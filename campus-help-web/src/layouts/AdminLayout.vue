@@ -80,14 +80,6 @@
                   <el-icon><User /></el-icon>
                   个人中心
                 </el-dropdown-item>
-                <el-dropdown-item command="my-posts">
-                  <el-icon><Document /></el-icon>
-                  我的发布
-                </el-dropdown-item>
-                <el-dropdown-item command="messages">
-                  <el-icon><Message /></el-icon>
-                  消息通知
-                </el-dropdown-item>
                 <el-dropdown-item command="settings">
                   <el-icon><Setting /></el-icon>
                   设置
@@ -126,6 +118,10 @@
           <el-menu-item index="/admin/lost-found-audit">
             <el-icon><DocumentChecked /></el-icon>
             <span>失物招领审核</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/goods-audit">
+            <el-icon><DocumentChecked /></el-icon>
+            <span>商品审核</span>
           </el-menu-item>
           <el-menu-item index="/admin/messages">
             <el-icon><Message /></el-icon>
@@ -190,14 +186,6 @@ const handleCommand = (command) => {
     case 'profile':
       // 跳转到后台的个人中心页面
       router.push('/admin/profile')
-      break
-    case 'my-posts':
-      // 在新标签页打开我的发布
-      window.open('/user/posts', '_blank')
-      break
-    case 'messages':
-      // 跳转到管理员消息通知页面
-      router.push('/admin/messages')
       break
     case 'settings':
       // 在新标签页打开设置

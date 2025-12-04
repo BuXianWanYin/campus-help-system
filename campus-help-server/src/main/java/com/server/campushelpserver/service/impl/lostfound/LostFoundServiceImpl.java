@@ -935,10 +935,25 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         
         LambdaQueryWrapper<LostFound> wrapper = new LambdaQueryWrapper<>();
         
-        // 只查询待审核的
-        wrapper.eq(LostFound::getStatus, "PENDING_REVIEW")
-               .eq(LostFound::getAuditStatus, "PENDING")
-               .eq(LostFound::getDeleteFlag, 0);
+        // 审核状态筛选
+        if (StringUtils.hasText(searchDTO.getAuditStatus()) && !"ALL".equals(searchDTO.getAuditStatus())) {
+            if ("PENDING".equals(searchDTO.getAuditStatus())) {
+                // 待审核：状态为PENDING_REVIEW且审核状态为PENDING
+                wrapper.eq(LostFound::getStatus, "PENDING_REVIEW")
+                       .eq(LostFound::getAuditStatus, "PENDING");
+            } else if ("APPROVED".equals(searchDTO.getAuditStatus())) {
+                // 已通过：审核状态为APPROVED
+                wrapper.eq(LostFound::getAuditStatus, "APPROVED");
+            } else if ("REJECTED".equals(searchDTO.getAuditStatus())) {
+                // 已拒绝：审核状态为REJECTED
+                wrapper.eq(LostFound::getAuditStatus, "REJECTED");
+            }
+        } else {
+            // 默认查看所有需要审核的数据（包括待审核、已通过、已拒绝）
+            // 只排除逻辑删除的
+        }
+        
+        wrapper.eq(LostFound::getDeleteFlag, 0);
         
         // 类型筛选
         if (searchDTO.getType() != null && !searchDTO.getType().isEmpty()) {
@@ -963,12 +978,8 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
                              .like(LostFound::getDescription, keyword));
         }
         
-        // 排序
-        if ("time".equals(searchDTO.getSortBy())) {
-            wrapper.orderByAsc(LostFound::getCreateTime);
-        } else {
-            wrapper.orderByDesc(LostFound::getCreateTime);
-        }
+        // 排序：默认按创建时间倒序，已审核的按审核时间倒序
+        wrapper.orderByDesc(LostFound::getAuditTime, LostFound::getCreateTime);
         
         Page<LostFound> resultPage = lostFoundMapper.selectPage(page, wrapper);
         

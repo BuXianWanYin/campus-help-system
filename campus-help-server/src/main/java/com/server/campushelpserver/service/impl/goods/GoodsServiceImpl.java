@@ -515,8 +515,25 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         Page<Goods> page = new Page<>(searchDTO.getPageNum(), searchDTO.getPageSize());
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
         
-        wrapper.eq(Goods::getStatus, "PENDING_REVIEW");
-        wrapper.eq(Goods::getAuditStatus, "PENDING");
+        // 审核状态筛选
+        if (StringUtils.hasText(searchDTO.getAuditStatus()) && !"ALL".equals(searchDTO.getAuditStatus())) {
+            if ("PENDING".equals(searchDTO.getAuditStatus())) {
+                // 待审核：状态为PENDING_REVIEW且审核状态为PENDING
+                wrapper.eq(Goods::getStatus, "PENDING_REVIEW")
+                       .eq(Goods::getAuditStatus, "PENDING");
+            } else if ("APPROVED".equals(searchDTO.getAuditStatus())) {
+                // 已通过：审核状态为APPROVED
+                wrapper.eq(Goods::getAuditStatus, "APPROVED");
+            } else if ("REJECTED".equals(searchDTO.getAuditStatus())) {
+                // 已拒绝：审核状态为REJECTED
+                wrapper.eq(Goods::getAuditStatus, "REJECTED");
+            }
+        } else {
+            // 默认查看所有需要审核的数据（包括待审核、已通过、已拒绝）
+            // 只排除逻辑删除的
+        }
+        
+        wrapper.eq(Goods::getDeleteFlag, 0);
         
         // 分类筛选
         if (StringUtils.hasText(searchDTO.getCategory())) {
@@ -530,9 +547,19 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
                              .like(Goods::getDescription, searchDTO.getKeyword()));
         }
         
-        wrapper.orderByDesc(Goods::getCreateTime);
+        // 排序：默认按创建时间倒序，已审核的按审核时间倒序
+        wrapper.orderByDesc(Goods::getAuditTime, Goods::getCreateTime);
         
-        return goodsMapper.selectPage(page, wrapper);
+        Page<Goods> resultPage = goodsMapper.selectPage(page, wrapper);
+        
+        // 为每个商品填充用户信息
+        if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+            for (Goods goods : resultPage.getRecords()) {
+                fillUserInfo(goods);
+            }
+        }
+        
+        return resultPage;
     }
     
     /**

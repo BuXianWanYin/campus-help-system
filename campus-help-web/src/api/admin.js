@@ -75,6 +75,25 @@ export const adminApi = {
    */
   auditLostFound(id, data) {
     return request.post(`/admin/lost-found/${id}/audit`, data)
+  },
+  
+  /**
+   * 获取待审核的商品列表
+   * @param {Object} params 查询参数
+   * @returns {Promise} 商品列表
+   */
+  getPendingGoodsList(params) {
+    return request.get('/admin/goods/pending', { params })
+  },
+  
+  /**
+   * 审核商品
+   * @param {Number} id 商品ID
+   * @param {Object} data 审核信息
+   * @returns {Promise} 审核结果
+   */
+  auditGoods(id, data) {
+    return request.post(`/admin/goods/${id}/audit`, data)
   }
 }
 

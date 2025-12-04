@@ -38,5 +38,8 @@ public class GoodsSearchDTO {
     
     @Schema(description = "排序方式：latest-最新，price_asc-价格从低到高，price_desc-价格从高到低，view-浏览量", example = "latest")
     private String sortBy = "latest";
+    
+    @Schema(description = "审核状态筛选：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝，ALL-全部")
+    private String auditStatus;
 }
 

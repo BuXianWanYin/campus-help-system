@@ -36,5 +36,8 @@ public class LostFoundSearchDTO {
     
     @Schema(description = "排序方式：latest-最新，view-浏览最多，reward-悬赏最高", example = "latest")
     private String sortBy = "latest";
+    
+    @Schema(description = "审核状态筛选：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝，ALL-全部")
+    private String auditStatus;
 }
 

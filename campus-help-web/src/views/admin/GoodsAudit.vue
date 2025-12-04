@@ -1,8 +1,8 @@
 <template>
-  <div class="lost-found-audit-page">
+  <div class="goods-audit-page">
     <div class="page-header">
-      <h2 class="page-title">失物招领审核</h2>
-      <p class="page-subtitle">审核用户提交的失物招领信息，可查看所有审核历史</p>
+      <h2 class="page-title">商品审核</h2>
+      <p class="page-subtitle">审核用户提交的闲置商品信息，可查看所有审核历史</p>
     </div>
 
     <div class="filter-bar">
@@ -15,31 +15,18 @@
             <el-option label="已拒绝" value="REJECTED" />
           </el-select>
         </el-form-item>
-        <el-form-item label="类型：">
-          <el-select v-model="filters.type" placeholder="全部" style="width: 120px" @change="handleFilter">
-            <el-option label="全部" value="" />
-            <el-option label="失物" value="LOST" />
-            <el-option label="招领" value="FOUND" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="分类：">
           <el-select v-model="filters.category" placeholder="全部" style="width: 150px" @change="handleFilter">
             <el-option label="全部" value="" />
-            <el-option label="电子产品" value="电子产品" />
-            <el-option label="证件" value="证件" />
-            <el-option label="衣物" value="衣物" />
-            <el-option label="书籍" value="书籍" />
+            <el-option label="数码产品" value="数码产品" />
+            <el-option label="图书教材" value="图书教材" />
+            <el-option label="服装鞋包" value="服装鞋包" />
+            <el-option label="生活用品" value="生活用品" />
+            <el-option label="运动健身" value="运动健身" />
+            <el-option label="乐器" value="乐器" />
+            <el-option label="文创用品" value="文创用品" />
             <el-option label="其他" value="其他" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="地点：">
-          <el-input
-            v-model="filters.location"
-            placeholder="搜索地点"
-            style="width: 150px"
-            clearable
-            @keyup.enter="handleFilter"
-          />
         </el-form-item>
         <el-form-item label="关键词：">
           <el-input
@@ -58,27 +45,21 @@
     </div>
 
     <el-table
-      :data="lostFoundList"
+      :data="goodsList"
       v-loading="loading"
       stripe
       style="width: 100%"
       :default-sort="{ prop: 'createTime', order: 'descending' }"
     >
       <el-table-column prop="id" label="ID" min-width="80" sortable />
-      <el-table-column prop="type" label="类型" min-width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.type === 'LOST' ? 'danger' : 'success'" size="small" style="white-space: nowrap;">
-            {{ row.type === 'LOST' ? '失物' : '招领' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="title" label="商品标题" min-width="200" show-overflow-tooltip />
       <el-table-column prop="category" label="分类" min-width="100" />
-      <el-table-column prop="lostLocation" label="地点" min-width="150" show-overflow-tooltip>
+      <el-table-column prop="currentPrice" label="价格" min-width="100">
         <template #default="{ row }">
-          {{ row.lostLocation || '-' }}
+          ¥{{ row.currentPrice }}
         </template>
       </el-table-column>
+      <el-table-column prop="stock" label="库存" min-width="80" />
       <el-table-column prop="user" label="发布者" min-width="120">
         <template #default="{ row }">
           {{ row.user?.nickname || '未知用户' }}
@@ -145,20 +126,18 @@
     <!-- 审核对话框 -->
     <el-dialog
       v-model="auditDialogVisible"
-      title="审核失物招领"
+      title="审核商品"
       width="900px"
       class="audit-dialog"
     >
       <div v-if="currentItem" class="item-detail-card">
         <el-descriptions :column="2" border class="item-descriptions">
-          <el-descriptions-item label="类型">
-            <el-tag :type="currentItem.type === 'LOST' ? 'danger' : 'success'">
-              {{ currentItem.type === 'LOST' ? '失物' : '招领' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="标题">{{ currentItem.title }}</el-descriptions-item>
+          <el-descriptions-item label="商品标题">{{ currentItem.title }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ currentItem.category }}</el-descriptions-item>
-          <el-descriptions-item label="地点">{{ currentItem.lostLocation || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="价格">¥{{ currentItem.currentPrice }}</el-descriptions-item>
+          <el-descriptions-item label="库存">{{ currentItem.stock }}件</el-descriptions-item>
+          <el-descriptions-item label="成色">{{ currentItem.condition }}</el-descriptions-item>
+          <el-descriptions-item label="交易方式">{{ currentItem.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}</el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
           <el-descriptions-item label="审核状态">
@@ -176,10 +155,10 @@
           <el-descriptions-item v-if="currentItem.auditStatus === 'REJECTED' && currentItem.auditReason" label="拒绝原因" :span="2">
             <el-alert :title="currentItem.auditReason" type="error" :closable="false" />
           </el-descriptions-item>
-          <el-descriptions-item label="物品描述" :span="2">
+          <el-descriptions-item label="商品描述" :span="2">
             {{ currentItem.description }}
           </el-descriptions-item>
-          <el-descriptions-item label="物品图片" :span="2" v-if="itemImages && itemImages.length > 0">
+          <el-descriptions-item label="商品图片" :span="2" v-if="itemImages && itemImages.length > 0">
             <div class="proof-images">
               <el-image
                 v-for="(img, index) in itemImages"
@@ -218,7 +197,7 @@
       </el-form>
       <div v-else-if="currentItem && currentItem.auditStatus !== 'PENDING'" style="margin-top: 20px; padding: 20px; background-color: #f5f7fa; border-radius: 8px;">
         <el-alert
-          :title="currentItem.auditStatus === 'APPROVED' ? '该失物已审核通过' : '该失物已审核拒绝'"
+          :title="currentItem.auditStatus === 'APPROVED' ? '该商品已审核通过' : '该商品已审核拒绝'"
           :type="currentItem.auditStatus === 'APPROVED' ? 'success' : 'error'"
           :closable="false"
         />
@@ -237,20 +216,18 @@
     <!-- 详情对话框 -->
     <el-dialog
       v-model="detailDialogVisible"
-      title="失物详情"
+      title="商品详情"
       width="1000px"
       class="detail-dialog"
     >
       <div v-if="currentItem" class="item-detail-card">
         <el-descriptions :column="2" border class="item-descriptions">
-          <el-descriptions-item label="类型">
-            <el-tag :type="currentItem.type === 'LOST' ? 'danger' : 'success'">
-              {{ currentItem.type === 'LOST' ? '失物' : '招领' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="标题">{{ currentItem.title }}</el-descriptions-item>
+          <el-descriptions-item label="商品标题">{{ currentItem.title }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ currentItem.category }}</el-descriptions-item>
-          <el-descriptions-item label="地点">{{ currentItem.lostLocation || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="价格">¥{{ currentItem.currentPrice }}</el-descriptions-item>
+          <el-descriptions-item label="库存">{{ currentItem.stock }}件</el-descriptions-item>
+          <el-descriptions-item label="成色">{{ currentItem.condition }}</el-descriptions-item>
+          <el-descriptions-item label="交易方式">{{ currentItem.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}</el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
           <el-descriptions-item label="审核状态">
@@ -268,16 +245,10 @@
           <el-descriptions-item v-if="currentItem.auditStatus === 'REJECTED' && currentItem.auditReason" label="拒绝原因" :span="2">
             <el-alert :title="currentItem.auditReason" type="error" :closable="false" />
           </el-descriptions-item>
-          <el-descriptions-item label="物品描述" :span="2">
+          <el-descriptions-item label="商品描述" :span="2">
             {{ currentItem.description }}
           </el-descriptions-item>
-          <el-descriptions-item label="联系方式" v-if="currentItem.contactInfo">
-            {{ currentItem.contactInfo }}
-          </el-descriptions-item>
-          <el-descriptions-item label="悬赏金额" v-if="currentItem.reward">
-            ¥{{ currentItem.reward }}
-          </el-descriptions-item>
-          <el-descriptions-item label="物品图片" :span="2" v-if="itemImages && itemImages.length > 0">
+          <el-descriptions-item label="商品图片" :span="2" v-if="itemImages && itemImages.length > 0">
             <div class="proof-images">
               <el-image
                 v-for="(img, index) in itemImages"
@@ -310,7 +281,7 @@ const userStore = useUserStore()
 
 const loading = ref(false)
 const submitting = ref(false)
-const lostFoundList = ref([])
+const goodsList = ref([])
 const auditDialogVisible = ref(false)
 const detailDialogVisible = ref(false)
 const currentItem = ref(null)
@@ -318,9 +289,7 @@ const itemImages = ref([])
 
 const filters = reactive({
   auditStatus: 'ALL', // 默认显示全部
-  type: '',
   category: '',
-  location: '',
   keyword: ''
 })
 
@@ -336,20 +305,18 @@ const auditForm = reactive({
 })
 
 // 获取待审核列表
-const fetchLostFoundList = async () => {
+const fetchGoodsList = async () => {
   loading.value = true
   try {
-    const response = await adminApi.getPendingLostFoundList({
+    const response = await adminApi.getPendingGoodsList({
       current: pagination.current,
       size: pagination.size,
       auditStatus: filters.auditStatus || 'ALL',
-      type: filters.type || undefined,
       category: filters.category || undefined,
-      location: filters.location || undefined,
       keyword: filters.keyword || undefined
     })
     if (response.code === 200) {
-      lostFoundList.value = response.data.records || []
+      goodsList.value = response.data.records || []
       pagination.total = response.data.total || 0
     }
   } catch (error) {
@@ -363,7 +330,7 @@ const fetchLostFoundList = async () => {
 const handleAudit = (row) => {
   // 只有待审核状态的才能审核
   if (row.auditStatus !== 'PENDING') {
-    ElMessage.warning('该失物不在待审核状态')
+    ElMessage.warning('该商品不在待审核状态')
     return
   }
   currentItem.value = row
@@ -391,14 +358,14 @@ const handleSubmitAudit = async () => {
   
   submitting.value = true
   try {
-    const response = await adminApi.auditLostFound(currentItem.value.id, {
+    const response = await adminApi.auditGoods(currentItem.value.id, {
       auditResult: auditForm.auditResult,
       auditReason: auditForm.auditReason || null
     })
     if (response.code === 200) {
       ElMessage.success(auditForm.auditResult === 1 ? '审核通过' : '审核拒绝')
       auditDialogVisible.value = false
-      fetchLostFoundList()
+      fetchGoodsList()
     }
   } catch (error) {
     ElMessage.error(error.message || '审核失败')
@@ -426,27 +393,25 @@ const handleViewDetail = (row) => {
 // 筛选
 const handleFilter = () => {
   pagination.current = 1
-  fetchLostFoundList()
+  fetchGoodsList()
 }
 
 // 重置
 const handleReset = () => {
   filters.auditStatus = 'ALL'
-  filters.type = ''
   filters.category = ''
-  filters.location = ''
   filters.keyword = ''
   pagination.current = 1
-  fetchLostFoundList()
+  fetchGoodsList()
 }
 
 // 分页
 const handleSizeChange = () => {
-  fetchLostFoundList()
+  fetchGoodsList()
 }
 
 const handlePageChange = () => {
-  fetchLostFoundList()
+  fetchGoodsList()
 }
 
 // 格式化日期
@@ -456,12 +421,12 @@ const formatDate = (date) => {
 }
 
 onMounted(() => {
-  fetchLostFoundList()
+  fetchGoodsList()
 })
 </script>
 
 <style scoped>
-.lost-found-audit-page {
+.goods-audit-page {
   background-color: var(--color-bg-white);
   border-radius: var(--radius-md);
   padding: var(--spacing-2xl);
@@ -499,10 +464,6 @@ onMounted(() => {
   margin-top: var(--spacing-xl);
   display: flex;
   justify-content: flex-end;
-}
-
-.item-detail {
-  margin-bottom: var(--spacing-lg);
 }
 
 .proof-images {
