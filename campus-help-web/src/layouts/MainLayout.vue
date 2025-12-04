@@ -70,11 +70,6 @@
                     <el-icon><Document /></el-icon>
                     我的发布
                   </el-dropdown-item>
-                  <el-dropdown-item command="messages">
-                    <el-icon><Message /></el-icon>
-                    消息通知
-                    <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" />
-                  </el-dropdown-item>
                   <el-dropdown-item command="chat">
                     <el-icon><ChatDotRound /></el-icon>
                     聊天
@@ -382,7 +377,7 @@
           <p>暂无消息</p>
         </div>
         <!-- 消息列表内容 -->
-        <div v-for="item in notifications" :key="item.id" class="notification-item" @click="handleNotificationClick(item)">
+        <div v-for="item in notifications" :key="item.id" class="notification-item" :class="{ 'unread': !item.read }" @click="handleNotificationClick(item)">
           <div class="notification-icon" :class="item.type">
             <el-icon><component :is="item.icon" /></el-icon>
           </div>
@@ -429,7 +424,7 @@ import {
   HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star,
   Location, Clock, View, Folder, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
   Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
-  Close, ArrowUp, ArrowDown as ArrowDownIcon, Box, InfoFilled
+  Close, ArrowUp, ArrowDown as ArrowDownIcon, Box, InfoFilled, Warning
 } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
@@ -559,9 +554,6 @@ const handleCommand = (command) => {
       break
     case 'my-posts':
       router.push('/user/posts')
-      break
-    case 'messages':
-      showNotificationPanel.value = true
       break
     case 'chat':
       router.push('/user/chat')
@@ -701,6 +693,15 @@ const getMessageTypeClass = (type) => {
   const typeMap = {
     'VERIFICATION_APPROVED': 'green',
     'VERIFICATION_REJECTED': 'red',
+    'LOST_FOUND_APPROVED': 'green',
+    'LOST_FOUND_REJECTED': 'red',
+    'LOST_FOUND_AUDIT_APPROVED': 'green',
+    'LOST_FOUND_AUDIT_REJECTED': 'red',
+    'CLAIM_APPLY': 'blue',
+    'CLAIM_CONFIRMED': 'green',
+    'CLAIM_REJECTED': 'red',
+    'ADMIN_AUDIT_REQUIRED': 'orange',
+    'ADMIN_VERIFICATION_REQUIRED': 'orange',
     'ORDER_STATUS': 'blue',
     'TASK_STATUS': 'orange',
     'ANNOUNCEMENT': 'blue'
@@ -713,6 +714,15 @@ const getMessageIcon = (type) => {
   const iconMap = {
     'VERIFICATION_APPROVED': markRaw(Check),
     'VERIFICATION_REJECTED': markRaw(Close),
+    'LOST_FOUND_APPROVED': markRaw(Check),
+    'LOST_FOUND_REJECTED': markRaw(Close),
+    'LOST_FOUND_AUDIT_APPROVED': markRaw(Check),
+    'LOST_FOUND_AUDIT_REJECTED': markRaw(Close),
+    'CLAIM_APPLY': markRaw(InfoFilled),
+    'CLAIM_CONFIRMED': markRaw(Check),
+    'CLAIM_REJECTED': markRaw(Close),
+    'ADMIN_AUDIT_REQUIRED': markRaw(Warning),
+    'ADMIN_VERIFICATION_REQUIRED': markRaw(Warning),
     'ORDER_STATUS': markRaw(ShoppingBag),
     'TASK_STATUS': markRaw(TrendChartsIcon),
     'ANNOUNCEMENT': markRaw(Bell)
@@ -2055,12 +2065,23 @@ onUnmounted(() => {
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
   position: relative;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .notification-item:hover {
-  background-color: var(--color-bg-primary);
+  background-color: #f5f7fa;
+}
+
+.notification-item.unread {
+  background-color: #f0f9ff;
 }
 
 .notification-empty {
@@ -2071,29 +2092,35 @@ onUnmounted(() => {
 }
 
 .notification-icon {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: var(--spacing-md);
   flex-shrink: 0;
+  font-size: 18px;
 }
 
 .notification-icon.blue {
-  background-color: var(--color-primary-lighter);
-  color: var(--color-primary);
+  background-color: #ecf5ff;
+  color: #409eff;
 }
 
 .notification-icon.green {
-  background-color: rgba(76, 175, 80, 0.1);
-  color: var(--color-success);
+  background-color: #f0f9ff;
+  color: #67c23a;
+}
+
+.notification-icon.red {
+  background-color: #fef0f0;
+  color: #f56c6c;
 }
 
 .notification-icon.orange {
-  background-color: rgba(255, 152, 0, 0.1);
-  color: var(--color-secondary);
+  background-color: #fdf6ec;
+  color: #e6a23c;
 }
 
 .notification-content {
