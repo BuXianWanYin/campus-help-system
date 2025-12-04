@@ -118,8 +118,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Location, Clock, Folder, View } from '@element-plus/icons-vue'
 import { lostFoundApi } from '@/api'
@@ -127,7 +127,11 @@ import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
+
+// 标记是否已初始化
+const isInitialized = ref(false)
 
 const loading = ref(false)
 const lostFoundList = ref([])
@@ -282,8 +286,17 @@ const handlePageChange = (page) => {
   fetchLostFoundList()
 }
 
+// 监听路由名称变化，当从其他页面跳转回来时刷新数据
+watch(() => route.name, (newName, oldName) => {
+  // 当路由名称是 LostFoundList 且从其他路由跳转过来时，刷新数据
+  if (newName === 'LostFoundList' && oldName && oldName !== 'LostFoundList' && isInitialized.value) {
+    fetchLostFoundList()
+  }
+})
+
 onMounted(() => {
   fetchLostFoundList()
+  isInitialized.value = true
 })
 </script>
 
