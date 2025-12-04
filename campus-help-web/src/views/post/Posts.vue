@@ -66,14 +66,29 @@
               <el-icon><Location /></el-icon>
               {{ item.lostLocation }}
             </span>
-            <span class="meta-item">
-              <el-icon><Clock /></el-icon>
-              {{ formatTime(item.createTime) }}
-            </span>
-            <span class="meta-item">
-              <el-icon><View /></el-icon>
-              {{ item.viewCount || 0 }}次浏览
-            </span>
+            <!-- 审核未通过（待审核、已拒绝）不显示发布日期和浏览量 -->
+            <template v-if="item.status !== 'PENDING_REVIEW' && item.status !== 'REJECTED'">
+              <span class="meta-item">
+                <el-icon><Clock /></el-icon>
+                {{ formatTime(item.createTime) }}
+              </span>
+              <span class="meta-item">
+                <el-icon><View /></el-icon>
+                {{ item.viewCount || 0 }}次浏览
+              </span>
+            </template>
+            <template v-else-if="item.status === 'PENDING_REVIEW'">
+              <span class="meta-item">
+                <el-icon><Clock /></el-icon>
+                待审核
+              </span>
+            </template>
+            <template v-else-if="item.status === 'REJECTED'">
+              <span class="meta-item">
+                <el-icon><Clock /></el-icon>
+                已拒绝
+              </span>
+            </template>
           </div>
           <div class="card-footer">
             <div class="card-info">

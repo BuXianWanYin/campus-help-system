@@ -251,8 +251,11 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             throw new BusinessException("失物信息不存在");
         }
         
-        // 增加浏览次数
-        lostFoundMapper.incrementViewCount(id);
+        // 只有审核通过的失物才增加浏览量（状态不是待审核和已拒绝）
+        // 审核通过的状态：PENDING_CLAIM, CLAIMING, CLAIMED, CLOSED
+        if (!"PENDING_REVIEW".equals(lostFound.getStatus()) && !"REJECTED".equals(lostFound.getStatus())) {
+            lostFoundMapper.incrementViewCount(id);
+        }
         
         // 填充用户信息
         fillUserInfo(lostFound);

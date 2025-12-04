@@ -156,6 +156,7 @@ const previewVisible = ref(false)
 const previewImageUrl = ref('')
 const imageList = ref([])
 const lostFoundId = ref(null)
+const originalStatus = ref(null) // 保存原始状态，用于判断是否为被拒绝状态
 
 const form = reactive({
   type: 'LOST',
@@ -204,6 +205,9 @@ const loadLostFoundDetail = async () => {
     const response = await lostFoundApi.getDetail(id)
     if (response.code === 200) {
       const data = response.data
+      
+      // 保存原始状态，用于判断是否为被拒绝状态
+      originalStatus.value = data.status
       
       // 填充表单
       form.type = data.type || 'LOST'
@@ -358,7 +362,8 @@ const handleSubmit = async () => {
     const response = await lostFoundApi.update(lostFoundId.value, submitData)
     
     if (response.code === 200) {
-      ElMessage.success('编辑成功！')
+      const message = originalStatus.value === 'REJECTED' ? '重新发布成功，等待审核！' : '编辑成功！'
+      ElMessage.success(message)
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
         router.push('/user/posts')

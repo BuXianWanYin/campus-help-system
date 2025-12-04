@@ -790,9 +790,9 @@ const keepAliveComponents = computed(() => {
 const handleRefreshHomeData = () => {
   const path = route.path
   if (path === '/home' || path === '/') {
-    fetchLostFoundList()
+      fetchLostFoundList()
   }
-}
+  }
 
 // 监听路由变化，实时更新激活菜单
 watch(() => route.path, (newPath, oldPath) => {
@@ -1013,7 +1013,7 @@ onMounted(async () => {
   const path = route.path
   if (path === '/home' || path === '/') {
     setTimeout(() => {
-      fetchLostFoundList()
+    fetchLostFoundList()
     }, 100)
   }
   
