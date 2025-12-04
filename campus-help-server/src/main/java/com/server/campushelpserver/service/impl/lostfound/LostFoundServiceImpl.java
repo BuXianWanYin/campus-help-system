@@ -109,12 +109,6 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         if (lostFound.getViewCount() == null) {
             lostFound.setViewCount(0);
         }
-        if (lostFound.getFavoriteCount() == null) {
-            lostFound.setFavoriteCount(0);
-        }
-        if (lostFound.getCommentCount() == null) {
-            lostFound.setCommentCount(0);
-        }
         if (lostFound.getVersion() == null) {
             lostFound.setVersion(0);
         }

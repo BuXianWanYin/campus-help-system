@@ -5,6 +5,45 @@
       <el-button type="primary" @click="handlePublish">发布失物</el-button>
     </div>
 
+    <!-- 搜索框 -->
+    <div class="search-bar">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索失物关键词（标题或描述）"
+        clearable
+        @keyup.enter="handleKeywordSearch"
+        @clear="handleClearKeyword"
+        class="search-input"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+        <template #append>
+          <el-button @click="handleKeywordSearch">搜索</el-button>
+        </template>
+      </el-input>
+      
+      <!-- 搜索历史 -->
+      <div v-if="searchHistoryList.length > 0" class="search-history">
+        <div class="history-header">
+          <span class="history-title">搜索历史</span>
+          <el-button text type="primary" size="small" @click="handleClearHistory">清空</el-button>
+        </div>
+        <div class="history-tags">
+          <el-tag
+            v-for="item in searchHistoryList"
+            :key="item.id"
+            closable
+            @close="handleDeleteHistory(item.id)"
+            @click="handleSelectHistory(item.keyword)"
+            class="history-tag"
+          >
+            {{ item.keyword }}
+          </el-tag>
+        </div>
+      </div>
+    </div>
+
     <!-- 筛选栏 -->
     <div class="filter-bar">
       <el-form :inline="true" class="filter-form">
@@ -121,8 +160,8 @@
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Location, Clock, Folder, View } from '@element-plus/icons-vue'
-import { lostFoundApi } from '@/api'
+import { Location, Clock, Folder, View, Search } from '@element-plus/icons-vue'
+import { lostFoundApi, searchHistoryApi } from '@/api'
 
 // 定义组件名称，用于 keep-alive
 defineOptions({
@@ -139,12 +178,16 @@ const loading = ref(false)
 const lostFoundList = ref([])
 const total = ref(0)
 
+const searchKeyword = ref('')
+const searchHistoryList = ref([])
+
 const filters = reactive({
   type: '',
   category: '',
   status: '',
   location: '',
-  sortBy: 'latest'
+  sortBy: 'latest',
+  keyword: '' // 添加关键词字段
 })
 
 const pagination = reactive({
@@ -165,7 +208,8 @@ const fetchLostFoundList = async () => {
       category: filters.category || undefined,
       status: filters.status || undefined,
       location: filters.location || undefined,
-      sortBy: filters.sortBy || 'latest'
+      sortBy: filters.sortBy || 'latest',
+      keyword: filters.keyword || undefined
     }
     
     const response = await lostFoundApi.getList(params)
@@ -242,6 +286,76 @@ const handleTypeChange = (type) => {
 }
 
 /**
+ * 处理关键词搜索
+ */
+const handleKeywordSearch = () => {
+  filters.keyword = searchKeyword.value.trim()
+  pagination.pageNum = 1
+  fetchLostFoundList()
+  fetchSearchHistory()
+}
+
+/**
+ * 清空关键词
+ */
+const handleClearKeyword = () => {
+  searchKeyword.value = ''
+  filters.keyword = ''
+  pagination.pageNum = 1
+  fetchLostFoundList()
+}
+
+/**
+ * 选择搜索历史
+ */
+const handleSelectHistory = (keyword) => {
+  searchKeyword.value = keyword
+  filters.keyword = keyword
+  pagination.pageNum = 1
+  fetchLostFoundList()
+}
+
+/**
+ * 删除搜索历史
+ */
+const handleDeleteHistory = async (id) => {
+  try {
+    await searchHistoryApi.delete(id)
+    ElMessage.success('删除成功')
+    fetchSearchHistory()
+  } catch (error) {
+    ElMessage.error('删除失败')
+  }
+}
+
+/**
+ * 清空搜索历史
+ */
+const handleClearHistory = async () => {
+  try {
+    await searchHistoryApi.clear('LOST_FOUND')
+    ElMessage.success('清空成功')
+    searchHistoryList.value = []
+  } catch (error) {
+    ElMessage.error('清空失败')
+  }
+}
+
+/**
+ * 获取搜索历史
+ */
+const fetchSearchHistory = async () => {
+  try {
+    const response = await searchHistoryApi.getList('LOST_FOUND', 10)
+    if (response.code === 200) {
+      searchHistoryList.value = response.data || []
+    }
+  } catch (error) {
+    // 未登录用户不显示搜索历史
+  }
+}
+
+/**
  * 处理搜索
  */
 const handleSearch = () => {
@@ -290,11 +404,13 @@ const handlePageChange = (page) => {
 // 组件激活时（从其他页面返回时），刷新数据
 onActivated(() => {
   fetchLostFoundList()
+  fetchSearchHistory()
 })
 
 onMounted(() => {
   // 首次加载时获取数据
   fetchLostFoundList()
+  fetchSearchHistory()
 })
 </script>
 
@@ -317,6 +433,54 @@ onMounted(() => {
   font-weight: bold;
   color: #303133;
   margin: 0;
+}
+
+.search-bar {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #E0E0E0;
+}
+
+.search-input {
+  margin-bottom: 12px;
+}
+
+.search-history {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #E0E0E0;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-title {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-tag:hover {
+  background-color: #409EFF;
+  color: #FFFFFF;
 }
 
 .filter-bar {

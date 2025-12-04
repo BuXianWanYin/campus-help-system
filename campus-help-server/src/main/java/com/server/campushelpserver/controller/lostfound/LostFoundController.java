@@ -33,6 +33,9 @@ public class LostFoundController {
     @Autowired
     private UserService userService;
     
+    @Autowired
+    private com.server.campushelpserver.service.search.SearchHistoryService searchHistoryService;
+    
     /**
      * 获取当前用户ID
      */
@@ -60,6 +63,23 @@ public class LostFoundController {
     @Operation(summary = "搜索失物列表", description = "根据条件搜索失物列表")
     @GetMapping("/list")
     public Result<Page<LostFound>> searchLostFound(@Parameter(description = "搜索条件") LostFoundSearchDTO searchDTO) {
+        // 保存搜索历史（如果有关键词）
+        if (searchDTO.getKeyword() != null && !searchDTO.getKeyword().trim().isEmpty()) {
+            try {
+                Long userId = null;
+                try {
+                    userId = getCurrentUserId();
+                } catch (Exception e) {
+                    // 未登录用户不保存搜索历史
+                }
+                if (userId != null) {
+                    searchHistoryService.saveSearchHistory(userId, searchDTO.getKeyword().trim(), "LOST_FOUND");
+                }
+            } catch (Exception e) {
+                // 保存搜索历史失败不影响搜索功能
+            }
+        }
+        
         Page<LostFound> page = lostFoundService.searchLostFound(searchDTO);
         return Result.success("查询成功", page);
     }

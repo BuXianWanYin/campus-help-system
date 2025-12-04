@@ -21,6 +21,9 @@ export { messageApi, chatApi } from './message'
 // 失物招领相关 API
 export { lostFoundApi } from './lostFound'
 
+// 搜索历史相关 API
+export { searchHistoryApi } from './searchHistory'
+
 // 可以继续添加其他模块的 API
 // export { goodsApi } from './goods'
 // export { taskApi } from './task'

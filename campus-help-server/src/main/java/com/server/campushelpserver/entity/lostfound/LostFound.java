@@ -115,14 +115,6 @@ public class LostFound implements Serializable {
     @Schema(description = "浏览次数")
     private Integer viewCount;
     
-    @TableField("favorite_count")
-    @Schema(description = "收藏次数")
-    private Integer favoriteCount;
-    
-    @TableField("comment_count")
-    @Schema(description = "评论次数")
-    private Integer commentCount;
-    
     @TableField("version")
     @Schema(description = "乐观锁版本号")
     private Integer version;
