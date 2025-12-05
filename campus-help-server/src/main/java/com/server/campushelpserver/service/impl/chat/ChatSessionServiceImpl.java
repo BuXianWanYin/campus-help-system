@@ -186,6 +186,11 @@ public class ChatSessionServiceImpl implements ChatSessionService {
             if (!StringUtils.hasText(dto.getContent())) {
                 throw new BusinessException("商品卡片消息内容不能为空");
             }
+        } else if ("ORDER_CARD".equals(dto.getMessageType())) {
+            // 订单卡片消息：content字段存储订单信息（JSON格式）
+            if (!StringUtils.hasText(dto.getContent())) {
+                throw new BusinessException("订单卡片消息内容不能为空");
+            }
         } else {
             throw new BusinessException("不支持的消息类型");
         }

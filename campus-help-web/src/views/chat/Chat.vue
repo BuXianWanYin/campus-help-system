@@ -50,9 +50,9 @@
           </div>
         </div>
 
-        <!-- 订单卡片（仅在GOODS类型会话且存在订单时显示） -->
+        <!-- 订单卡片（仅在GOODS类型会话且存在订单时显示，紧凑型横向布局） -->
         <div v-if="currentOrder" class="order-card-wrapper">
-          <OrderCard :order="currentOrder" @update-order="handleOrderUpdate" />
+          <OrderCard :order="currentOrder" @update-order="handleOrderUpdate" @send-order="handleSendOrder" />
         </div>
 
         <!-- 消息列表 -->
@@ -102,6 +102,9 @@
                 </div>
                 <div v-else-if="message.messageType === 'GOODS_CARD'" class="message-goods-card">
                   <GoodsCardMessage :message="message" />
+                </div>
+                <div v-else-if="message.messageType === 'ORDER_CARD'" class="message-order-card">
+                  <OrderCard :order="parseOrderFromMessage(message)" :is-in-message="true" />
                 </div>
               </div>
               <div class="message-time">
@@ -898,6 +901,80 @@ const handleOrderUpdate = () => {
 }
 
 /**
+ * 处理发送订单
+ */
+const handleSendOrder = async (order) => {
+  if (!currentSessionId.value || !order) {
+    return
+  }
+  
+  try {
+    // 将订单信息作为消息内容发送（使用JSON格式）
+    const orderData = {
+      orderId: order.id,
+      orderNo: order.orderNo,
+      goodsId: order.goodsId,
+      goodsTitle: order.goods?.title,
+      quantity: order.quantity,
+      price: order.price,
+      totalAmount: order.totalAmount,
+      shippingFee: order.shippingFee,
+      status: order.status,
+      tradeMethod: order.tradeMethod
+    }
+    
+    const response = await chatApi.sendMessage({
+      sessionId: currentSessionId.value,
+      messageType: 'ORDER_CARD',
+      content: JSON.stringify(orderData)
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success('订单已发送')
+      // 刷新消息列表
+      await fetchMessages(currentSessionId.value)
+      scrollToBottom()
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '发送订单失败')
+  }
+}
+
+/**
+ * 从消息内容解析订单信息
+ */
+const parseOrderFromMessage = (message) => {
+  if (!message || !message.content) {
+    return null
+  }
+  
+  try {
+    const orderData = JSON.parse(message.content)
+    // 构造一个简化的订单对象用于显示
+    return {
+      id: orderData.orderId,
+      orderNo: orderData.orderNo,
+      goodsId: orderData.goodsId,
+      goods: {
+        title: orderData.goodsTitle,
+        images: null // 可以从goodsId获取，这里简化处理
+      },
+      quantity: orderData.quantity,
+      price: orderData.price,
+      totalAmount: orderData.totalAmount,
+      shippingFee: orderData.shippingFee || 0,
+      status: orderData.status,
+      tradeMethod: orderData.tradeMethod,
+      buyerId: null, // 消息中不包含，需要从当前用户判断
+      sellerId: null
+    }
+  } catch (e) {
+    console.error('解析订单消息失败:', e)
+    return null
+  }
+}
+
+/**
  * 获取第一张商品图片
  */
 const getFirstGoodsImage = (imagesJson) => {
@@ -1651,11 +1728,18 @@ onUnmounted(() => {
 }
 
 .order-card-wrapper {
-  padding: 16px;
-  background-color: #F5F5F5;
-  border-bottom: 1px solid var(--color-border);
-  max-height: 500px;
-  overflow-y: auto;
+  padding: 0 20px;
+  margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.message-order-card {
+  max-width: 100%;
+}
+
+.message-order-card :deep(.order-card-compact) {
+  margin-bottom: 0;
 }
 
 .goods-select-content {

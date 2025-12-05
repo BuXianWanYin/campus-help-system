@@ -1,111 +1,132 @@
 <template>
-  <div class="order-card" v-if="order">
-    <div class="order-card-header">
-      <div class="order-title">
-        <el-icon><ShoppingBag /></el-icon>
-        <span>订单信息</span>
-      </div>
-      <el-tag :type="getStatusType(order.status)" size="small">{{ getStatusText(order.status) }}</el-tag>
-    </div>
-    
-    <div class="order-card-body">
-      <!-- 订单号 -->
-      <div class="order-info-row">
-        <span class="label">订单号：</span>
-        <span class="value">{{ order.orderNo }}</span>
+  <div class="order-card-compact" v-if="order">
+    <div class="order-card-content">
+      <!-- 商品图片 -->
+      <div class="order-goods-image" @click="goToGoodsDetail">
+        <img :src="getGoodsImage(order.goods)" :alt="order.goods?.title" />
       </div>
       
-      <!-- 商品信息 -->
-      <div class="goods-info" @click="goToGoodsDetail">
-        <img :src="getGoodsImage(order.goods)" :alt="order.goods?.title" class="goods-image" />
-        <div class="goods-details">
-          <div class="goods-title">{{ order.goods?.title }}</div>
-          <div class="goods-meta">
-            <span>数量：{{ order.quantity }}件</span>
-            <span>单价：¥{{ order.price }}</span>
+      <!-- 订单信息 -->
+      <div class="order-info">
+        <div class="order-header">
+          <div class="order-title-text">{{ order.goods?.title || '商品' }}</div>
+          <el-tag :type="getStatusType(order.status)" size="small">{{ getStatusText(order.status) }}</el-tag>
+        </div>
+        
+        <div class="order-details">
+          <div class="order-detail-item">
+            <span class="detail-label">共{{ order.quantity }}件商品</span>
+            <span class="detail-value">合计 ¥{{ (parseFloat(order.totalAmount) + parseFloat(order.shippingFee || 0)).toFixed(2) }}</span>
+          </div>
+          <div class="order-detail-item" v-if="order.orderNo">
+            <span class="detail-label">订单号：</span>
+            <span class="detail-value order-no">{{ order.orderNo }}</span>
           </div>
         </div>
       </div>
       
-      <!-- 交易方式 -->
-      <div class="order-info-row">
-        <span class="label">交易方式：</span>
-        <span class="value">{{ order.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}</span>
-      </div>
-      
-      <!-- 邮寄信息（邮寄时显示） -->
-      <div v-if="order.tradeMethod === 'MAIL' && order.receiverName" class="order-info-row">
-        <span class="label">收货地址：</span>
-        <span class="value">{{ order.receiverAddress }}</span>
-      </div>
-      
-      <!-- 自提信息（自提时显示） -->
-      <div v-if="order.tradeMethod === 'FACE_TO_FACE' && order.pickupLocation" class="order-info-row">
-        <span class="label">自提地点：</span>
-        <span class="value">{{ order.pickupLocation }}</span>
-      </div>
-      
-      <!-- 物流信息（已发货时显示） -->
-      <div v-if="order.status === 'SHIPPED' && order.trackingNumber" class="order-info-row">
-        <span class="label">物流单号：</span>
-        <span class="value">{{ order.trackingNumber }}</span>
-        <span v-if="order.logisticsCompany" class="value">（{{ order.logisticsCompany }}）</span>
-      </div>
-      
-      <!-- 订单金额 -->
-      <div class="order-amount">
-        <div class="amount-row">
-          <span>商品金额：</span>
-          <span>¥{{ order.totalAmount }}</span>
-        </div>
-        <div v-if="order.shippingFee > 0" class="amount-row">
-          <span>邮费：</span>
-          <span>¥{{ order.shippingFee }}</span>
-        </div>
-        <div class="amount-total">
-          <span>合计：</span>
-          <span class="total-price">¥{{ (parseFloat(order.totalAmount) + parseFloat(order.shippingFee || 0)).toFixed(2) }}</span>
-        </div>
+      <!-- 操作按钮区域 -->
+      <div class="order-actions">
+        <!-- 发送订单按钮（买家可见） -->
+        <el-button 
+          v-if="isBuyer && !isInMessage"
+          type="primary" 
+          size="small" 
+          @click="handleSendOrder"
+          class="send-order-btn">
+          <el-icon><Promotion /></el-icon>
+          <span>发送订单</span>
+        </el-button>
+        
+        <!-- 卖家操作按钮 -->
+        <template v-if="isSeller">
+          <!-- 改价按钮（待付款状态） -->
+          <el-button 
+            v-if="order.status === 'PENDING_PAYMENT'"
+            type="warning" 
+            size="small" 
+            @click="handleUpdatePrice"
+            class="action-btn">
+            <el-icon><Edit /></el-icon>
+            <span>改价</span>
+          </el-button>
+          
+          <!-- 发货按钮（已付款且邮寄方式） -->
+          <el-button 
+            v-if="order.status === 'PAID' && order.tradeMethod === 'MAIL'"
+            type="primary" 
+            size="small" 
+            @click="handleShip"
+            class="action-btn">
+            <el-icon><Box /></el-icon>
+            <span>发货</span>
+          </el-button>
+        </template>
+        
+        <!-- 买家操作按钮 -->
+        <template v-if="isBuyer">
+          <!-- 付款按钮 -->
+          <el-button 
+            v-if="order.status === 'PENDING_PAYMENT'"
+            type="primary" 
+            size="small" 
+            @click="handlePay"
+            class="action-btn">
+            <el-icon><Wallet /></el-icon>
+            <span>立即付款</span>
+          </el-button>
+          
+          <!-- 确认收货按钮 -->
+          <el-button 
+            v-if="order.status === 'SHIPPED' || order.status === 'PENDING_PICKUP'"
+            type="success" 
+            size="small" 
+            @click="handleConfirmReceipt"
+            class="action-btn">
+            <el-icon><CircleCheck /></el-icon>
+            <span>确认收货</span>
+          </el-button>
+        </template>
+        
+        <!-- 查看详情按钮 -->
+        <el-button 
+          type="text" 
+          size="small" 
+          @click="goToOrderDetail"
+          class="detail-btn">
+          查看详情
+        </el-button>
       </div>
     </div>
     
-    <!-- 操作按钮 -->
-    <div class="order-card-actions">
-      <el-button 
-        v-if="isBuyer && order.status === 'PENDING_PAYMENT'" 
-        type="primary" 
-        size="small" 
-        @click="handlePay">
-        立即付款
-      </el-button>
-      <el-button 
-        v-if="isSeller && order.status === 'PAID' && order.tradeMethod === 'MAIL'" 
-        type="primary" 
-        size="small" 
-        @click="handleShip">
-        发货
-      </el-button>
-      <el-button 
-        v-if="isBuyer && (order.status === 'SHIPPED' || order.status === 'PENDING_PICKUP')" 
-        type="success" 
-        size="small" 
-        @click="handleConfirmReceipt">
-        确认收货
-      </el-button>
-      <el-button 
-        v-if="order.status === 'PENDING_PAYMENT'" 
-        type="danger" 
-        size="small" 
-        @click="handleCancel">
-        取消订单
-      </el-button>
-      <el-button 
-        type="text" 
-        size="small" 
-        @click="goToOrderDetail">
-        查看详情
-      </el-button>
-    </div>
+    <!-- 改价对话框 -->
+    <el-dialog v-model="priceDialogVisible" title="修改订单价格" width="400px">
+      <el-form :model="priceForm" label-width="100px">
+        <el-form-item label="原价">
+          <el-input :value="`¥${order.price}`" disabled />
+        </el-form-item>
+        <el-form-item label="新价格" required>
+          <el-input-number 
+            v-model="priceForm.newPrice" 
+            :min="0.01" 
+            :precision="2"
+            :step="1"
+            style="width: 100%"
+            placeholder="请输入新价格" />
+        </el-form-item>
+        <el-form-item label="改价原因">
+          <el-input 
+            v-model="priceForm.reason" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入改价原因（选填）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="priceDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmUpdatePrice">确定</el-button>
+      </template>
+    </el-dialog>
     
     <!-- 发货对话框 -->
     <el-dialog v-model="shipDialogVisible" title="发货" width="500px">
@@ -129,7 +150,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ShoppingBag } from '@element-plus/icons-vue'
+import { Promotion, Edit, Box, Wallet, CircleCheck } from '@element-plus/icons-vue'
 import { orderApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
@@ -138,13 +159,24 @@ const props = defineProps({
   order: {
     type: Object,
     default: null
+  },
+  // 是否在消息中显示（用于区分是固定卡片还是消息中的卡片）
+  isInMessage: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update-order'])
+const emit = defineEmits(['update-order', 'send-order'])
 
 const router = useRouter()
 const userStore = useUserStore()
+
+const priceDialogVisible = ref(false)
+const priceForm = ref({
+  newPrice: null,
+  reason: ''
+})
 
 const shipDialogVisible = ref(false)
 const shipForm = ref({
@@ -225,6 +257,51 @@ const goToOrderDetail = () => {
 }
 
 /**
+ * 发送订单
+ */
+const handleSendOrder = () => {
+  emit('send-order', props.order)
+}
+
+/**
+ * 处理改价
+ */
+const handleUpdatePrice = () => {
+  priceForm.value = {
+    newPrice: parseFloat(props.order.price),
+    reason: ''
+  }
+  priceDialogVisible.value = true
+}
+
+/**
+ * 确认改价
+ */
+const confirmUpdatePrice = async () => {
+  if (!priceForm.value.newPrice || priceForm.value.newPrice <= 0) {
+    ElMessage.warning('请输入有效的新价格')
+    return
+  }
+  
+  if (priceForm.value.newPrice === parseFloat(props.order.price)) {
+    ElMessage.warning('新价格不能与原价相同')
+    return
+  }
+  
+  try {
+    await orderApi.updatePrice(props.order.id, {
+      newPrice: priceForm.value.newPrice,
+      reason: priceForm.value.reason
+    })
+    ElMessage.success('改价成功')
+    priceDialogVisible.value = false
+    emit('update-order')
+  } catch (error) {
+    ElMessage.error(error.message || '改价失败')
+  }
+}
+
+/**
  * 处理付款
  */
 const handlePay = async () => {
@@ -295,170 +372,151 @@ const handleConfirmReceipt = async () => {
     }
   }
 }
-
-/**
- * 处理取消订单
- */
-const handleCancel = async () => {
-  try {
-    const { value: reason } = await ElMessageBox.prompt('请输入取消原因', '取消订单', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputType: 'textarea',
-      inputPlaceholder: '请输入取消原因'
-    })
-    
-    await orderApi.cancel(props.order.id, reason)
-    ElMessage.success('取消订单成功')
-    emit('update-order')
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('取消订单失败')
-    }
-  }
-}
 </script>
 
 <style scoped>
-.order-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #E0E0E0;
-}
-
-.order-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #F0F0F0;
-}
-
-.order-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.order-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.order-info-row {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-}
-
-.label {
-  color: #909399;
-  width: 80px;
-  flex-shrink: 0;
-}
-
-.value {
-  color: #303133;
-  flex: 1;
-}
-
-.goods-info {
-  display: flex;
-  gap: 12px;
+.order-card-compact {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-md);
   padding: 12px;
-  background-color: #F5F5F5;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.goods-info:hover {
-  background-color: #EEEEEE;
+.order-card-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
 }
 
-.goods-image {
+.order-goods-image {
   width: 80px;
   height: 80px;
-  object-fit: cover;
-  border-radius: 4px;
   flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background-color: var(--color-bg-primary);
 }
 
-.goods-details {
+.order-goods-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.order-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 8px;
 }
 
-.goods-title {
+.order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.order-title-text {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: var(--color-text-primary);
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.goods-meta {
-  display: flex;
-  gap: 16px;
-  font-size: 12px;
-  color: #909399;
-}
-
-.order-amount {
-  padding: 12px;
-  background-color: #F9F9F9;
-  border-radius: 6px;
+.order-details {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.order-detail-item {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  font-size: 12px;
 }
 
-.amount-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  color: #606266;
+.detail-label {
+  color: var(--color-text-secondary);
 }
 
-.amount-total {
-  display: flex;
-  justify-content: space-between;
-  font-size: 16px;
+.detail-value {
+  color: var(--color-text-primary);
   font-weight: 500;
-  color: #303133;
-  padding-top: 8px;
-  border-top: 1px solid #E0E0E0;
 }
 
-.total-price {
-  color: #F56C6C;
-  font-size: 18px;
-  font-weight: bold;
+.detail-value.order-no {
+  font-family: monospace;
+  font-size: 11px;
 }
 
-.order-card-actions {
+.order-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #F0F0F0;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+
+.send-order-btn,
+.action-btn {
+  width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.send-order-btn :deep(.el-icon),
+.action-btn :deep(.el-icon) {
+  font-size: 14px;
+  margin-right: 0;
+}
+
+.send-order-btn span,
+.action-btn span {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.detail-btn {
+  padding: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.detail-btn:hover {
+  color: var(--color-primary);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .order-card-content {
+    flex-wrap: wrap;
+  }
+  
+  .order-actions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .send-order-btn,
+  .action-btn {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>
-

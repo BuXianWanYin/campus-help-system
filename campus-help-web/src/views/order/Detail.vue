@@ -216,7 +216,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Clock, Money, CircleCheck, Close } from '@element-plus/icons-vue'
-import { orderApi } from '@/api'
+import { orderApi, chatApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
@@ -349,11 +349,47 @@ const goToGoodsDetail = (goodsId) => {
 /**
  * 跳转聊天
  */
-const goToChat = () => {
-  if (order.value && order.value.sessionId) {
-    router.push(`/chat/${order.value.sessionId}`)
-  } else {
-    ElMessage.warning('聊天会话不存在')
+const goToChat = async () => {
+  if (!order.value) {
+    ElMessage.warning('订单信息不存在')
+    return
+  }
+  
+  // 如果订单有sessionId，直接使用
+  if (order.value.sessionId) {
+    router.push({
+      path: '/user/chat',
+      query: { sessionId: order.value.sessionId }
+    })
+    return
+  }
+  
+  // 如果没有sessionId，需要创建或获取会话
+  try {
+    const otherUserId = isBuyer.value ? order.value.sellerId : order.value.buyerId
+    if (!otherUserId) {
+      ElMessage.warning('无法获取对方用户信息')
+      return
+    }
+    
+    const response = await chatApi.createOrGetSession({
+      targetUserId: otherUserId,
+      relatedType: 'GOODS',
+      relatedId: order.value.goodsId
+    })
+    
+    if (response.code === 200) {
+      const sessionId = response.data.sessionId || response.data
+      router.push({
+        path: '/user/chat',
+        query: { sessionId }
+      })
+    } else {
+      ElMessage.error(response.message || '创建会话失败')
+    }
+  } catch (error) {
+    console.error('联系对方失败:', error)
+    ElMessage.error('联系对方失败，请稍后重试')
   }
 }
 
@@ -484,7 +520,7 @@ onMounted(() => {
 }
 
 .status-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1E88E5 0%, #42A5F5 100%);
   color: #FFFFFF;
 }
 
