@@ -248,7 +248,7 @@
     <!-- 订单选择对话框 -->
     <el-dialog
       v-model="orderSelectDialogVisible"
-      title="请选择需要咨询的订单"
+      title="选择订单"
       width="600px"
       :close-on-click-modal="false"
     >
@@ -937,6 +937,18 @@ const handleChatMessage = (message) => {
  * 根据会话ID获取订单信息
  */
 /**
+ * 判断订单是否应该显示（仅显示需要操作的订单）
+ */
+const shouldShowOrder = (order) => {
+  if (!order || !order.status) {
+    return false
+  }
+  // 仅显示需要操作的订单状态：待付款、已付款、已发货、待自提
+  const activeStatuses = ['PENDING_PAYMENT', 'PAID', 'SHIPPED', 'PENDING_PICKUP']
+  return activeStatuses.includes(order.status)
+}
+
+/**
  * 根据会话ID获取订单信息（获取与当前用户的最新订单）
  */
 const fetchOrderBySessionId = async (sessionId) => {
@@ -950,12 +962,19 @@ const fetchOrderBySessionId = async (sessionId) => {
     // 先尝试通过sessionId获取订单
     const response = await orderApi.getBySessionId(sessionId)
     if (response.code === 200 && response.data) {
-      currentOrder.value = response.data
-      orderCardHidden.value = false
+      const order = response.data
+      // 只显示需要操作的订单
+      if (shouldShowOrder(order)) {
+        currentOrder.value = order
+        orderCardHidden.value = false
+      } else {
+        // 订单已完成或已取消，不自动显示
+        currentOrder.value = null
+      }
       return
     }
     
-    // 如果没有通过sessionId找到订单，尝试获取与对方用户的所有订单，显示最新的
+    // 如果没有通过sessionId找到订单，尝试获取与对方用户的所有订单，显示最新的活跃订单
     if (currentOtherUser.value?.id) {
       await fetchLatestOrderWithUser(currentOtherUser.value.id)
     } else {
@@ -970,7 +989,7 @@ const fetchOrderBySessionId = async (sessionId) => {
 }
 
 /**
- * 获取与指定用户的最新订单
+ * 获取与指定用户的最新活跃订单（仅显示需要操作的订单）
  */
 const fetchLatestOrderWithUser = async (otherUserId) => {
   if (!otherUserId) {
@@ -988,14 +1007,14 @@ const fetchLatestOrderWithUser = async (otherUserId) => {
     
     if (response.code === 200) {
       const orders = response.data?.records || response.data?.list || []
-      // 筛选出与对方用户的订单
+      // 筛选出与对方用户的订单，并且只保留需要操作的订单
       const ordersWithUser = orders.filter(order => {
         const isBuyer = order.buyerId === userStore.userInfo?.id && order.sellerId === otherUserId
         const isSeller = order.sellerId === userStore.userInfo?.id && order.buyerId === otherUserId
-        return isBuyer || isSeller
+        return (isBuyer || isSeller) && shouldShowOrder(order)
       })
       
-      // 按创建时间排序，取最新的
+      // 按创建时间排序，取最新的活跃订单
       if (ordersWithUser.length > 0) {
         ordersWithUser.sort((a, b) => {
           const timeA = new Date(a.createTime).getTime()
@@ -1005,6 +1024,7 @@ const fetchLatestOrderWithUser = async (otherUserId) => {
         currentOrder.value = ordersWithUser[0]
         orderCardHidden.value = false
       } else {
+        // 没有活跃订单，不显示
         currentOrder.value = null
       }
     } else {
@@ -1023,6 +1043,12 @@ const handleOrderUpdate = () => {
   // 重新获取订单信息
   if (currentSessionId.value) {
     fetchOrderBySessionId(currentSessionId.value)
+  }
+  
+  // 如果当前订单状态变为已完成或已取消，自动隐藏订单卡片
+  if (currentOrder.value && !shouldShowOrder(currentOrder.value)) {
+    currentOrder.value = null
+    orderCardHidden.value = true
   }
 }
 
