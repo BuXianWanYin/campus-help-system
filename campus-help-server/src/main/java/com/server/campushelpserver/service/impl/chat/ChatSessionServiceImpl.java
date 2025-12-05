@@ -173,27 +173,38 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         Long receiverId = session.getUser1Id().equals(senderId) ? session.getUser2Id() : session.getUser1Id();
         
         // 4. 验证消息内容
-        if ("TEXT".equals(dto.getMessageType())) {
+        String messageType = dto.getMessageType();
+        if (messageType == null) {
+            throw new BusinessException("消息类型不能为空");
+        }
+        
+        // 统一转换为大写，避免大小写问题
+        messageType = messageType.trim().toUpperCase();
+        
+        if ("TEXT".equals(messageType)) {
             if (!StringUtils.hasText(dto.getContent())) {
                 throw new BusinessException("文字消息内容不能为空");
             }
-        } else if ("IMAGE".equals(dto.getMessageType())) {
+        } else if ("IMAGE".equals(messageType)) {
             if (dto.getImages() == null || dto.getImages().isEmpty()) {
                 throw new BusinessException("图片消息必须包含至少一张图片");
             }
-        } else if ("GOODS_CARD".equals(dto.getMessageType())) {
+        } else if ("GOODS_CARD".equals(messageType)) {
             // 商品卡片消息：content字段存储商品ID（JSON格式：{"goodsId": 123}）
             if (!StringUtils.hasText(dto.getContent())) {
                 throw new BusinessException("商品卡片消息内容不能为空");
             }
-        } else if ("ORDER_CARD".equals(dto.getMessageType())) {
+        } else if ("ORDER_CARD".equals(messageType)) {
             // 订单卡片消息：content字段存储订单信息（JSON格式）
             if (!StringUtils.hasText(dto.getContent())) {
                 throw new BusinessException("订单卡片消息内容不能为空");
             }
         } else {
-            throw new BusinessException("不支持的消息类型");
+            throw new BusinessException("不支持的消息类型: " + messageType);
         }
+        
+        // 使用处理后的messageType
+        dto.setMessageType(messageType);
         
         // 5. 创建消息
         ChatMessage message = new ChatMessage();

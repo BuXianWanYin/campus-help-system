@@ -376,29 +376,38 @@ const handleConfirmReceipt = async () => {
 
 <style scoped>
 .order-card-compact {
-  background-color: var(--color-bg-white);
-  border-radius: var(--radius-md);
-  padding: 12px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.order-card-compact:hover {
+  background-color: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .order-card-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
 .order-goods-image {
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   background-color: var(--color-bg-primary);
@@ -415,7 +424,7 @@ const handleConfirmReceipt = async () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .order-header {
@@ -426,26 +435,28 @@ const handleConfirmReceipt = async () => {
 }
 
 .order-title-text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text-primary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.4;
 }
 
 .order-details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .order-detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .detail-label {
@@ -465,29 +476,32 @@ const handleConfirmReceipt = async () => {
 .order-actions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
   align-items: flex-end;
 }
 
 .send-order-btn,
 .action-btn {
-  width: 100px;
+  width: 90px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  padding: 0 8px;
+  font-size: 12px;
 }
 
 .send-order-btn :deep(.el-icon),
 .action-btn :deep(.el-icon) {
-  font-size: 14px;
+  font-size: 13px;
   margin-right: 0;
 }
 
 .send-order-btn span,
 .action-btn span {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
 }
 

@@ -51,7 +51,19 @@
         </div>
 
         <!-- 订单卡片（仅在GOODS类型会话且存在订单时显示，紧凑型横向布局） -->
-        <div v-if="currentOrder" class="order-card-wrapper">
+        <div v-if="currentOrder && !orderCardHidden" class="order-card-wrapper">
+          <div class="order-card-header">
+            <span class="order-card-title">订单信息</span>
+            <el-button 
+              text 
+              size="small" 
+              class="close-order-btn"
+              @click="orderCardHidden = true"
+              title="关闭订单卡片"
+            >
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
           <OrderCard :order="currentOrder" @update-order="handleOrderUpdate" @send-order="handleSendOrder" />
         </div>
 
@@ -156,6 +168,14 @@
               >
                 <el-icon :size="21"><ShoppingBag /></el-icon>
               </div>
+              <div
+                v-if="currentOtherUser"
+                class="input-icon order-card-icon"
+                title="发送订单"
+                @click="handleSendOrderCard"
+              >
+                <el-icon :size="21"><ShoppingCart /></el-icon>
+              </div>
               <el-upload
                 :action="''"
                 :auto-upload="false"
@@ -224,6 +244,49 @@
         <el-button type="primary" @click="confirmSendGoodsCard" :disabled="!selectedGoodsId">发送</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 订单选择对话框 -->
+    <el-dialog
+      v-model="orderSelectDialogVisible"
+      title="请选择需要咨询的订单"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div v-loading="orderListLoading" class="order-select-content">
+        <div v-if="selectableOrders.length === 0 && !orderListLoading" class="empty-orders">
+          <el-empty description="暂无订单" />
+        </div>
+        <div v-else class="order-list">
+          <div
+            v-for="order in selectableOrders"
+            :key="order.id"
+            class="order-item"
+            :class="{ selected: selectedOrderId === order.id }"
+            @click="selectedOrderId = order.id"
+          >
+            <div class="order-item-image">
+              <img :src="getOrderGoodsImage(order)" :alt="order.goods?.title" />
+            </div>
+            <div class="order-item-info">
+              <div class="order-item-title">{{ order.goods?.title || '商品' }}</div>
+              <div class="order-item-meta">
+                <span>订单编号: {{ order.orderNo }}</span>
+                <span class="order-item-price">¥{{ (parseFloat(order.totalAmount) + parseFloat(order.shippingFee || 0)).toFixed(2) }}</span>
+              </div>
+              <div class="order-item-status">
+                <el-tag :type="getOrderStatusType(order.status)" size="small">{{ getOrderStatusText(order.status) }}</el-tag>
+              </div>
+            </div>
+            <div class="order-item-actions">
+              <el-button type="primary" size="small" @click.stop="confirmSendSelectedOrder(order)">发送</el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="orderSelectDialogVisible = false">取消</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -231,7 +294,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Picture, Close, Promotion, CircleCheck, ShoppingBag } from '@element-plus/icons-vue'
+import { Picture, Close, Promotion, CircleCheck, ShoppingBag, ShoppingCart } from '@element-plus/icons-vue'
 import { chatApi, fileApi, messageApi, orderApi, goodsApi } from '@/api'
 import OrderCard from './components/OrderCard.vue'
 import GoodsCardMessage from './components/GoodsCardMessage.vue'
@@ -258,10 +321,15 @@ const selectedImages = ref([])
 const chatSubscription = ref(null)
 const currentOrder = ref(null)
 const orderLoading = ref(false)
+const orderCardHidden = ref(false) // 订单卡片是否隐藏
 const goodsSelectDialogVisible = ref(false)
 const selectableGoods = ref([])
 const goodsListLoading = ref(false)
 const selectedGoodsId = ref(null)
+const orderSelectDialogVisible = ref(false)
+const selectableOrders = ref([])
+const orderListLoading = ref(false)
+const selectedOrderId = ref(null)
 
 // 获取对方用户信息
 const getOtherUser = (session) => {
@@ -868,6 +936,9 @@ const handleChatMessage = (message) => {
 /**
  * 根据会话ID获取订单信息
  */
+/**
+ * 根据会话ID获取订单信息（获取与当前用户的最新订单）
+ */
 const fetchOrderBySessionId = async (sessionId) => {
   if (!sessionId) {
     currentOrder.value = null
@@ -876,9 +947,17 @@ const fetchOrderBySessionId = async (sessionId) => {
   
   orderLoading.value = true
   try {
+    // 先尝试通过sessionId获取订单
     const response = await orderApi.getBySessionId(sessionId)
     if (response.code === 200 && response.data) {
       currentOrder.value = response.data
+      orderCardHidden.value = false
+      return
+    }
+    
+    // 如果没有通过sessionId找到订单，尝试获取与对方用户的所有订单，显示最新的
+    if (currentOtherUser.value?.id) {
+      await fetchLatestOrderWithUser(currentOtherUser.value.id)
     } else {
       currentOrder.value = null
     }
@@ -887,6 +966,53 @@ const fetchOrderBySessionId = async (sessionId) => {
     currentOrder.value = null
   } finally {
     orderLoading.value = false
+  }
+}
+
+/**
+ * 获取与指定用户的最新订单
+ */
+const fetchLatestOrderWithUser = async (otherUserId) => {
+  if (!otherUserId) {
+    currentOrder.value = null
+    return
+  }
+  
+  try {
+    // 获取与对方用户的所有订单（作为买家和卖家）
+    const response = await orderApi.getList({
+      pageNum: 1,
+      pageSize: 10,
+      role: 'ALL' // 获取所有订单
+    })
+    
+    if (response.code === 200) {
+      const orders = response.data?.records || response.data?.list || []
+      // 筛选出与对方用户的订单
+      const ordersWithUser = orders.filter(order => {
+        const isBuyer = order.buyerId === userStore.userInfo?.id && order.sellerId === otherUserId
+        const isSeller = order.sellerId === userStore.userInfo?.id && order.buyerId === otherUserId
+        return isBuyer || isSeller
+      })
+      
+      // 按创建时间排序，取最新的
+      if (ordersWithUser.length > 0) {
+        ordersWithUser.sort((a, b) => {
+          const timeA = new Date(a.createTime).getTime()
+          const timeB = new Date(b.createTime).getTime()
+          return timeB - timeA
+        })
+        currentOrder.value = ordersWithUser[0]
+        orderCardHidden.value = false
+      } else {
+        currentOrder.value = null
+      }
+    } else {
+      currentOrder.value = null
+    }
+  } catch (error) {
+    console.error('获取订单列表失败:', error)
+    currentOrder.value = null
   }
 }
 
@@ -901,42 +1027,14 @@ const handleOrderUpdate = () => {
 }
 
 /**
- * 处理发送订单
+ * 处理发送订单（从订单卡片发送）
  */
 const handleSendOrder = async (order) => {
-  if (!currentSessionId.value || !order) {
-    return
+  if (!order) {
+    order = currentOrder.value
   }
-  
-  try {
-    // 将订单信息作为消息内容发送（使用JSON格式）
-    const orderData = {
-      orderId: order.id,
-      orderNo: order.orderNo,
-      goodsId: order.goodsId,
-      goodsTitle: order.goods?.title,
-      quantity: order.quantity,
-      price: order.price,
-      totalAmount: order.totalAmount,
-      shippingFee: order.shippingFee,
-      status: order.status,
-      tradeMethod: order.tradeMethod
-    }
-    
-    const response = await chatApi.sendMessage({
-      sessionId: currentSessionId.value,
-      messageType: 'ORDER_CARD',
-      content: JSON.stringify(orderData)
-    })
-    
-    if (response.code === 200) {
-      ElMessage.success('订单已发送')
-      // 刷新消息列表
-      await fetchMessages(currentSessionId.value)
-      scrollToBottom()
-    }
-  } catch (error) {
-    ElMessage.error(error.message || '发送订单失败')
+  if (order) {
+    await sendOrderMessage(order)
   }
 }
 
@@ -1106,6 +1204,168 @@ const confirmSendGoodsCard = async () => {
   } finally {
     sending.value = false
   }
+}
+
+/**
+ * 打开订单选择对话框
+ */
+const handleSendOrderCard = async () => {
+  if (!currentOtherUser.value?.id) {
+    ElMessage.warning('无法获取对方用户信息')
+    return
+  }
+  
+  orderSelectDialogVisible.value = true
+  selectedOrderId.value = null
+  await fetchSelectableOrders(currentOtherUser.value.id)
+}
+
+/**
+ * 获取可选订单列表（与对方用户的所有订单）
+ */
+const fetchSelectableOrders = async (otherUserId) => {
+  if (!otherUserId) {
+    selectableOrders.value = []
+    return
+  }
+  
+  orderListLoading.value = true
+  try {
+    const response = await orderApi.getList({
+      pageNum: 1,
+      pageSize: 50,
+      role: 'ALL' // 获取所有订单
+    })
+    
+    if (response.code === 200) {
+      const orders = response.data?.records || response.data?.list || []
+      // 筛选出与对方用户的订单
+      selectableOrders.value = orders.filter(order => {
+        const isBuyer = order.buyerId === userStore.userInfo?.id && order.sellerId === otherUserId
+        const isSeller = order.sellerId === userStore.userInfo?.id && order.buyerId === otherUserId
+        return isBuyer || isSeller
+      })
+      
+      // 按创建时间排序，最新的在前
+      selectableOrders.value.sort((a, b) => {
+        const timeA = new Date(a.createTime).getTime()
+        const timeB = new Date(b.createTime).getTime()
+        return timeB - timeA
+      })
+    } else {
+      ElMessage.error(response.message || '获取订单列表失败')
+      selectableOrders.value = []
+    }
+  } catch (error) {
+    console.error('获取订单列表失败:', error)
+    ElMessage.error('获取订单列表失败')
+    selectableOrders.value = []
+  } finally {
+    orderListLoading.value = false
+  }
+}
+
+/**
+ * 确认发送选中的订单
+ */
+const confirmSendSelectedOrder = async (order) => {
+  if (!order) {
+    ElMessage.warning('请选择订单')
+    return
+  }
+  
+  await sendOrderMessage(order)
+  orderSelectDialogVisible.value = false
+}
+
+/**
+ * 发送订单消息
+ */
+const sendOrderMessage = async (order) => {
+  if (!currentSessionId.value || !order) {
+    return
+  }
+  
+  try {
+    // 将订单信息作为消息内容发送（使用JSON格式）
+    const orderData = {
+      orderId: order.id,
+      orderNo: order.orderNo,
+      goodsId: order.goodsId,
+      goodsTitle: order.goods?.title,
+      quantity: order.quantity,
+      price: order.price,
+      totalAmount: order.totalAmount,
+      shippingFee: order.shippingFee,
+      status: order.status,
+      tradeMethod: order.tradeMethod
+    }
+    
+    const response = await chatApi.sendMessage({
+      sessionId: currentSessionId.value,
+      messageType: 'ORDER_CARD',
+      content: JSON.stringify(orderData)
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success('订单已发送')
+      // 刷新消息列表
+      await fetchMessages(currentSessionId.value)
+      scrollToBottom()
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '发送订单失败')
+  }
+}
+
+/**
+ * 获取订单商品图片
+ */
+const getOrderGoodsImage = (order) => {
+  if (!order || !order.goods || !order.goods.images) {
+    return 'https://via.placeholder.com/80x80?text=暂无图片'
+  }
+  try {
+    const images = typeof order.goods.images === 'string' 
+      ? JSON.parse(order.goods.images) 
+      : order.goods.images
+    if (Array.isArray(images) && images.length > 0) {
+      return getAvatarUrl(images[0])
+    }
+  } catch {
+    // 解析失败
+  }
+  return 'https://via.placeholder.com/80x80?text=暂无图片'
+}
+
+/**
+ * 获取订单状态文本
+ */
+const getOrderStatusText = (status) => {
+  const statusMap = {
+    'PENDING_PAYMENT': '待付款',
+    'PAID': '已付款',
+    'SHIPPED': '已发货',
+    'PENDING_PICKUP': '待自提',
+    'COMPLETED': '已完成',
+    'CANCELLED': '已取消'
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * 获取订单状态类型
+ */
+const getOrderStatusType = (status) => {
+  const typeMap = {
+    'PENDING_PAYMENT': 'warning',
+    'PAID': 'info',
+    'SHIPPED': 'primary',
+    'PENDING_PICKUP': 'primary',
+    'COMPLETED': 'success',
+    'CANCELLED': 'danger'
+  }
+  return typeMap[status] || 'info'
 }
 
 // 监听会话ID变化（避免重复调用）
@@ -1728,10 +1988,57 @@ onUnmounted(() => {
 }
 
 .order-card-wrapper {
-  padding: 0 20px;
-  margin-bottom: 8px;
+  padding: 10px 20px;
+  margin-bottom: 0;
   width: 100%;
   box-sizing: border-box;
+  background-color: transparent;
+  border-bottom: none;
+  position: relative;
+}
+
+.order-card-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-border), transparent);
+  opacity: 0.2;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 6px 0;
+  margin-bottom: 6px;
+}
+
+.order-card-title {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.close-order-btn {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-order-btn :deep(.el-icon) {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.close-order-btn:hover :deep(.el-icon) {
+  color: var(--color-text-primary);
 }
 
 .message-order-card {
@@ -1740,6 +2047,100 @@ onUnmounted(() => {
 
 .message-order-card :deep(.order-card-compact) {
   margin-bottom: 0;
+}
+
+/* 订单选择对话框 */
+.order-select-content {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--color-bg-white);
+}
+
+.order-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.order-item.selected {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-lighter);
+}
+
+.order-item-image {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--color-bg-primary);
+}
+
+.order-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.order-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-item-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.order-item-price {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-danger);
+}
+
+.order-item-status {
+  display: flex;
+  align-items: center;
+}
+
+.order-item-actions {
+  flex-shrink: 0;
+}
+
+.empty-orders {
+  padding: 40px 0;
+  text-align: center;
 }
 
 .goods-select-content {

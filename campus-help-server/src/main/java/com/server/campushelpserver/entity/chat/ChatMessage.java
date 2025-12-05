@@ -38,7 +38,7 @@ public class ChatMessage implements Serializable {
     private Long receiverId;
     
     @TableField("message_type")
-    @Schema(description = "消息类型：TEXT-文字，IMAGE-图片，GOODS_CARD-商品卡片")
+    @Schema(description = "消息类型：TEXT-文字，IMAGE-图片，GOODS_CARD-商品卡片，ORDER_CARD-订单卡片")
     private String messageType;
     
     @TableField("content")
