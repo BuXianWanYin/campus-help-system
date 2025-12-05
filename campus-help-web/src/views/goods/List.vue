@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onActivated } from 'vue'
+import { ref, reactive, onMounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, Clock, Folder, View, Box } from '@element-plus/icons-vue'
@@ -195,6 +195,11 @@ const pagination = reactive({
  * 获取商品列表
  */
 const fetchGoodsList = async () => {
+  // 如果已经在加载中，不重复请求
+  if (loading.value) {
+    return
+  }
+  
   loading.value = true
   try {
     const params = {
@@ -401,11 +406,18 @@ const handlePageChange = (page) => {
 }
 
 onActivated(() => {
-  fetchGoodsList()
-  fetchSearchHistory()
+  // 清空旧数据，避免显示缓存数据
+  goodsList.value = []
+  // 延迟一下确保页面已渲染
+  nextTick(() => {
+    fetchGoodsList()
+    fetchSearchHistory()
+  })
 })
 
 onMounted(() => {
+  // 首次加载时也清空数据
+  goodsList.value = []
   fetchGoodsList()
   fetchSearchHistory()
 })

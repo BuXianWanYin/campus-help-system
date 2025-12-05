@@ -16,6 +16,7 @@ import com.server.campushelpserver.service.common.PublishFrequencyService;
 import com.server.campushelpserver.service.goods.GoodsService;
 import com.server.campushelpserver.service.message.SystemMessageService;
 import com.server.campushelpserver.service.sensitive.SensitiveWordService;
+import com.server.campushelpserver.service.user.UserService;
 import com.server.campushelpserver.util.SensitiveWordCheckResult;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     
     @Autowired
     private UserMapper userMapper;
+    
+    @Autowired
+    private UserService userService;
     
     @Autowired
     private SensitiveWordService sensitiveWordService;
@@ -257,10 +261,10 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         try {
             String email = com.server.campushelpserver.util.SecurityUtils.getCurrentUserEmail();
             if (email != null) {
-                User currentUser = userMapper.selectUserByEmail(email);
-                if (currentUser != null) {
+                User currentUser = userService.getUserByEmail(email);
+                if (currentUser != null && currentUser.getId() != null) {
                     // 检查是否是发布者 - 发布者可以查看自己的商品（包括待审核和已拒绝的）
-                    if (goods.getUserId().equals(currentUser.getId())) {
+                    if (goods.getUserId() != null && goods.getUserId().equals(currentUser.getId())) {
                         canView = true;
                     }
                     // 检查是否是管理员 - 管理员可以查看所有商品
@@ -270,17 +274,19 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
                 }
             }
         } catch (Exception e) {
-            // 未登录用户继续检查
+            // 未登录用户或获取用户信息失败，继续检查商品状态
+            // 记录日志以便调试
+            System.err.println("获取当前用户信息失败: " + e.getMessage());
         }
         
         // 如果不是发布者和管理员，检查商品状态
         // 只有审核通过的商品（ON_SALE、SOLD_OUT、CLOSED等）才允许普通用户查看
-        if (!canView && !"PENDING_REVIEW".equals(goods.getStatus()) && !"REJECTED".equals(goods.getStatus())) {
-            canView = true;
-        }
-        
         if (!canView) {
-            throw new BusinessException("无权查看此商品");
+            // 待审核和已拒绝的商品，只有发布者和管理员可以查看
+            if ("PENDING_REVIEW".equals(goods.getStatus()) || "REJECTED".equals(goods.getStatus())) {
+                throw new BusinessException("无权查看此商品");
+            }
+            // 其他状态（审核通过的商品）允许查看
         }
         
         // 只有审核通过的商品才增加浏览量（发布者和管理员查看待审核/已拒绝的商品不增加浏览量）

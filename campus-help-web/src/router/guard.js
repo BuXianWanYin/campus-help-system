@@ -64,6 +64,9 @@ export function setupRouterGuard(router) {
     // 设置页面标题
     const title = to.meta.title ? `${to.meta.title} - ${appConfig.title}` : appConfig.title
     document.title = title || '校园帮助系统'
+    
+    // 滚动到顶部（避免页面切换时停留在旧页面的滚动位置）
+    window.scrollTo(0, 0)
   })
 }
 

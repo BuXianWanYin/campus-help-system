@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onActivated } from 'vue'
+import { ref, reactive, onMounted, onActivated, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Location, Clock, Folder, View, Search } from '@element-plus/icons-vue'
@@ -199,6 +199,11 @@ const pagination = reactive({
  * 获取失物列表
  */
 const fetchLostFoundList = async () => {
+  // 如果已经在加载中，不重复请求
+  if (loading.value) {
+    return
+  }
+  
   loading.value = true
   try {
     const params = {
@@ -403,12 +408,18 @@ const handlePageChange = (page) => {
 
 // 组件激活时（从其他页面返回时），刷新数据
 onActivated(() => {
-  fetchLostFoundList()
-  fetchSearchHistory()
+  // 清空旧数据，避免显示缓存数据
+  lostFoundList.value = []
+  // 延迟一下确保页面已渲染
+  nextTick(() => {
+    fetchLostFoundList()
+    fetchSearchHistory()
+  })
 })
 
 onMounted(() => {
-  // 首次加载时获取数据
+  // 首次加载时也清空数据
+  lostFoundList.value = []
   fetchLostFoundList()
   fetchSearchHistory()
 })

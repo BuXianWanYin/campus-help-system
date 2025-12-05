@@ -236,36 +236,47 @@
         <div class="category-nav">
           <div v-for="category in goodsCategories" :key="category.id" class="category-item" :class="{ active: goodsActiveCategory === category.id }" @click="goodsActiveCategory = category.id">
             <el-icon :size="20"><component :is="category.icon" /></el-icon>
-            <span>{{ category.name }}</span>
+            <span class="category-name">{{ category.name }}</span>
           </div>
         </div>
 
         <!-- 商品列表 -->
-        <div class="goods-grid">
+        <div class="goods-grid" v-loading="goodsLoading">
           <div v-for="item in goodsList" :key="item.id" class="goods-card" @click="goToDetail('goods', item.id)">
             <div class="card-image-wrapper">
-              <img :src="item.image" :alt="item.title" class="card-image" />
-              <span v-if="item.badge" class="card-badge" :class="item.badgeClass">{{ item.badge }}</span>
+              <img :src="getFirstGoodsImage(item.images)" :alt="item.title" class="card-image" />
+              <span v-if="item.status === 'ON_SALE'" class="card-badge badge-on-sale">在售</span>
+              <span v-else-if="item.status === 'SOLD_OUT'" class="card-badge badge-sold-out">已售完</span>
             </div>
             <div class="card-content">
               <h3 class="card-title">{{ item.title }}</h3>
+              <div class="card-meta-row">
+                <el-tag size="small" type="info" class="category-tag">{{ item.category }}</el-tag>
+                <span class="card-time">
+                  <el-icon><Clock /></el-icon>
+                  {{ formatTime(item.createTime) }}
+                </span>
+              </div>
               <div class="card-price-row">
-                <span class="card-price">¥{{ item.price }}</span>
+                <span class="card-price">¥{{ item.currentPrice }}</span>
                 <span class="card-views">
                   <el-icon><View /></el-icon>
-                  {{ item.views }}
+                  {{ item.viewCount || 0 }}
                 </span>
               </div>
               <div class="card-footer">
                 <div class="card-user">
-                  <el-avatar :size="20" :src="getAvatarUrl(item.userAvatar)">{{ item.userName.charAt(0) }}</el-avatar>
-                  <span>{{ item.userName }}</span>
+                  <el-avatar :size="20" :src="getAvatarUrl(item.user?.avatar || item.userAvatar)">
+                    {{ (item.user?.nickname || item.userName || 'U').charAt(0) }}
+                  </el-avatar>
+                  <span>{{ item.user?.nickname || item.userName || '未知用户' }}</span>
                 </div>
-                <span class="card-time">{{ item.time }}</span>
               </div>
             </div>
           </div>
         </div>
+        
+        <el-empty v-if="!goodsLoading && goodsList.length === 0" description="暂无商品信息" />
 
       
       </section>
@@ -335,9 +346,11 @@
       
       <!-- 路由视图（其他页面） -->
       <router-view v-if="!isHomePage" v-slot="{ Component, route }">
-        <keep-alive :include="keepAliveComponents">
-          <component :is="Component" :key="route.path" />
-        </keep-alive>
+        <transition name="fade" mode="out-in">
+          <keep-alive :include="keepAliveComponents">
+            <component :is="Component" :key="route.fullPath" v-if="Component" />
+          </keep-alive>
+        </transition>
       </router-view>
     </main>
     
@@ -432,7 +445,7 @@ import {
 } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
-import { messageApi, lostFoundApi } from '@/api'
+import { messageApi, lostFoundApi, goodsApi } from '@/api'
 import wsManager from '@/utils/websocket'
 import { getToken } from '@/utils/auth'
 
@@ -470,23 +483,20 @@ const lostFoundList = ref([])
 const lostFoundLoading = ref(false)
 
 // 闲置交易（使用 markRaw 避免图标组件被响应式化）
-const goodsActiveCategory = ref(1)
+const goodsActiveCategory = ref('')
 const goodsCategories = ref([
-  { id: 1, name: '数码产品', icon: markRaw(ComputerIcon) },
-  { id: 2, name: '图书教材', icon: markRaw(NotebookIcon) },
-  { id: 3, name: '服装鞋包', icon: markRaw(TShirtIcon) },
-  { id: 4, name: '生活用品', icon: markRaw(HomeFilled) },
-  { id: 5, name: '运动健身', icon: markRaw(BasketballIcon) },
-  { id: 6, name: '乐器', icon: markRaw(HeadsetIcon) },
-  { id: 7, name: '文创用品', icon: markRaw(EditPenIcon) },
-  { id: 8, name: '更多分类', icon: markRaw(More) }
+  { id: '', name: '全部', icon: markRaw(ComputerIcon) },
+  { id: '数码产品', name: '数码产品', icon: markRaw(ComputerIcon) },
+  { id: '图书教材', name: '图书教材', icon: markRaw(NotebookIcon) },
+  { id: '服装鞋包', name: '服装鞋包', icon: markRaw(TShirtIcon) },
+  { id: '生活用品', name: '生活用品', icon: markRaw(HomeFilled) },
+  { id: '运动健身', name: '运动健身', icon: markRaw(BasketballIcon) },
+  { id: '乐器', name: '乐器', icon: markRaw(HeadsetIcon) },
+  { id: '文创用品', name: '文创用品', icon: markRaw(EditPenIcon) },
+  { id: '其他', name: '其他', icon: markRaw(More) }
 ])
-const goodsList = ref([
-  { id: 1, title: 'iPhone 13 128GB 午夜色 9成新', price: 3999, views: 128, image: 'https://via.placeholder.com/300x200?text=iPhone', userAvatar: '', userName: '陈同学', time: '1小时前', badge: '新品', badgeClass: 'badge-red' },
-  { id: 2, title: 'MacBook Pro 2020款 13英寸 8GB内存', price: 6800, views: 86, image: 'https://via.placeholder.com/300x200?text=MacBook', userAvatar: '', userName: '林同学', time: '3小时前' },
-  { id: 3, title: '大学物理教材 上下册 几乎全新', price: 80, views: 42, image: 'https://via.placeholder.com/300x200?text=教材', userAvatar: '', userName: '黄同学', time: '昨天' },
-  { id: 4, title: '耐克 Air Jordan 1 高帮运动鞋 42码', price: 450, views: 215, image: 'https://via.placeholder.com/300x200?text=运动鞋', userAvatar: '', userName: '刘同学', time: '2天前', badge: '热门', badgeClass: 'badge-orange' }
-])
+const goodsList = ref([])
+const goodsLoading = ref(false)
 const negotiationPrice = ref({ current: 3999, offer: 3800, min: 3500 })
 
 // 跑腿服务
@@ -790,14 +800,29 @@ const keepAliveComponents = computed(() => {
 const handleRefreshHomeData = () => {
   const path = route.path
   if (path === '/home' || path === '/') {
+    // 延迟一下确保页面已渲染
+    nextTick(() => {
       fetchLostFoundList()
+      fetchGoodsList()
+    })
   }
-  }
+}
 
-// 监听路由变化，实时更新激活菜单
+// 监听路由变化，实时更新激活菜单和数据刷新
 watch(() => route.path, (newPath, oldPath) => {
   updateActiveMenu()
-  // 注意：数据刷新现在由 keep-alive + onActivated 统一处理
+  
+  // 路由切换时，如果是回到首页，立即刷新数据
+  if (newPath === '/home' || newPath === '/') {
+    // 清空旧数据，避免显示缓存数据
+    lostFoundList.value = []
+    goodsList.value = []
+    // 立即刷新数据
+    nextTick(() => {
+      fetchLostFoundList()
+      fetchGoodsList()
+    })
+  }
 }, { immediate: true })
 
 // 跳转到功能模块
@@ -810,6 +835,11 @@ const fetchLostFoundList = async () => {
   // 只在首页时获取数据
   const path = route.path
   if (path !== '/home' && path !== '/') {
+    return
+  }
+  
+  // 如果已经在加载中，不重复请求
+  if (lostFoundLoading.value) {
     return
   }
   
@@ -879,6 +909,30 @@ const getFirstImage = (images) => {
 }
 
 /**
+ * 获取商品第一张图片
+ */
+const getFirstGoodsImage = (images) => {
+  if (!images) return 'https://via.placeholder.com/300x200?text=暂无图片'
+  
+  let imageArray = []
+  if (typeof images === 'string') {
+    try {
+      imageArray = JSON.parse(images)
+    } catch (e) {
+      console.error('解析商品图片失败:', e)
+      return 'https://via.placeholder.com/300x200?text=暂无图片'
+    }
+  } else if (Array.isArray(images)) {
+    imageArray = images
+  }
+  
+  if (imageArray.length > 0) {
+    return getAvatarUrl(imageArray[0])
+  }
+  return 'https://via.placeholder.com/300x200?text=暂无图片'
+}
+
+/**
  * 格式化时间
  */
 const formatTime = (time) => {
@@ -900,6 +954,78 @@ const formatTime = (time) => {
     return '刚刚'
   }
 }
+
+/**
+ * 获取商品列表（首页显示）
+ */
+const fetchGoodsList = async () => {
+  // 只在首页时获取数据
+  const path = route.path
+  if (path !== '/home' && path !== '/') {
+    return
+  }
+  
+  // 如果已经在加载中，不重复请求
+  if (goodsLoading.value) {
+    return
+  }
+  
+  goodsLoading.value = true
+  try {
+    const params = {
+      pageNum: 1,
+      pageSize: 8,
+      category: goodsActiveCategory.value || undefined,
+      sortBy: 'latest'
+    }
+    
+    const response = await goodsApi.getList(params)
+    if (response.code === 200) {
+      const pageData = response.data
+      
+      // MyBatis-Plus的Page对象可能直接是数组，或者有records字段
+      let records = []
+      if (Array.isArray(pageData)) {
+        records = pageData
+      } else if (pageData.records) {
+        records = pageData.records
+      } else if (pageData.list) {
+        records = pageData.list
+      }
+      
+      goodsList.value = records.map(item => {
+        let images = []
+        if (item.images) {
+          try {
+            images = typeof item.images === 'string' ? JSON.parse(item.images) : item.images
+          } catch (e) {
+            console.error('解析商品图片失败:', e)
+            images = []
+          }
+        }
+        return {
+          ...item,
+          images: images,
+          // 后端可能返回user对象，也可能只有userId
+          userAvatar: item.user?.avatar || null,
+          userName: item.user?.nickname || `用户${item.userId}` || '未知用户',
+          userId: item.userId // 保存userId用于判断是否为发布者
+        }
+      })
+    } else {
+      console.error('获取商品列表失败，响应码:', response.code, response.message)
+    }
+  } catch (error) {
+    console.error('获取商品列表失败:', error)
+  } finally {
+    goodsLoading.value = false
+  }
+}
+
+// 监听商品分类变化
+watch(() => goodsActiveCategory.value, () => {
+  fetchGoodsList()
+})
 
 /**
  * 处理类型切换
@@ -1533,6 +1659,26 @@ onUnmounted(() => {
   background-color: var(--color-secondary);
 }
 
+.badge-on-sale {
+  background-color: #ff4d4f;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge-sold-out {
+  background-color: #8c8c8c;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .card-content {
   padding: 12px;
   display: flex;
@@ -1604,6 +1750,27 @@ onUnmounted(() => {
   color: var(--color-text-regular);
 }
 
+.card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.category-tag {
+  flex-shrink: 0;
+}
+
+.card-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
 .card-price-row {
   display: flex;
   justify-content: space-between;
@@ -1625,10 +1792,7 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-.card-time {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
+/* 商品卡片时间样式已在 card-meta-row 中定义 */
 
 /* AI智能匹配 */
 .ai-match-card {
@@ -1742,30 +1906,44 @@ onUnmounted(() => {
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
   display: flex;
-  gap: var(--spacing-2xl);
-  overflow-x: auto;
+  gap: 8px;
+  width: 100%;
 }
 
 .category-item {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: var(--spacing-sm);
+  justify-content: center;
+  gap: 6px;
   color: var(--color-text-regular);
   cursor: pointer;
   transition: all 0.3s;
-  padding: var(--spacing-sm);
+  padding: 10px 8px;
   border-radius: var(--radius-sm);
-  min-width: 80px;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
 }
 
 .category-item:hover {
   color: var(--color-primary);
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-bg-white);
+  border-color: var(--color-primary);
 }
 
 .category-item.active {
-  color: var(--color-primary);
+  color: #FFFFFF;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.category-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
 }
 
 .goods-grid {
@@ -2324,6 +2502,17 @@ onUnmounted(() => {
   .stats-cards {
     grid-template-columns: 1fr;
   }
+}
+
+/* 路由切换过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
 

@@ -52,13 +52,18 @@ const userStore = useUserStore()
 
 // 组件激活时（从其他页面返回时），通知 MainLayout 刷新数据
 onActivated(() => {
-  // 通知 MainLayout 刷新首页的失物招领数据
-  window.dispatchEvent(new CustomEvent('refresh-home-data'))
+  // 延迟一下确保页面已渲染
+  nextTick(() => {
+    // 通知 MainLayout 刷新首页的失物招领数据
+    window.dispatchEvent(new CustomEvent('refresh-home-data'))
+  })
 })
 
 onMounted(() => {
   // 首次加载时也通知刷新
-  window.dispatchEvent(new CustomEvent('refresh-home-data'))
+  nextTick(() => {
+    window.dispatchEvent(new CustomEvent('refresh-home-data'))
+  })
 })
 
 const goToLostFound = () => {
