@@ -114,6 +114,61 @@
             </div>
           </div>
           
+          <!-- 地址表单对话框 -->
+          <el-dialog
+            v-model="addressDialogVisible"
+            title="添加收货地址"
+            width="600px"
+            :close-on-click-modal="false"
+          >
+            <el-form
+              ref="addressFormRef"
+              :model="addressForm"
+              :rules="addressRules"
+              label-width="100px"
+            >
+              <el-form-item label="收货人姓名" prop="receiverName">
+                <el-input v-model="addressForm.receiverName" placeholder="请输入收货人姓名" maxlength="50" />
+              </el-form-item>
+              <el-form-item label="收货人电话" prop="receiverPhone">
+                <el-input v-model="addressForm.receiverPhone" placeholder="请输入收货人电话" maxlength="11" />
+              </el-form-item>
+              <el-form-item label="所在地区" prop="province">
+                <el-row :gutter="12">
+                  <el-col :span="8">
+                    <el-input v-model="addressForm.province" placeholder="省份" />
+                  </el-col>
+                  <el-col :span="8">
+                    <el-input v-model="addressForm.city" placeholder="城市" />
+                  </el-col>
+                  <el-col :span="8">
+                    <el-input v-model="addressForm.district" placeholder="区县" />
+                  </el-col>
+                </el-row>
+              </el-form-item>
+              <el-form-item label="详细地址" prop="detailAddress">
+                <el-input 
+                  v-model="addressForm.detailAddress" 
+                  type="textarea" 
+                  :rows="3" 
+                  placeholder="请输入详细地址" 
+                  maxlength="200"
+                  show-word-limit
+                />
+              </el-form-item>
+              <el-form-item label="邮政编码" prop="postalCode">
+                <el-input v-model="addressForm.postalCode" placeholder="选填，6位数字" maxlength="6" />
+              </el-form-item>
+              <el-form-item label="默认地址">
+                <el-switch v-model="addressForm.isDefault" :active-value="1" :inactive-value="0" />
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="addressDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="handleSubmitAddress" :loading="addressSubmitting">确定</el-button>
+            </template>
+          </el-dialog>
+          
           <!-- 购买对话框 -->
           <el-dialog
             v-model="buyDialogVisible"
@@ -268,6 +323,61 @@ const buyForm = ref({
   addressId: null
 })
 const addressList = ref([])
+// 地址警告标志，确保只弹一次
+const addressWarningShown = ref(false)
+// 地址表单弹窗
+const addressDialogVisible = ref(false)
+const addressFormRef = ref(null)
+const addressSubmitting = ref(false)
+const addressForm = ref({
+  receiverName: '',
+  receiverPhone: '',
+  province: '',
+  city: '',
+  district: '',
+  detailAddress: '',
+  postalCode: '',
+  isDefault: 0
+})
+const addressRules = {
+  receiverName: [
+    { required: true, message: '请输入收货人姓名', trigger: 'blur' },
+    { max: 50, message: '长度不能超过50个字符', trigger: 'blur' }
+  ],
+  receiverPhone: [
+    { required: true, message: '请输入收货人电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+  ],
+  province: [
+    { required: true, message: '请输入省份', trigger: 'blur' }
+  ],
+  city: [
+    { required: true, message: '请输入城市', trigger: 'blur' }
+  ],
+  district: [
+    { required: true, message: '请输入区县', trigger: 'blur' }
+  ],
+  detailAddress: [
+    { required: true, message: '请输入详细地址', trigger: 'blur' },
+    { max: 200, message: '长度不能超过200个字符', trigger: 'blur' }
+  ],
+  postalCode: [
+    { 
+      validator: (rule, value, callback) => {
+        if (value && value.trim() !== '') {
+          if (!/^\d{6}$/.test(value)) {
+            callback(new Error('邮政编码必须是6位数字'))
+          } else {
+            callback()
+          }
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
 const buyRules = {
   quantity: [
     { required: true, message: '请选择购买数量', trigger: 'blur' },
@@ -421,6 +531,9 @@ const handleBuy = async () => {
     addressId: null
   }
   
+  // 重置警告标志
+  addressWarningShown.value = false
+  
   // 如果是邮寄方式，加载收货地址列表
   if (tradeMethod === 'MAIL') {
     await fetchAddressList()
@@ -450,8 +563,9 @@ const fetchAddressList = async () => {
       const defaultAddress = addressList.value.find(addr => addr.isDefault === 1)
       if (defaultAddress) {
         buyForm.value.addressId = defaultAddress.id
-      } else if (addressList.value.length === 0) {
-        // 如果没有地址，提示用户添加
+      } else if (addressList.value.length === 0 && !addressWarningShown.value) {
+        // 如果没有地址，提示用户添加（只弹一次）
+        addressWarningShown.value = true
         ElMessage.warning('您还没有收货地址，请先添加收货地址')
       }
     }
@@ -473,11 +587,60 @@ const handleAddressChange = () => {
  * 添加新地址
  */
 const handleAddAddress = () => {
-  // 跳转到地址管理页面，并传递返回参数
-  router.push({
-    path: '/user/address/list',
-    query: { from: 'buy', goodsId: goods.value?.id }
-  })
+  // 重置表单
+  addressForm.value = {
+    receiverName: '',
+    receiverPhone: '',
+    province: '',
+    city: '',
+    district: '',
+    detailAddress: '',
+    postalCode: '',
+    isDefault: addressList.value.length === 0 ? 1 : 0 // 如果没有地址，默认设为默认地址
+  }
+  addressDialogVisible.value = true
+}
+
+/**
+ * 提交地址表单
+ */
+const handleSubmitAddress = async () => {
+  if (!addressFormRef.value) return
+  
+  try {
+    await addressFormRef.value.validate()
+  } catch (error) {
+    return
+  }
+  
+  addressSubmitting.value = true
+  try {
+    const response = await addressApi.add(addressForm.value)
+    if (response.code === 200) {
+      ElMessage.success('地址添加成功')
+      addressDialogVisible.value = false
+      // 刷新地址列表
+      await fetchAddressList()
+      // 自动选择新添加的地址
+      if (response.data) {
+        buyForm.value.addressId = response.data
+      } else {
+        // 如果后端没有返回地址ID，重新获取列表并选择最后一个（最新添加的）
+        const newResponse = await addressApi.getList()
+        if (newResponse.code === 200 && newResponse.data && newResponse.data.length > 0) {
+          const newAddress = newResponse.data[0] // 新添加的地址应该在列表最前面
+          buyForm.value.addressId = newAddress.id
+        }
+      }
+    } else {
+      ElMessage.error(response.message || '地址添加失败')
+    }
+  } catch (error) {
+    console.error('添加地址失败:', error)
+    ElMessage.error(error.response?.data?.message || '地址添加失败，请稍后重试')
+  } finally {
+    addressSubmitting.value = false
+  }
 }
 
 /**
@@ -658,16 +821,10 @@ onMounted(() => {
   fetchGoodsDetail()
 })
 
-// 当从地址管理页面返回时，如果购买对话框打开，刷新地址列表
+// 当从地址管理页面返回时，如果购买对话框打开，刷新地址列表（保留兼容性）
 onActivated(() => {
   if (route.query.from === 'buy' && buyDialogVisible.value && buyForm.value.tradeMethod === 'MAIL') {
-    fetchAddressList()
-  }
-})
-
-// 当从地址管理页面返回时，如果购买对话框打开，刷新地址列表
-onActivated(() => {
-  if (route.query.from === 'buy' && buyDialogVisible.value && buyForm.value.tradeMethod === 'MAIL') {
+    addressWarningShown.value = false // 重置警告标志
     fetchAddressList()
   }
 })

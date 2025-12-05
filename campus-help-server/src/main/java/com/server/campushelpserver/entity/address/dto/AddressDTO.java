@@ -41,8 +41,8 @@ public class AddressDTO {
     @Schema(description = "详细地址", required = true)
     private String detailAddress;
     
-    @Schema(description = "邮政编码（6位数字）")
-    @Pattern(regexp = "^\\d{6}$", message = "邮政编码必须是6位数字")
+    @Schema(description = "邮政编码（6位数字，选填）")
+    @Pattern(regexp = "^$|^\\d{6}$", message = "邮政编码必须是6位数字或为空")
     private String postalCode;
     
     @Schema(description = "是否默认地址：0-否，1-是")

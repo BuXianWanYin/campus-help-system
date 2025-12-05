@@ -146,7 +146,20 @@ const rules = {
     { max: 200, message: '长度不能超过200个字符', trigger: 'blur' }
   ],
   postalCode: [
-    { pattern: /^\d{6}$/, message: '邮政编码必须是6位数字', trigger: 'blur' }
+    { 
+      validator: (rule, value, callback) => {
+        if (value && value.trim() !== '') {
+          if (!/^\d{6}$/.test(value)) {
+            callback(new Error('邮政编码必须是6位数字'))
+          } else {
+            callback()
+          }
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 }
 

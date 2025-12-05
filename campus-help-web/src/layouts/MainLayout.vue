@@ -70,6 +70,10 @@
                     <el-icon><Document /></el-icon>
                     我的发布
                   </el-dropdown-item>
+                  <el-dropdown-item command="orders">
+                    <el-icon><ShoppingCart /></el-icon>
+                    我的交易
+                  </el-dropdown-item>
                   <el-dropdown-item command="chat">
                     <el-icon><ChatDotRound /></el-icon>
                     聊天
@@ -572,6 +576,9 @@ const handleCommand = (command) => {
       break
     case 'my-posts':
       router.push('/user/posts')
+      break
+    case 'orders':
+      router.push('/order/list')
       break
     case 'chat':
       router.push('/user/chat')

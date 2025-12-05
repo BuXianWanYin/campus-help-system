@@ -145,14 +145,14 @@
               @input="handleInput"
             ></textarea>
             <div class="input-actions">
-              <el-icon
+              <div
                 v-if="canSendGoodsCard"
                 class="input-icon goods-card-icon"
                 title="发送商品卡片"
                 @click="handleSendGoodsCard"
               >
-                <ShoppingBag />
-              </el-icon>
+                <el-icon :size="21"><ShoppingBag /></el-icon>
+              </div>
               <el-upload
                 :action="''"
                 :auto-upload="false"
@@ -161,15 +161,20 @@
                 accept="image/*"
                 :multiple="true"
               >
-                <el-icon class="input-icon image-icon"><Picture /></el-icon>
+                <template #trigger>
+                  <div class="input-icon image-icon" title="上传图片">
+                    <el-icon :size="21"><Picture /></el-icon>
+                  </div>
+                </template>
               </el-upload>
-              <el-icon 
+              <div 
                 class="input-icon send-icon" 
                 :class="{ 'send-disabled': !canSend }"
+                title="发送消息"
                 @click="handleSendMessage"
               >
-                <Promotion />
-              </el-icon>
+                <el-icon :size="21"><Promotion /></el-icon>
+              </div>
             </div>
           </div>
         </div>
@@ -1529,10 +1534,10 @@ onUnmounted(() => {
   gap: 12px;
   flex-shrink: 0;
   flex-wrap: nowrap;
+  height: 23px;
 }
 
 .input-icon {
-  font-size: 26px;
   cursor: pointer;
   color: var(--color-text-secondary);
   transition: color 0.2s;
@@ -1540,7 +1545,38 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 0;
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+}
+
+.input-icon .el-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+  width: 23px;
+  height: 23px;
+}
+
+/* 确保 el-upload 内的图标也对齐 */
+.input-actions :deep(.el-upload) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  height: 23px;
+  width: 23px;
+}
+
+.input-actions :deep(.el-upload .input-icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  width: 23px;
+  height: 23px;
 }
 
 .input-icon:hover {
