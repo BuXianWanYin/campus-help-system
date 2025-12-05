@@ -1049,13 +1049,13 @@ const parseOrderFromMessage = (message) => {
   try {
     const orderData = JSON.parse(message.content)
     // 构造一个简化的订单对象用于显示
-    return {
+    const parsedOrder = {
       id: orderData.orderId,
       orderNo: orderData.orderNo,
       goodsId: orderData.goodsId,
       goods: {
         title: orderData.goodsTitle,
-        images: null // 可以从goodsId获取，这里简化处理
+        images: orderData.goodsImages || null // 使用消息中的图片信息
       },
       quantity: orderData.quantity,
       price: orderData.price,
@@ -1063,13 +1063,41 @@ const parseOrderFromMessage = (message) => {
       shippingFee: orderData.shippingFee || 0,
       status: orderData.status,
       tradeMethod: orderData.tradeMethod,
-      buyerId: null, // 消息中不包含，需要从当前用户判断
-      sellerId: null
+      buyerId: orderData.buyerId ? Number(orderData.buyerId) : null, // 使用消息中的买家ID，确保是数字类型
+      sellerId: orderData.sellerId ? Number(orderData.sellerId) : null // 使用消息中的卖家ID，确保是数字类型
     }
+    
+    return parsedOrder
   } catch (e) {
     console.error('解析订单消息失败:', e)
     return null
   }
+}
+
+/**
+ * 获取订单商品图片（用于消息中的订单卡片）
+ */
+const getOrderGoodsImageFromMessage = (message) => {
+  const order = parseOrderFromMessage(message)
+  if (!order || !order.goods) {
+    return 'https://via.placeholder.com/60x60?text=暂无图片'
+  }
+  
+  if (order.goods.images) {
+    try {
+      const images = typeof order.goods.images === 'string' 
+        ? JSON.parse(order.goods.images) 
+        : order.goods.images
+      if (Array.isArray(images) && images.length > 0) {
+        return getAvatarUrl(images[0])
+      }
+    } catch {
+      // 解析失败
+    }
+  }
+  
+  // 如果没有图片，返回占位符
+  return 'https://via.placeholder.com/60x60?text=暂无图片'
 }
 
 /**
@@ -1293,12 +1321,15 @@ const sendOrderMessage = async (order) => {
       orderNo: order.orderNo,
       goodsId: order.goodsId,
       goodsTitle: order.goods?.title,
+      goodsImages: order.goods?.images, // 添加商品图片信息
       quantity: order.quantity,
       price: order.price,
       totalAmount: order.totalAmount,
       shippingFee: order.shippingFee,
       status: order.status,
-      tradeMethod: order.tradeMethod
+      tradeMethod: order.tradeMethod,
+      buyerId: order.buyerId, // 添加买家ID
+      sellerId: order.sellerId // 添加卖家ID
     }
     
     const response = await chatApi.sendMessage({

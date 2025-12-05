@@ -170,6 +170,13 @@
           立即付款
         </el-button>
         <el-button 
+          v-if="isSeller && order.status === 'PENDING_PAYMENT'" 
+          type="warning" 
+          size="large" 
+          @click="handleUpdatePrice">
+          改价
+        </el-button>
+        <el-button 
           v-if="isSeller && order.status === 'PAID' && order.tradeMethod === 'MAIL'" 
           type="primary" 
           size="large" 
@@ -193,6 +200,35 @@
       </div>
     </div>
 
+    <!-- 改价对话框 -->
+    <el-dialog v-model="priceDialogVisible" title="修改订单价格" width="400px">
+      <el-form :model="priceForm" label-width="100px">
+        <el-form-item label="原价">
+          <el-input :value="order ? `¥${order.price}` : ''" disabled />
+        </el-form-item>
+        <el-form-item label="新价格" required>
+          <el-input-number 
+            v-model="priceForm.newPrice" 
+            :min="0.01" 
+            :precision="2"
+            :step="1"
+            style="width: 100%"
+            placeholder="请输入新价格" />
+        </el-form-item>
+        <el-form-item label="改价原因">
+          <el-input 
+            v-model="priceForm.reason" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入改价原因（选填）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="priceDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmUpdatePrice">确定</el-button>
+      </template>
+    </el-dialog>
+    
     <!-- 发货对话框 -->
     <el-dialog v-model="shipDialogVisible" title="发货" width="500px">
       <el-form :model="shipForm" label-width="100px">
@@ -235,9 +271,43 @@ const shipForm = ref({
   logisticsCompany: '',
   trackingNumber: ''
 })
+const priceDialogVisible = ref(false)
+const priceForm = ref({
+  newPrice: null,
+  reason: ''
+})
 
 const isBuyer = computed(() => {
-  return order.value && userStore.userInfo?.id === order.value.buyerId
+  if (!order.value || !userStore.userInfo?.id) {
+    return false
+  }
+  // 确保类型一致（都转换为数字进行比较）
+  const currentUserId = Number(userStore.userInfo.id)
+  const buyerId = order.value.buyerId ? Number(order.value.buyerId) : null
+  return buyerId !== null && currentUserId === buyerId
+})
+
+const isSeller = computed(() => {
+  if (!order.value || !userStore.userInfo?.id) {
+    return false
+  }
+  // 确保类型一致（都转换为数字进行比较）
+  const currentUserId = Number(userStore.userInfo.id)
+  const sellerId = order.value.sellerId ? Number(order.value.sellerId) : null
+  const result = sellerId !== null && currentUserId === sellerId
+  // 调试日志（生产环境可移除）
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Detail.vue isSeller check:', {
+      currentUserId,
+      sellerId,
+      orderBuyerId: order.value.buyerId,
+      orderSellerId: order.value.sellerId,
+      orderStatus: order.value.status,
+      result,
+      userInfo: userStore.userInfo
+    })
+  }
+  return result
 })
 
 /**
@@ -411,6 +481,45 @@ const handlePay = async () => {
     if (error !== 'cancel') {
       ElMessage.error('付款失败')
     }
+  }
+}
+
+/**
+ * 处理改价
+ */
+const handleUpdatePrice = () => {
+  if (!order.value) return
+  priceForm.value = {
+    newPrice: parseFloat(order.value.price),
+    reason: ''
+  }
+  priceDialogVisible.value = true
+}
+
+/**
+ * 确认改价
+ */
+const confirmUpdatePrice = async () => {
+  if (!priceForm.value.newPrice || priceForm.value.newPrice <= 0) {
+    ElMessage.warning('请输入有效的新价格')
+    return
+  }
+  
+  if (priceForm.value.newPrice === parseFloat(order.value.price)) {
+    ElMessage.warning('新价格不能与原价相同')
+    return
+  }
+  
+  try {
+    await orderApi.updatePrice(order.value.id, {
+      newPrice: priceForm.value.newPrice,
+      reason: priceForm.value.reason
+    })
+    ElMessage.success('改价成功')
+    priceDialogVisible.value = false
+    fetchOrderDetail()
+  } catch (error) {
+    ElMessage.error(error.message || '改价失败')
   }
 }
 
