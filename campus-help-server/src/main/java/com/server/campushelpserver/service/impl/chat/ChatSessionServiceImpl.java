@@ -167,6 +167,11 @@ public class ChatSessionServiceImpl implements ChatSessionService {
             if (dto.getImages() == null || dto.getImages().isEmpty()) {
                 throw new BusinessException("图片消息必须包含至少一张图片");
             }
+        } else if ("GOODS_CARD".equals(dto.getMessageType())) {
+            // 商品卡片消息：content字段存储商品ID（JSON格式：{"goodsId": 123}）
+            if (!StringUtils.hasText(dto.getContent())) {
+                throw new BusinessException("商品卡片消息内容不能为空");
+            }
         } else {
             throw new BusinessException("不支持的消息类型");
         }

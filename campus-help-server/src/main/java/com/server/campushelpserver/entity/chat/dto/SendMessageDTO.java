@@ -18,7 +18,7 @@ public class SendMessageDTO {
     private Long sessionId;
     
     @NotNull(message = "消息类型不能为空")
-    @Schema(description = "消息类型：TEXT-文字，IMAGE-图片", required = true)
+    @Schema(description = "消息类型：TEXT-文字，IMAGE-图片，GOODS_CARD-商品卡片", required = true)
     private String messageType;
     
     @Schema(description = "消息内容（文字消息必填）")

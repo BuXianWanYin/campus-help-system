@@ -93,6 +93,9 @@
                   </el-image>
                   <div v-if="message.content" class="message-image-caption">{{ message.content }}</div>
                 </div>
+                <div v-else-if="message.messageType === 'GOODS_CARD'" class="message-goods-card">
+                  <GoodsCardMessage :message="message" />
+                </div>
               </div>
               <div class="message-time">
                 {{ formatMessageTime(message.createTime) }}
@@ -134,6 +137,14 @@
               @input="handleInput"
             ></textarea>
             <div class="input-actions">
+              <el-icon
+                v-if="canSendGoodsCard"
+                class="input-icon goods-card-icon"
+                title="发送商品卡片"
+                @click="handleSendGoodsCard"
+              >
+                <ShoppingBag />
+              </el-icon>
               <el-upload
                 :action="''"
                 :auto-upload="false"
@@ -163,9 +174,10 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Picture, Close, Promotion, CircleCheck } from '@element-plus/icons-vue'
-import { chatApi, fileApi, messageApi, orderApi } from '@/api'
+import { Picture, Close, Promotion, CircleCheck, ShoppingBag } from '@element-plus/icons-vue'
+import { chatApi, fileApi, messageApi, orderApi, goodsApi } from '@/api'
 import OrderCard from './components/OrderCard.vue'
+import GoodsCardMessage from './components/GoodsCardMessage.vue'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 import wsManager from '@/utils/websocket'
@@ -214,6 +226,26 @@ const getOtherUser = (session) => {
 const currentOtherUser = computed(() => {
   const session = sessions.value.find(s => s.id === currentSessionId.value)
   return session ? getOtherUser(session) : null
+})
+
+// 当前会话信息
+const currentSession = computed(() => {
+  return sessions.value.find(s => s.id === currentSessionId.value)
+})
+
+// 是否可以发送商品卡片（仅在GOODS类型会话时）
+const canSendGoodsCard = computed(() => {
+  return currentSession.value?.relatedType === 'GOODS' && currentSession.value?.relatedId
+})
+
+// 当前会话信息
+const currentSession = computed(() => {
+  return sessions.value.find(s => s.id === currentSessionId.value)
+})
+
+// 是否可以发送商品卡片（仅在GOODS类型会话时）
+const canSendGoodsCard = computed(() => {
+  return currentSession.value?.relatedType === 'GOODS' && currentSession.value?.relatedId
 })
 
 // 获取未读数量（需要后端支持）
@@ -302,6 +334,10 @@ const fetchSessions = async (autoSelectFromUrl = false, forceRefresh = false) =>
             // 直接设置会话ID并加载消息，避免触发 watch 和 selectSession 的循环
             currentSessionId.value = session.id
             await fetchMessages(session.id)
+            // 如果是商品类型会话，获取订单信息
+            if (session.relatedType === 'GOODS' && session.id) {
+              fetchOrderBySessionId(session.id)
+            }
             // 标记系统消息为已读
             try {
               await messageApi.markChatMessagesAsRead(session.id)
@@ -749,6 +785,70 @@ const handleOrderUpdate = () => {
   // 重新获取订单信息
   if (currentSessionId.value) {
     fetchOrderBySessionId(currentSessionId.value)
+  }
+}
+
+/**
+ * 发送商品卡片
+ */
+const handleSendGoodsCard = async () => {
+  if (!currentSessionId.value || !canSendGoodsCard.value) {
+    return
+  }
+  
+  const goodsId = currentSession.value.relatedId
+  if (!goodsId) {
+    ElMessage.warning('商品信息不存在')
+    return
+  }
+  
+  sending.value = true
+  try {
+    // 发送商品卡片消息，content存储商品ID的JSON
+    const goodsCardContent = JSON.stringify({ goodsId: goodsId })
+    
+    const response = await chatApi.sendMessage({
+      sessionId: currentSessionId.value,
+      messageType: 'GOODS_CARD',
+      content: goodsCardContent,
+      images: null
+    })
+    
+    if (response.code === 200) {
+      // 获取新发送的消息ID
+      const messageId = response.data?.messageId || response.data
+      
+      // 立即创建临时消息对象显示在界面上
+      const tempMessage = {
+        id: messageId || Date.now(),
+        sessionId: currentSessionId.value,
+        senderId: userStore.userInfo.id,
+        receiverId: currentOtherUser.value?.id,
+        messageType: 'GOODS_CARD',
+        content: goodsCardContent,
+        images: null,
+        isRead: 0,
+        createTime: new Date().toISOString()
+      }
+      
+      messages.value.push(tempMessage)
+      
+      // 滚动到底部
+      nextTick(() => {
+        scrollToBottom()
+      })
+      
+      // 清空输入框
+      inputMessage.value = ''
+      selectedImages.value = []
+    } else {
+      ElMessage.error(response.message || '发送失败')
+    }
+  } catch (error) {
+    console.error('发送商品卡片失败:', error)
+    ElMessage.error(error.response?.data?.message || '发送商品卡片失败')
+  } finally {
+    sending.value = false
   }
 }
 
@@ -1231,6 +1331,19 @@ onUnmounted(() => {
 
 .send-icon.send-disabled:hover {
   color: var(--color-text-placeholder);
+}
+
+.goods-card-icon {
+  color: var(--color-primary);
+}
+
+.goods-card-icon:hover {
+  color: var(--color-primary);
+  opacity: 0.8;
+}
+
+.message-goods-card {
+  max-width: 100%;
 }
 
 .image-preview-list {

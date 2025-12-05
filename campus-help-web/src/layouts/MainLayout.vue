@@ -259,10 +259,14 @@
               </div>
               <div class="card-price-row">
                 <span class="card-price">¥{{ item.currentPrice }}</span>
-                <span class="card-views">
-                  <el-icon><View /></el-icon>
-                  {{ item.viewCount || 0 }}
-                </span>
+                <div class="card-meta-info">
+                  <span v-if="item.condition" class="meta-text">{{ item.condition }}</span>
+                  <span v-if="item.tradeMethod" class="meta-text">{{ item.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}</span>
+                  <span class="card-views">
+                    <el-icon><View /></el-icon>
+                    {{ item.viewCount || 0 }}
+                  </span>
+                </div>
               </div>
               <div class="card-footer">
                 <div class="card-user">
@@ -1660,7 +1664,7 @@ onUnmounted(() => {
 }
 
 .badge-on-sale {
-  background-color: #ff4d4f;
+  background-color: #67C23A;
   color: #FFFFFF;
   font-weight: 600;
   font-size: 13px;
@@ -1776,12 +1780,28 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  gap: 12px;
 }
 
 .card-price {
   font-size: 18px;
   font-weight: bold;
   color: var(--color-danger);
+  flex-shrink: 0;
+}
+
+.card-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.meta-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .card-views {
@@ -1790,6 +1810,7 @@ onUnmounted(() => {
   gap: var(--spacing-xs);
   font-size: 12px;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 /* 商品卡片时间样式已在 card-meta-row 中定义 */

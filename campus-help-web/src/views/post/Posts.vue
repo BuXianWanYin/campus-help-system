@@ -196,6 +196,10 @@
               <el-icon><View /></el-icon>
               {{ item.viewCount || 0 }}次浏览
             </span>
+            <span v-if="item.tradeMethod" class="meta-item">
+              <el-icon><Box /></el-icon>
+              {{ item.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}
+            </span>
             <span class="meta-item">
               <el-icon><Clock /></el-icon>
               {{ formatTime(item.createTime) }}
@@ -882,6 +886,8 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-all;
+  white-space: normal;
 }
 
 .card-title:hover {
@@ -899,6 +905,8 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-all;
+  white-space: normal;
 }
 
 .card-meta {

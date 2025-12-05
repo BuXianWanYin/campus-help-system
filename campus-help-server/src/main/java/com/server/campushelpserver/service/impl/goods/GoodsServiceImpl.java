@@ -11,6 +11,7 @@ import com.server.campushelpserver.entity.goods.dto.GoodsSearchDTO;
 import com.server.campushelpserver.entity.user.User;
 import com.server.campushelpserver.exception.BusinessException;
 import com.server.campushelpserver.mapper.goods.GoodsMapper;
+import com.server.campushelpserver.mapper.order.OrderMapper;
 import com.server.campushelpserver.mapper.user.UserMapper;
 import com.server.campushelpserver.service.common.PublishFrequencyService;
 import com.server.campushelpserver.service.goods.GoodsService;
@@ -36,6 +37,9 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     
     @Autowired
     private GoodsMapper goodsMapper;
+    
+    @Autowired
+    private OrderMapper orderMapper;
     
     @Autowired
     private UserMapper userMapper;
@@ -312,8 +316,26 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             throw new BusinessException("无权修改此商品");
         }
         
-        // 检查是否有订单（这里简化处理，实际应该查询订单表）
-        // 如果有订单，价格和库存不能修改
+        // 检查是否有已付款的订单（参考闲鱼设计：待付款订单可以改价，已付款订单不能改价）
+        // 已付款订单状态：PAID, SHIPPED, PENDING_PICKUP, COMPLETED
+        LambdaQueryWrapper<com.server.campushelpserver.entity.order.Order> paidOrderWrapper = 
+            new LambdaQueryWrapper<>();
+        paidOrderWrapper.eq(com.server.campushelpserver.entity.order.Order::getGoodsId, id)
+                        .in(com.server.campushelpserver.entity.order.Order::getStatus, 
+                            "PAID", "SHIPPED", "PENDING_PICKUP", "COMPLETED")
+                        .eq(com.server.campushelpserver.entity.order.Order::getDeleteFlag, 0);
+        long paidOrderCount = orderMapper.selectCount(paidOrderWrapper);
+        
+        // 如果有已付款的订单，价格和库存不能修改（已购买的订单不能改价）
+        if (paidOrderCount > 0) {
+            if (dto.getPrice() != null && dto.getPrice().compareTo(goods.getCurrentPrice()) != 0) {
+                throw new BusinessException("该商品已有已付款订单，不能修改价格");
+            }
+            if (dto.getStock() != null && !dto.getStock().equals(goods.getStock())) {
+                throw new BusinessException("该商品已有已付款订单，不能修改库存");
+            }
+        }
+        // 如果只有待付款订单（PENDING_PAYMENT），允许修改价格和库存（参考闲鱼：可以改价卖给其他用户）
         
         // 验证价格
         if (dto.getPrice() == null || dto.getPrice().compareTo(BigDecimal.ZERO) <= 0) {

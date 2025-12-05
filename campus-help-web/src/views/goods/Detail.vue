@@ -114,6 +114,115 @@
             </div>
           </div>
           
+          <!-- 购买对话框 -->
+          <el-dialog
+            v-model="buyDialogVisible"
+            title="立即购买"
+            width="600px"
+            :close-on-click-modal="false"
+          >
+            <el-form :model="buyForm" :rules="buyRules" ref="buyFormRef" label-width="100px">
+              <el-form-item label="商品信息">
+                <div class="buy-goods-info">
+                  <img :src="mainImage" :alt="goods.title" class="buy-goods-image" />
+                  <div class="buy-goods-details">
+                    <div class="buy-goods-title">{{ goods.title }}</div>
+                    <div class="buy-goods-price">¥{{ goods.currentPrice }}</div>
+                  </div>
+                </div>
+              </el-form-item>
+              
+              <el-form-item label="购买数量" prop="quantity">
+                <el-input-number
+                  v-model="buyForm.quantity"
+                  :min="1"
+                  :max="goods.stock"
+                  :precision="0"
+                  style="width: 200px"
+                />
+                <span class="stock-tip">库存：{{ goods.stock }}件</span>
+              </el-form-item>
+              
+              <el-form-item label="交易方式" prop="tradeMethod">
+                <el-radio-group v-model="buyForm.tradeMethod" :disabled="!!goods.tradeMethod">
+                  <el-radio label="MAIL" :disabled="goods.tradeMethod === 'FACE_TO_FACE'">
+                    邮寄
+                    <span v-if="goods.shippingFee" class="fee-tip">（邮费：¥{{ goods.shippingFee }}）</span>
+                  </el-radio>
+                  <el-radio label="FACE_TO_FACE" :disabled="goods.tradeMethod === 'MAIL'">
+                    自提
+                    <span v-if="goods.tradeLocation" class="fee-tip">（地点：{{ goods.tradeLocation }}）</span>
+                  </el-radio>
+                </el-radio-group>
+                <div v-if="goods.tradeMethod" class="trade-method-tip">
+                  该商品仅支持{{ goods.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}方式
+                </div>
+              </el-form-item>
+              
+              <el-form-item
+                v-if="buyForm.tradeMethod === 'MAIL'"
+                label="收货地址"
+                prop="addressId"
+              >
+                <el-select
+                  v-model="buyForm.addressId"
+                  placeholder="请选择收货地址"
+                  style="width: 100%"
+                  @change="handleAddressChange"
+                >
+                  <el-option
+                    v-for="address in addressList"
+                    :key="address.id"
+                    :label="`${address.receiverName} ${address.receiverPhone} ${address.fullAddress}`"
+                    :value="address.id"
+                  >
+                    <div class="address-option">
+                      <div class="address-name-phone">
+                        <span>{{ address.receiverName }}</span>
+                        <span style="margin-left: 8px">{{ address.receiverPhone }}</span>
+                        <el-tag v-if="address.isDefault === 1" type="success" size="small" style="margin-left: 8px">默认</el-tag>
+                      </div>
+                      <div class="address-detail">{{ address.fullAddress }}</div>
+                    </div>
+                  </el-option>
+                </el-select>
+                <el-button
+                  type="text"
+                  @click="handleAddAddress"
+                  style="margin-top: 8px"
+                >
+                  + 添加新地址
+                </el-button>
+              </el-form-item>
+              
+              <el-form-item label="订单金额">
+                <div class="order-amount">
+                  <div class="amount-row">
+                    <span>商品金额：</span>
+                    <span>¥{{ (goods.currentPrice * buyForm.quantity).toFixed(2) }}</span>
+                  </div>
+                  <div v-if="buyForm.tradeMethod === 'MAIL' && goods.shippingFee" class="amount-row">
+                    <span>邮费：</span>
+                    <span>¥{{ goods.shippingFee.toFixed(2) }}</span>
+                  </div>
+                  <div class="amount-row total">
+                    <span>合计：</span>
+                    <span class="total-amount">
+                      ¥{{ calculateTotalAmount().toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+              </el-form-item>
+            </el-form>
+            
+            <template #footer>
+              <el-button @click="buyDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="handleSubmitBuy" :loading="buySubmitting">
+                确认购买
+              </el-button>
+            </template>
+          </el-dialog>
+          
           <!-- 发布者操作 -->
           <div v-if="isSeller" class="seller-actions">
             <el-button type="primary" @click="handleEdit">编辑商品</el-button>
@@ -128,11 +237,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Location, Clock, Folder, View, Box, ShoppingCart, Money } from '@element-plus/icons-vue'
-import { goodsApi } from '@/api'
+import { goodsApi, chatApi, orderApi, addressApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
@@ -148,6 +257,39 @@ const loading = ref(false)
 const goods = ref(null)
 const mainImage = ref('')
 const imageList = ref([])
+
+// 购买相关
+const buyDialogVisible = ref(false)
+const buySubmitting = ref(false)
+const buyFormRef = ref(null)
+const buyForm = ref({
+  quantity: 1,
+  tradeMethod: '',
+  addressId: null
+})
+const addressList = ref([])
+const buyRules = {
+  quantity: [
+    { required: true, message: '请选择购买数量', trigger: 'blur' },
+    { type: 'number', min: 1, message: '购买数量至少为1', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (goods.value && value > goods.value.stock) {
+          callback(new Error(`购买数量不能超过库存（当前库存：${goods.value.stock}）`))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  tradeMethod: [
+    { required: true, message: '请选择交易方式', trigger: 'change' }
+  ],
+  addressId: [
+    { required: true, message: '请选择收货地址', trigger: 'change' }
+  ]
+}
 
 const isSeller = computed(() => {
   return goods.value && userStore.userInfo?.id === goods.value.userId
@@ -250,23 +392,210 @@ const goBack = () => {
 /**
  * 处理购买
  */
-const handleBuy = () => {
+const handleBuy = async () => {
   // 检查实名认证
   if (!userStore.userInfo?.isVerified) {
     ElMessage.warning('购买商品需要实名认证，请先完成实名认证')
     router.push('/user/verification')
     return
   }
-  // 跳转到购买页面或显示购买对话框
-  ElMessage.info('购买功能开发中')
+  
+  // 检查商品状态
+  if (goods.value.status !== 'ON_SALE') {
+    ElMessage.warning('商品已下架或已售完')
+    return
+  }
+  
+  // 检查库存
+  if (goods.value.stock <= 0) {
+    ElMessage.warning('商品库存不足')
+    return
+  }
+  
+  // 初始化购买表单
+  // 如果商品只支持一种交易方式，自动设置并禁用选择
+  const tradeMethod = goods.value.tradeMethod || ''
+  buyForm.value = {
+    quantity: 1,
+    tradeMethod: tradeMethod,
+    addressId: null
+  }
+  
+  // 如果是邮寄方式，加载收货地址列表
+  if (tradeMethod === 'MAIL') {
+    await fetchAddressList()
+  }
+  
+  buyDialogVisible.value = true
+}
+
+// 监听交易方式变化
+watch(() => buyForm.value.tradeMethod, async (newMethod) => {
+  if (newMethod === 'MAIL') {
+    await fetchAddressList()
+  } else {
+    buyForm.value.addressId = null
+  }
+})
+
+/**
+ * 获取收货地址列表
+ */
+const fetchAddressList = async () => {
+  try {
+    const response = await addressApi.getList()
+    if (response.code === 200) {
+      addressList.value = response.data || []
+      // 如果有默认地址，自动选择
+      const defaultAddress = addressList.value.find(addr => addr.isDefault === 1)
+      if (defaultAddress) {
+        buyForm.value.addressId = defaultAddress.id
+      } else if (addressList.value.length === 0) {
+        // 如果没有地址，提示用户添加
+        ElMessage.warning('您还没有收货地址，请先添加收货地址')
+      }
+    }
+  } catch (error) {
+    console.error('获取收货地址列表失败:', error)
+    ElMessage.error('获取收货地址列表失败')
+  }
+}
+
+/**
+ * 处理地址变化
+ */
+const handleAddressChange = () => {
+  // 地址变化时，重新计算订单总金额（如果需要）
+  // 这里暂时不需要额外处理，因为订单金额是计算属性，会自动更新
+}
+
+/**
+ * 添加新地址
+ */
+const handleAddAddress = () => {
+  // 跳转到地址管理页面，并传递返回参数
+  router.push({
+    path: '/user/address/list',
+    query: { from: 'buy', goodsId: goods.value?.id }
+  })
+}
+
+/**
+ * 计算订单总金额
+ */
+const calculateTotalAmount = () => {
+  if (!goods.value) return 0
+  const goodsAmount = goods.value.currentPrice * buyForm.value.quantity
+  const shippingFee = (buyForm.value.tradeMethod === 'MAIL' && goods.value.shippingFee) 
+    ? goods.value.shippingFee 
+    : 0
+  return goodsAmount + shippingFee
+}
+
+/**
+ * 提交购买
+ */
+const handleSubmitBuy = async () => {
+  if (!buyFormRef.value) return
+  
+  try {
+    await buyFormRef.value.validate()
+  } catch (error) {
+    return
+  }
+  
+  // 验证邮寄方式必须选择地址
+  if (buyForm.value.tradeMethod === 'MAIL' && !buyForm.value.addressId) {
+    ElMessage.warning('邮寄方式必须选择收货地址')
+    return
+  }
+  
+  buySubmitting.value = true
+  try {
+    const orderData = {
+      goodsId: goods.value.id,
+      quantity: buyForm.value.quantity,
+      tradeMethod: buyForm.value.tradeMethod,
+      addressId: buyForm.value.tradeMethod === 'MAIL' ? buyForm.value.addressId : null
+    }
+    
+    const response = await orderApi.create(orderData)
+    if (response.code === 200) {
+      ElMessage.success('订单创建成功')
+      buyDialogVisible.value = false
+      
+      // 创建订单后，自动创建会话并跳转到聊天页面
+      try {
+        const sessionResponse = await chatApi.createOrGetSession({
+          targetUserId: goods.value.userId,
+          relatedType: 'GOODS',
+          relatedId: goods.value.id
+        })
+        
+        if (sessionResponse.code === 200) {
+          const sessionId = sessionResponse.data.sessionId || sessionResponse.data
+          router.push({
+            path: '/user/chat',
+            query: { sessionId }
+          })
+        } else {
+          // 如果创建会话失败，跳转到订单详情页
+          router.push(`/order/detail/${response.data}`)
+        }
+      } catch (error) {
+        console.error('创建会话失败:', error)
+        // 如果创建会话失败，跳转到订单详情页
+        router.push(`/order/detail/${response.data}`)
+      }
+    } else {
+      ElMessage.error(response.message || '创建订单失败')
+    }
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    ElMessage.error(error.response?.data?.message || '创建订单失败，请稍后重试')
+  } finally {
+    buySubmitting.value = false
+  }
 }
 
 /**
  * 处理联系
  */
-const handleContact = () => {
-  // 跳转到聊天页面
-  router.push('/user/chat')
+const handleContact = async () => {
+  // 检查实名认证
+  if (!userStore.userInfo?.isVerified) {
+    ElMessage.warning('联系卖家需要实名认证，请先完成实名认证')
+    router.push('/user/verification')
+    return
+  }
+  
+  if (!goods.value || !goods.value.userId) {
+    ElMessage.warning('用户信息不存在')
+    return
+  }
+  
+  try {
+    // 创建或获取会话
+    const response = await chatApi.createOrGetSession({
+      targetUserId: goods.value.userId,
+      relatedType: 'GOODS',
+      relatedId: goods.value.id
+    })
+    
+    if (response.code === 200) {
+      const sessionId = response.data.sessionId || response.data
+      // 跳转到聊天页面，并传递会话ID
+      router.push({
+        path: '/user/chat',
+        query: { sessionId }
+      })
+    } else {
+      ElMessage.error(response.message || '创建会话失败')
+    }
+  } catch (error) {
+    console.error('联系卖家失败:', error)
+    ElMessage.error('联系卖家失败，请稍后重试')
+  }
 }
 
 /**
@@ -327,6 +656,20 @@ const handleDelete = async () => {
 
 onMounted(() => {
   fetchGoodsDetail()
+})
+
+// 当从地址管理页面返回时，如果购买对话框打开，刷新地址列表
+onActivated(() => {
+  if (route.query.from === 'buy' && buyDialogVisible.value && buyForm.value.tradeMethod === 'MAIL') {
+    fetchAddressList()
+  }
+})
+
+// 当从地址管理页面返回时，如果购买对话框打开，刷新地址列表
+onActivated(() => {
+  if (route.query.from === 'buy' && buyDialogVisible.value && buyForm.value.tradeMethod === 'MAIL') {
+    fetchAddressList()
+  }
 })
 </script>
 
@@ -546,6 +889,107 @@ onMounted(() => {
   padding: 24px;
   background-color: #F5F7FA;
   border-radius: 8px;
+}
+
+/* 购买对话框样式 */
+.buy-goods-info {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background-color: #F5F7FA;
+  border-radius: 8px;
+}
+
+.buy-goods-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.buy-goods-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.buy-goods-title {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.buy-goods-price {
+  font-size: 18px;
+  color: #F56C6C;
+  font-weight: bold;
+}
+
+.stock-tip {
+  margin-left: 12px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.fee-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 4px;
+}
+
+.trade-method-tip {
+  font-size: 12px;
+  color: #E6A23C;
+  margin-top: 4px;
+}
+
+.address-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.address-name-phone {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #303133;
+}
+
+.address-detail {
+  font-size: 12px;
+  color: #909399;
+}
+
+.order-amount {
+  padding: 12px;
+  background-color: #F5F7FA;
+  border-radius: 8px;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.amount-row.total {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #E0E0E0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.total-amount {
+  font-size: 20px;
+  color: #F56C6C;
+  font-weight: bold;
 }
 </style>
 
