@@ -149,10 +149,13 @@
           <el-timeline-item timestamp="创建订单" :icon="Clock">
             <p>{{ formatDateTime(order.createTime) }}</p>
           </el-timeline-item>
+          <el-timeline-item v-if="order.priceUpdateTime" timestamp="改价时间" :icon="Edit">
+            <p>{{ formatDateTime(order.priceUpdateTime) }}</p>
+          </el-timeline-item>
           <el-timeline-item v-if="order.payTime" timestamp="付款时间" :icon="Money">
             <p>{{ formatDateTime(order.payTime) }}</p>
           </el-timeline-item>
-          <el-timeline-item v-if="order.shipTime" timestamp="发货时间" :icon="Truck">
+          <el-timeline-item v-if="order.shipTime" timestamp="发货时间" :icon="Box">
             <p>{{ formatDateTime(order.shipTime) }}</p>
           </el-timeline-item>
           <el-timeline-item v-if="order.completeTime" timestamp="完成时间" :icon="CircleCheck">
@@ -251,7 +254,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Clock, Money, CircleCheck, Close } from '@element-plus/icons-vue'
+import { ArrowLeft, Clock, Money, CircleCheck, Close, Edit, Box } from '@element-plus/icons-vue'
 import { orderApi, chatApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
@@ -294,20 +297,7 @@ const isSeller = computed(() => {
   // 确保类型一致（都转换为数字进行比较）
   const currentUserId = Number(userStore.userInfo.id)
   const sellerId = order.value.sellerId ? Number(order.value.sellerId) : null
-  const result = sellerId !== null && currentUserId === sellerId
-  // 调试日志（生产环境可移除）
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Detail.vue isSeller check:', {
-      currentUserId,
-      sellerId,
-      orderBuyerId: order.value.buyerId,
-      orderSellerId: order.value.sellerId,
-      orderStatus: order.value.status,
-      result,
-      userInfo: userStore.userInfo
-    })
-  }
-  return result
+  return sellerId !== null && currentUserId === sellerId
 })
 
 /**
@@ -458,7 +448,6 @@ const goToChat = async () => {
       ElMessage.error(response.message || '创建会话失败')
     }
   } catch (error) {
-    console.error('联系对方失败:', error)
     ElMessage.error('联系对方失败，请稍后重试')
   }
 }

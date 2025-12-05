@@ -74,6 +74,8 @@
             <el-avatar :size="24" :src="getAvatarUrl(getOtherUser(order)?.avatar)">
               {{ getOtherUser(order)?.nickname?.charAt(0) || 'U' }}
             </el-avatar>
+            <span v-if="role === 'SELLER'" class="user-label">买家：</span>
+            <span v-else class="user-label">卖家：</span>
             <span>{{ getOtherUser(order)?.nickname || '未知用户' }}</span>
           </div>
           <div class="order-actions">
@@ -502,6 +504,11 @@ onMounted(() => {
   gap: 8px;
   font-size: 14px;
   color: #606266;
+}
+
+.user-label {
+  font-weight: 500;
+  color: #909399;
 }
 
 .order-actions {

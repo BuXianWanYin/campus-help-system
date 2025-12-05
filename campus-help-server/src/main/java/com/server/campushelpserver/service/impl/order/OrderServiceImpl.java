@@ -261,6 +261,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 更新订单价格和总金额
         order.setPrice(dto.getNewPrice());
         order.setTotalAmount(dto.getNewPrice().multiply(new BigDecimal(order.getQuantity())));
+        order.setPriceUpdateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(order);
         
@@ -458,10 +459,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return null;
         }
         
-        // 根据sessionId查询订单
+        // 根据sessionId查询订单（可能有多个订单，取最新的）
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Order::getSessionId, sessionId)
-               .eq(Order::getDeleteFlag, 0);
+               .eq(Order::getDeleteFlag, 0)
+               .orderByDesc(Order::getCreateTime)
+               .last("LIMIT 1");
         
         Order order = orderMapper.selectOne(wrapper);
         

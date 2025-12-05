@@ -204,24 +204,7 @@ const isSeller = computed(() => {
   // 确保类型一致（都转换为数字进行比较）
   const currentUserId = Number(userStore.userInfo.id)
   const sellerId = props.order.sellerId ? Number(props.order.sellerId) : null
-  if (sellerId === null) {
-    return false
-  }
-  const result = currentUserId === sellerId
-  // 调试日志（生产环境可移除）
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OrderCard isSeller check:', {
-      currentUserId,
-      sellerId,
-      orderBuyerId: props.order.buyerId,
-      orderSellerId: props.order.sellerId,
-      orderStatus: props.order.status,
-      isInMessage: props.isInMessage,
-      result,
-      userInfo: userStore.userInfo
-    })
-  }
-  return result
+  return sellerId !== null && currentUserId === sellerId
 })
 
 /**

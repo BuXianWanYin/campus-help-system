@@ -126,6 +126,11 @@ public class Order implements Serializable {
     @Schema(description = "取消原因")
     private String cancelReason;
     
+    @TableField("price_update_time")
+    @Schema(description = "改价时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime priceUpdateTime;
+    
     @TableField("delete_flag")
     @Schema(description = "逻辑删除标志：0-未删除，1-已删除")
     private Integer deleteFlag;
