@@ -200,6 +200,11 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
                             .like(Goods::getDescription, searchDTO.getKeyword()));
         }
         
+        // 用户ID筛选
+        if (searchDTO.getUserId() != null) {
+            wrapper.eq(Goods::getUserId, searchDTO.getUserId());
+        }
+        
         // 分类筛选
         if (StringUtils.hasText(searchDTO.getCategory())) {
             wrapper.eq(Goods::getCategory, searchDTO.getCategory());

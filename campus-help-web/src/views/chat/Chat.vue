@@ -56,16 +56,21 @@
         </div>
 
         <!-- 消息列表 -->
-        <div class="messages-container" ref="messagesContainer" v-loading="messagesLoading">
+        <div class="messages-container" ref="messagesContainer">
           <div v-if="messages.length === 0 && !messagesLoading" class="empty-messages">
             <el-empty description="暂无消息，开始聊天吧" />
           </div>
-          <div
-            v-for="message in messages"
-            :key="message.id"
-            class="message-item"
-            :class="{ 'message-sent': isSentMessage(message), 'message-received': !isSentMessage(message) }"
+          <transition-group
+            name="message-list"
+            tag="div"
+            class="message-list-wrapper"
           >
+            <div
+              v-for="message in messages"
+              :key="`${currentSessionId}-${message.id}`"
+              class="message-item"
+              :class="{ 'message-sent': isSentMessage(message), 'message-received': !isSentMessage(message) }"
+            >
             <el-avatar
               v-if="!isSentMessage(message)"
               :size="36"
@@ -78,19 +83,21 @@
               <div class="message-bubble" :class="{ 'bubble-sent': isSentMessage(message), 'bubble-received': !isSentMessage(message) }">
                 <div v-if="message.messageType === 'TEXT'" class="message-text">{{ message.content }}</div>
                 <div v-else-if="message.messageType === 'IMAGE'" class="message-images">
-                  <el-image
-                    v-for="(img, index) in parseImages(message.images)"
-                    :key="index"
-                    :src="getAvatarUrl(img)"
-                    fit="cover"
-                    :preview-src-list="parseImages(message.images).map(i => getAvatarUrl(i))"
-                    class="message-image"
-                    loading="lazy"
-                  >
-                    <template #error>
-                      <div class="image-error-small">图片加载失败</div>
-                    </template>
-                  </el-image>
+                  <div class="message-images-container">
+                    <el-image
+                      v-for="(img, index) in parseImages(message.images)"
+                      :key="index"
+                      :src="getAvatarUrl(img)"
+                      fit="cover"
+                      :preview-src-list="parseImages(message.images).map(i => getAvatarUrl(i))"
+                      class="message-image"
+                      loading="lazy"
+                    >
+                      <template #error>
+                        <div class="image-error-small">图片加载失败</div>
+                      </template>
+                    </el-image>
+                  </div>
                   <div v-if="message.content" class="message-image-caption">{{ message.content }}</div>
                 </div>
                 <div v-else-if="message.messageType === 'GOODS_CARD'" class="message-goods-card">
@@ -117,6 +124,7 @@
               {{ userStore.userInfo?.nickname?.charAt(0) || 'U' }}
             </el-avatar>
           </div>
+          </transition-group>
         </div>
 
         <!-- 输入框 -->
@@ -167,6 +175,47 @@
         </div>
       </div>
     </div>
+    
+    <!-- 商品选择对话框 -->
+    <el-dialog
+      v-model="goodsSelectDialogVisible"
+      title="选择商品"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div v-loading="goodsListLoading" class="goods-select-content">
+        <div v-if="selectableGoods.length === 0 && !goodsListLoading" class="empty-goods">
+          <el-empty description="暂无在售商品" />
+        </div>
+        <div v-else class="goods-list">
+          <div
+            v-for="goods in selectableGoods"
+            :key="goods.id"
+            class="goods-item"
+            :class="{ selected: selectedGoodsId === goods.id }"
+            @click="selectedGoodsId = goods.id"
+          >
+            <el-image
+              :src="getFirstGoodsImage(goods.images)"
+              fit="cover"
+              class="goods-item-image"
+            >
+              <template #error>
+                <div class="image-error">图片加载失败</div>
+              </template>
+            </el-image>
+            <div class="goods-item-info">
+              <div class="goods-item-title">{{ goods.title }}</div>
+              <div class="goods-item-price">¥{{ goods.currentPrice }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="goodsSelectDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmSendGoodsCard" :disabled="!selectedGoodsId">发送</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -192,6 +241,8 @@ const sessionsLoading = ref(false)
 const currentSessionId = ref(null)
 const messages = ref([])
 const messagesLoading = ref(false)
+// 消息缓存，按会话ID存储消息，避免切换时闪烁
+const messagesCache = ref(new Map())
 const sending = ref(false)
 const inputMessage = ref('')
 const messagesContainer = ref(null)
@@ -199,6 +250,10 @@ const selectedImages = ref([])
 const chatSubscription = ref(null)
 const currentOrder = ref(null)
 const orderLoading = ref(false)
+const goodsSelectDialogVisible = ref(false)
+const selectableGoods = ref([])
+const goodsListLoading = ref(false)
+const selectedGoodsId = ref(null)
 
 // 获取对方用户信息
 const getOtherUser = (session) => {
@@ -233,19 +288,9 @@ const currentSession = computed(() => {
   return sessions.value.find(s => s.id === currentSessionId.value)
 })
 
-// 是否可以发送商品卡片（仅在GOODS类型会话时）
+// 是否可以发送商品卡片（任何会话都可以发送，但需要知道对方用户ID）
 const canSendGoodsCard = computed(() => {
-  return currentSession.value?.relatedType === 'GOODS' && currentSession.value?.relatedId
-})
-
-// 当前会话信息
-const currentSession = computed(() => {
-  return sessions.value.find(s => s.id === currentSessionId.value)
-})
-
-// 是否可以发送商品卡片（仅在GOODS类型会话时）
-const canSendGoodsCard = computed(() => {
-  return currentSession.value?.relatedType === 'GOODS' && currentSession.value?.relatedId
+  return !!currentOtherUser.value?.id
 })
 
 // 获取未读数量（需要后端支持）
@@ -321,7 +366,6 @@ const fetchSessions = async (autoSelectFromUrl = false, forceRefresh = false) =>
     if (response.code === 200) {
       sessions.value = response.data || []
       
-      console.log('加载会话列表成功，会话数量:', sessions.value.length)
       
       // 如果URL中有sessionId参数且需要自动选中，自动选中
       if (autoSelectFromUrl) {
@@ -333,7 +377,7 @@ const fetchSessions = async (autoSelectFromUrl = false, forceRefresh = false) =>
             session.unreadCount = 0
             // 直接设置会话ID并加载消息，避免触发 watch 和 selectSession 的循环
             currentSessionId.value = session.id
-            await fetchMessages(session.id)
+            await fetchMessages(session.id, false)
             // 如果是商品类型会话，获取订单信息
             if (session.relatedType === 'GOODS' && session.id) {
               fetchOrderBySessionId(session.id)
@@ -344,6 +388,10 @@ const fetchSessions = async (autoSelectFromUrl = false, forceRefresh = false) =>
             } catch (error) {
               console.error('标记聊天系统消息为已读失败:', error)
             }
+            // 确保滚动到底部（fetchMessages 中已经调用了，这里再次确保）
+            scrollToBottom(true)
+          } else {
+            console.warn('未找到会话:', sessionId, '所有会话:', sessions.value.map(s => s.id))
           }
         }
       }
@@ -366,12 +414,26 @@ const selectSession = async (session) => {
     return
   }
   
+  // 保存当前会话的消息到缓存
+  if (currentSessionId.value) {
+    messagesCache.value.set(currentSessionId.value, [...messages.value])
+  }
+  
+  // 先更新会话ID
   currentSessionId.value = session.id
   
+  // 立即从缓存中恢复消息（如果有），避免空白闪烁
+  if (messagesCache.value.has(session.id)) {
+    messages.value = messagesCache.value.get(session.id)
+  } else {
+    // 如果缓存中没有，先清空消息（避免显示上一个会话的消息）
+    messages.value = []
+  }
+  
   // 立即更新本地会话的未读数量为0（优化用户体验，避免延迟显示）
-  const currentSession = sessions.value.find(s => s.id === session.id)
-  if (currentSession) {
-    currentSession.unreadCount = 0
+  const targetSession = sessions.value.find(s => s.id === session.id)
+  if (targetSession) {
+    targetSession.unreadCount = 0
   }
   
   // 如果是商品类型会话，尝试获取关联订单
@@ -381,7 +443,9 @@ const selectSession = async (session) => {
     currentOrder.value = null
   }
   
-  await fetchMessages(session.id)
+  // 异步加载最新消息（不显示加载状态，避免闪烁）
+  // fetchMessages 中已经会滚动到底部，这里不需要额外处理
+  fetchMessages(session.id, false)
   
   // 标记该会话相关的系统消息为已读
   try {
@@ -398,28 +462,37 @@ const selectSession = async (session) => {
 }
 
 // 获取消息列表
-const fetchMessages = async (sessionId) => {
+const fetchMessages = async (sessionId, showLoading = true) => {
   if (!sessionId) return
-  messagesLoading.value = true
+  // 只有在需要显示加载状态时才显示（切换会话时不显示，避免闪烁）
+  if (showLoading) {
+    messagesLoading.value = true
+  }
   try {
     const response = await chatApi.getMessageList(sessionId)
     if (response.code === 200) {
-      // 直接替换消息列表（切换会话时）
-      messages.value = response.data || []
-      // 加载消息后，确保当前会话的未读数量为0（后端会标记消息为已读）
-      const currentSession = sessions.value.find(s => s.id === sessionId)
-      if (currentSession) {
-        currentSession.unreadCount = 0
+      // 只有在获取的消息属于当前会话时才更新（避免异步请求导致的错误更新）
+      if (currentSessionId.value === sessionId) {
+        const newMessages = response.data || []
+        // 更新消息列表
+        messages.value = newMessages
+        // 更新缓存
+        messagesCache.value.set(sessionId, [...newMessages])
+        // 加载消息后，确保当前会话的未读数量为0（后端会标记消息为已读）
+        const targetSession = sessions.value.find(s => s.id === sessionId)
+        if (targetSession) {
+          targetSession.unreadCount = 0
+        }
+        // 消息加载完成后，滚动到底部
+        scrollToBottom(true)
       }
-      // 滚动到底部
-      nextTick(() => {
-        scrollToBottom()
-      })
     }
   } catch (error) {
     ElMessage.error('获取消息列表失败')
   } finally {
-    messagesLoading.value = false
+    if (showLoading) {
+      messagesLoading.value = false
+    }
   }
 }
 
@@ -599,6 +672,14 @@ const handleSendMessage = async () => {
       if (!exists) {
         // 添加到消息列表（立即显示）
         messages.value.push(tempMessage)
+        // 更新缓存
+        if (messagesCache.value.has(currentSessionId.value)) {
+          const cachedMessages = messagesCache.value.get(currentSessionId.value)
+          cachedMessages.push(tempMessage)
+          messagesCache.value.set(currentSessionId.value, cachedMessages)
+        } else {
+          messagesCache.value.set(currentSessionId.value, [...messages.value])
+        }
         nextTick(() => {
           scrollToBottom()
         })
@@ -621,9 +702,17 @@ const handleSendMessage = async () => {
 }
 
 // 滚动到底部
-const scrollToBottom = () => {
+const scrollToBottom = (force = false) => {
   if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    // 使用 nextTick 确保 DOM 更新完成
+    nextTick(() => {
+      // 使用 setTimeout 确保渲染完成后再滚动
+      setTimeout(() => {
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+        }
+      }, force ? 0 : 100)
+    })
   }
 }
 
@@ -637,9 +726,9 @@ const debouncedUpdateSessions = () => {
     await fetchSessions()
     // 更新会话列表后，确保当前会话的未读数量为0（用户正在查看）
     if (currentSessionId.value) {
-      const currentSession = sessions.value.find(s => s.id === currentSessionId.value)
-      if (currentSession) {
-        currentSession.unreadCount = 0
+      const targetSession = sessions.value.find(s => s.id === currentSessionId.value)
+      if (targetSession) {
+        targetSession.unreadCount = 0
       }
     }
     sessionUpdateTimer = null
@@ -687,28 +776,34 @@ const debouncedShowNotification = (sessionName, sessionId, messageId) => {
 
 // WebSocket消息处理
 const handleChatMessage = (message) => {
-  console.log('收到WebSocket聊天消息:', message)
-  
   // 检查消息是否已存在（避免重复）
   const exists = messages.value.find(m => m.id === message.id)
   
   // 如果是当前会话的消息
   if (message.sessionId === currentSessionId.value) {
     // 当前会话的消息，确保未读数量为0（用户正在查看）
-    const currentSession = sessions.value.find(s => s.id === currentSessionId.value)
-    if (currentSession) {
-      currentSession.unreadCount = 0
+    const targetSession = sessions.value.find(s => s.id === currentSessionId.value)
+    if (targetSession) {
+      targetSession.unreadCount = 0
     }
     
     // 如果消息不存在，添加到消息列表
     if (!exists) {
       messages.value.push(message)
+      // 更新缓存
+      if (messagesCache.value.has(currentSessionId.value)) {
+        const cachedMessages = messagesCache.value.get(currentSessionId.value)
+        cachedMessages.push(message)
+        messagesCache.value.set(currentSessionId.value, cachedMessages)
+      } else {
+        messagesCache.value.set(currentSessionId.value, [...messages.value])
+      }
       nextTick(() => {
         scrollToBottom()
       })
     } else {
       // 如果消息已存在（可能是自己发送的临时消息），更新为完整消息
-      const index = messages.value.findIndex(m => m.id === message.id || (m.id === message.id && m.senderId === message.senderId))
+      const index = messages.value.findIndex(m => m.id === message.id)
       if (index !== -1) {
         // 保留原有的消息对象，只更新关键字段（特别是isRead状态）
         const existingMessage = messages.value[index]
@@ -717,6 +812,15 @@ const handleChatMessage = (message) => {
           ...message,
           // 确保isRead状态实时更新
           isRead: message.isRead !== undefined ? message.isRead : existingMessage.isRead
+        }
+        // 更新缓存
+        if (messagesCache.value.has(currentSessionId.value)) {
+          const cachedMessages = messagesCache.value.get(currentSessionId.value)
+          const cachedIndex = cachedMessages.findIndex(m => m.id === message.id)
+          if (cachedIndex !== -1) {
+            cachedMessages[cachedIndex] = messages.value[index]
+            messagesCache.value.set(currentSessionId.value, cachedMessages)
+          }
         }
         nextTick(() => {
           scrollToBottom()
@@ -789,23 +893,82 @@ const handleOrderUpdate = () => {
 }
 
 /**
- * 发送商品卡片
+ * 获取第一张商品图片
+ */
+const getFirstGoodsImage = (imagesJson) => {
+  if (!imagesJson) return ''
+  try {
+    const images = typeof imagesJson === 'string' ? JSON.parse(imagesJson) : imagesJson
+    if (Array.isArray(images) && images.length > 0) {
+      return getAvatarUrl(images[0])
+    }
+  } catch (e) {
+    console.error('解析商品图片失败:', e)
+  }
+  return ''
+}
+
+/**
+ * 打开商品选择对话框
  */
 const handleSendGoodsCard = async () => {
-  if (!currentSessionId.value || !canSendGoodsCard.value) {
+  if (!currentSessionId.value || !canSendGoodsCard.value || sending.value) {
     return
   }
   
-  const goodsId = currentSession.value.relatedId
-  if (!goodsId) {
-    ElMessage.warning('商品信息不存在')
+  // 获取对方用户ID
+  const otherUserId = currentOtherUser.value?.id
+  if (!otherUserId) {
+    ElMessage.warning('无法获取对方用户信息')
+    return
+  }
+  
+  // 打开对话框并加载商品列表
+  goodsSelectDialogVisible.value = true
+  selectedGoodsId.value = null
+  await fetchSelectableGoods(otherUserId)
+}
+
+/**
+ * 获取可选商品列表（对方用户发布的在售商品）
+ */
+const fetchSelectableGoods = async (userId) => {
+  goodsListLoading.value = true
+  try {
+    const response = await goodsApi.getList({
+      userId: userId,
+      status: 'ON_SALE',
+      pageNum: 1,
+      pageSize: 50
+    })
+    
+    if (response.code === 200) {
+      selectableGoods.value = response.data?.records || []
+    } else {
+      ElMessage.error(response.message || '获取商品列表失败')
+      selectableGoods.value = []
+    }
+  } catch (error) {
+    console.error('获取商品列表失败:', error)
+    ElMessage.error('获取商品列表失败')
+    selectableGoods.value = []
+  } finally {
+    goodsListLoading.value = false
+  }
+}
+
+/**
+ * 确认发送商品卡片
+ */
+const confirmSendGoodsCard = async () => {
+  if (!selectedGoodsId.value || !currentSessionId.value || sending.value) {
     return
   }
   
   sending.value = true
   try {
     // 发送商品卡片消息，content存储商品ID的JSON
-    const goodsCardContent = JSON.stringify({ goodsId: goodsId })
+    const goodsCardContent = JSON.stringify({ goodsId: selectedGoodsId.value })
     
     const response = await chatApi.sendMessage({
       sessionId: currentSessionId.value,
@@ -818,29 +981,40 @@ const handleSendGoodsCard = async () => {
       // 获取新发送的消息ID
       const messageId = response.data?.messageId || response.data
       
-      // 立即创建临时消息对象显示在界面上
-      const tempMessage = {
-        id: messageId || Date.now(),
-        sessionId: currentSessionId.value,
-        senderId: userStore.userInfo.id,
-        receiverId: currentOtherUser.value?.id,
-        messageType: 'GOODS_CARD',
-        content: goodsCardContent,
-        images: null,
-        isRead: 0,
-        createTime: new Date().toISOString()
+      // 检查消息是否已存在（避免重复添加临时消息）
+      const exists = messages.value.find(m => m.id === messageId)
+      if (!exists && messageId) {
+        // 立即创建临时消息对象显示在界面上（优化用户体验）
+        const tempMessage = {
+          id: messageId,
+          sessionId: currentSessionId.value,
+          senderId: userStore.userInfo.id,
+          receiverId: currentOtherUser.value?.id,
+          messageType: 'GOODS_CARD',
+          content: goodsCardContent,
+          images: null,
+          isRead: 0,
+          createTime: new Date().toISOString()
+        }
+        
+        messages.value.push(tempMessage)
+        
+        // 滚动到底部
+        nextTick(() => {
+          scrollToBottom()
+        })
       }
       
-      messages.value.push(tempMessage)
-      
-      // 滚动到底部
-      nextTick(() => {
-        scrollToBottom()
-      })
+      // 关闭对话框
+      goodsSelectDialogVisible.value = false
+      selectedGoodsId.value = null
       
       // 清空输入框
       inputMessage.value = ''
       selectedImages.value = []
+      
+      // 更新会话列表（更新最后消息时间和内容）
+      debouncedUpdateSessions()
     } else {
       ElMessage.error(response.message || '发送失败')
     }
@@ -855,7 +1029,14 @@ const handleSendGoodsCard = async () => {
 // 监听会话ID变化（避免重复调用）
 watch(currentSessionId, (newId, oldId) => {
   if (newId && newId !== oldId) {
-    fetchMessages(newId)
+    // 不在这里调用fetchMessages，因为selectSession已经调用了
+    // 只在URL参数变化时调用（比如直接通过URL访问）
+    if (!oldId) {
+      fetchMessages(newId, false).then(() => {
+        // 确保滚动到底部
+        scrollToBottom(true)
+      })
+    }
     // 如果是商品类型会话，获取订单信息
     const session = sessions.value.find(s => s.id === newId)
     if (session && session.relatedType === 'GOODS') {
@@ -959,7 +1140,7 @@ onUnmounted(() => {
 <style scoped>
 .chat-container {
   display: flex;
-  height: calc(100vh - var(--header-height));
+  height: calc(95vh - var(--header-height));
   background-color: var(--color-bg-primary);
 }
 
@@ -1102,14 +1283,32 @@ onUnmounted(() => {
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   min-height: 0; /* 确保 flex 子元素可以缩小 */
+  max-height: calc(100vh - 280px); /* 降低聊天框高度 */
   /* 隐藏滚动条但保持滚动功能 */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 和 Edge */
+}
+
+.message-list-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 消息列表过渡动画（平滑切换） */
+.message-list-enter-active,
+.message-list-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.message-list-enter-from,
+.message-list-leave-to {
+  opacity: 0;
 }
 
 /* 隐藏 WebKit 浏览器的滚动条 */
@@ -1154,6 +1353,11 @@ onUnmounted(() => {
   word-wrap: break-word;
 }
 
+/* 图片消息的气泡只需要少量内边距，让图片和文字自然排列 */
+.message-bubble:has(.message-images) {
+  padding: 8px;
+}
+
 .bubble-sent {
   background-color: var(--color-primary);
   color: white;
@@ -1173,6 +1377,13 @@ onUnmounted(() => {
 
 .message-images {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.message-images-container {
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -1182,8 +1393,7 @@ onUnmounted(() => {
   height: 200px;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 8px;
-  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .image-error-small {
@@ -1199,10 +1409,22 @@ onUnmounted(() => {
 }
 
 .message-image-caption {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--color-text-regular);
+  margin-top: 0;
+  padding: 0;
+  font-size: 14px;
   line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 发送的图片消息文字颜色（白色，因为气泡是蓝色的） */
+.message-item.message-sent .message-image-caption {
+  color: #ffffff;
+}
+
+/* 接收的图片消息文字颜色 */
+.message-item.message-received .message-image-caption {
+  color: var(--color-text-primary);
 }
 
 .message-time {
@@ -1244,11 +1466,11 @@ onUnmounted(() => {
 }
 
 .chat-input-area {
-  padding: 16px 20px;
+  padding: 12px 20px;
   border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0; /* 输入区域不缩小 */
   background-color: var(--color-bg-white);
 }
@@ -1256,12 +1478,12 @@ onUnmounted(() => {
 .input-wrapper {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   background-color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 6px 10px;
-  min-height: 36px;
+  padding: 8px 12px;
+  min-height: 40px;
 }
 
 .chat-textarea {
@@ -1272,8 +1494,8 @@ onUnmounted(() => {
   font-size: 14px;
   line-height: 1.5;
   padding: 0;
-  padding-right: 8px;
-  max-height: 200px;
+  padding-right: 12px;
+  max-height: 150px;
   overflow-y: auto;
   font-family: inherit;
   color: var(--color-text-primary);
@@ -1304,16 +1526,21 @@ onUnmounted(() => {
 .input-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 
 .input-icon {
-  font-size: 22px;
+  font-size: 26px;
   cursor: pointer;
   color: var(--color-text-secondary);
   transition: color 0.2s;
-  padding: 4px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .input-icon:hover {
@@ -1393,6 +1620,83 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--color-border);
   max-height: 500px;
   overflow-y: auto;
+}
+
+.goods-select-content {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.goods-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.goods-item {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #fff;
+}
+
+.goods-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.goods-item.selected {
+  border-color: var(--color-primary);
+  background-color: #f0f9ff;
+}
+
+.goods-item-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.goods-item-info {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.goods-item-title {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.goods-item-price {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--color-danger);
+}
+
+.empty-goods {
+  padding: 40px 0;
+  text-align: center;
+}
+
+.image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+  color: #999;
+  font-size: 12px;
 }
 
 </style>

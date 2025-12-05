@@ -70,15 +70,29 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         ChatSession existingSession = chatSessionMapper.selectOne(wrapper);
         
         if (existingSession != null) {
-            // 如果现有会话没有关联信息，但新请求有，则更新关联信息
+            // 如果新请求有关联信息，则更新关联信息（即使现有会话已有，也更新，确保是最新的关联信息）
             if (StringUtils.hasText(dto.getRelatedType()) && dto.getRelatedId() != null) {
+                // 检查是否需要更新：如果现有会话没有关联信息，或者关联信息不同，则更新
+                boolean needUpdate = false;
                 if (!StringUtils.hasText(existingSession.getRelatedType()) || existingSession.getRelatedId() == null) {
+                    // 现有会话没有关联信息，需要更新
+                    needUpdate = true;
+                } else if (!dto.getRelatedType().equals(existingSession.getRelatedType()) 
+                    || !dto.getRelatedId().equals(existingSession.getRelatedId())) {
+                    // 关联信息不同，需要更新
+                    needUpdate = true;
+                }
+                
+                if (needUpdate) {
                     LambdaUpdateWrapper<ChatSession> updateWrapper = new LambdaUpdateWrapper<>();
                     updateWrapper.eq(ChatSession::getId, existingSession.getId())
                                 .set(ChatSession::getRelatedType, dto.getRelatedType())
                                 .set(ChatSession::getRelatedId, dto.getRelatedId())
                                 .set(ChatSession::getUpdateTime, LocalDateTime.now());
                     chatSessionMapper.update(null, updateWrapper);
+                    // 更新本地对象，确保返回的数据是最新的
+                    existingSession.setRelatedType(dto.getRelatedType());
+                    existingSession.setRelatedId(dto.getRelatedId());
                 }
             }
             return existingSession.getId();

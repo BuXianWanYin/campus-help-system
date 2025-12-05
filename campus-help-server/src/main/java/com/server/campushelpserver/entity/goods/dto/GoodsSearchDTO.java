@@ -41,5 +41,8 @@ public class GoodsSearchDTO {
     
     @Schema(description = "审核状态筛选：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝，ALL-全部")
     private String auditStatus;
+    
+    @Schema(description = "用户ID（筛选指定用户发布的商品）")
+    private Long userId;
 }
 

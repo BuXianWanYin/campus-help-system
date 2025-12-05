@@ -176,8 +176,11 @@
       <div v-for="item in goodsList" :key="item.id" class="goods-card">
         <div class="card-image-wrapper" @click="goToGoodsDetail(item.id)">
           <img :src="getFirstImage(item.images)" :alt="item.title" class="card-image" />
-          <span class="status-badge" :class="getGoodsStatusClass(item.status)">
+          <span class="status-badge status-badge-left" :class="getGoodsStatusClass(item.status)">
             {{ getGoodsStatusText(item.status) }}
+          </span>
+          <span v-if="item.stock" class="stock-badge">
+            库存：{{ item.stock }}件
           </span>
         </div>
         <div class="card-content">
@@ -208,7 +211,6 @@
           <div class="card-footer">
             <div class="card-info">
               <span class="price-text">¥{{ item.currentPrice }}</span>
-              <span v-if="item.stock" class="stock-text">库存：{{ item.stock }}件</span>
             </div>
             <div class="card-actions">
               <el-button size="small" @click.stop="goToGoodsDetail(item.id)">查看详情</el-button>
@@ -839,6 +841,25 @@ onMounted(() => {
   font-size: 12px;
   color: #FFFFFF;
   font-weight: 500;
+  z-index: 1;
+}
+
+.status-badge-left {
+  left: 8px;
+  right: auto;
+}
+
+.stock-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #FFFFFF;
+  font-weight: 500;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   z-index: 1;
 }
 

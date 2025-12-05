@@ -71,8 +71,14 @@ class WebSocketManager {
           this.isConnected = true
           this.reconnectAttempts = 0
           this.onConnect()
-          // 订阅系统消息
-          this.subscribeToSystemMessages()
+          // 延迟订阅系统消息，确保 STOMP 客户端完全就绪
+          setTimeout(() => {
+            if (this.stompClient && this.stompClient.connected) {
+              this.subscribeToSystemMessages()
+            } else {
+              console.warn('STOMP 客户端未就绪，无法订阅系统消息')
+            }
+          }, 100)
           // 订阅聊天消息 (如果需要，可以在这里或在Chat页面中订阅)
           // this.subscribeChatMessages()
         },
@@ -110,24 +116,45 @@ class WebSocketManager {
    * 订阅系统消息
    */
   subscribeToSystemMessages() {
-    // 订阅系统消息队列（用户专属队列）
-    // Spring会自动将 /user/queue/system 路由到当前用户
-    const subscription = this.stompClient.subscribe('/user/queue/system', (message) => {
-      try {
-        const data = JSON.parse(message.body)
-        this.systemMessageHandlers.forEach(handler => {
-          try {
-            handler(data)
-          } catch (e) {
-            console.error('系统消息处理器执行失败:', e)
-          }
-        })
-      } catch (e) {
-        console.error('WebSocket系统消息解析失败:', e)
-      }
-    })
+    // 检查 STOMP 客户端是否已连接
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.warn('WebSocket未连接，无法订阅系统消息')
+      return
+    }
     
-    this.subscriptions.push(subscription)
+    try {
+      // 订阅系统消息队列（用户专属队列）
+      // Spring会自动将 /user/queue/system 路由到当前用户
+      const subscription = this.stompClient.subscribe('/user/queue/system', (message) => {
+        try {
+          const data = JSON.parse(message.body)
+          this.systemMessageHandlers.forEach(handler => {
+            try {
+              handler(data)
+            } catch (e) {
+              console.error('系统消息处理器执行失败:', e)
+            }
+          })
+        } catch (e) {
+          console.error('WebSocket系统消息解析失败:', e)
+        }
+      })
+      
+      this.subscriptions.push(subscription)
+      console.log('系统消息订阅成功')
+    } catch (error) {
+      console.error('订阅系统消息失败:', error)
+      // 如果订阅失败，尝试延迟重试
+      setTimeout(() => {
+        if (this.stompClient && this.stompClient.connected) {
+          try {
+            this.subscribeToSystemMessages()
+          } catch (e) {
+            console.error('重试订阅系统消息失败:', e)
+          }
+        }
+      }, 500)
+    }
   }
   
   /**
