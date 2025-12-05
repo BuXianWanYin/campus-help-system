@@ -21,14 +21,14 @@
                 <el-tag type="success">已认证</el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="接单权限">
-                <el-tag v-if="userInfo.canAcceptTask === 1" type="success">可接单</el-tag>
-                <el-tag v-else type="info">不可接单</el-tag>
+                <el-tag v-if="userInfo.canAcceptTask === 1" type="success">可回答问题</el-tag>
+                <el-tag v-else type="info">不可回答问题</el-tag>
               </el-descriptions-item>
             </el-descriptions>
             <div style="margin-top: 20px;">
               <p style="color: var(--color-text-regular); font-size: 14px;">
-                您现在可以发布闲置商品和跑腿任务<br>
-                您现在可以参与商品交易和接单跑腿
+                您现在可以发布闲置商品和学习问题<br>
+                您现在可以参与商品交易和回答问题
               </p>
             </div>
           </template>
@@ -117,8 +117,8 @@
             <div>
               <p style="font-weight: 500; margin-bottom: 8px;">实名认证说明</p>
               <ul style="margin: 0; padding-left: 20px;">
-                <li>实名认证后可以发布闲置商品和跑腿任务</li>
-                <li>实名认证后可以参与商品交易和接单跑腿</li>
+                <li>实名认证后可以发布闲置商品和学习问题</li>
+                <li>实名认证后可以参与商品交易和回答问题</li>
                 <li>未认证用户只能使用失物招领功能</li>
                 <li>认证信息仅用于平台安全管理，不会泄露给其他用户</li>
                 <li>提交后，管理员将在1-3个工作日内完成审核</li>

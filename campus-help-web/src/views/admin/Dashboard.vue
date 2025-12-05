@@ -206,7 +206,7 @@ const initCharts = () => {
             data: [
               { value: 30, name: '失物招领', itemStyle: { color: '#1E88E5' } },
               { value: 40, name: '闲置交易', itemStyle: { color: '#4CAF50' } },
-              { value: 20, name: '跑腿服务', itemStyle: { color: '#FF9800' } },
+              { value: 20, name: '学习互助', itemStyle: { color: '#FF9800' } },
               { value: 5, name: '校园活动', itemStyle: { color: '#9C27B0' } },
               { value: 5, name: '志愿互助', itemStyle: { color: '#F44336' } }
             ]
@@ -224,7 +224,7 @@ const initCharts = () => {
           trigger: 'axis'
         },
         legend: {
-          data: ['失物招领', '闲置交易', '跑腿服务'],
+          data: ['失物招领', '闲置交易', '学习互助'],
           top: 10
         },
         grid: {
@@ -261,7 +261,7 @@ const initCharts = () => {
             areaStyle: { opacity: 0.3 }
           },
           {
-            name: '跑腿服务',
+            name: '学习互助',
             type: 'line',
             stack: 'Total',
             smooth: true,

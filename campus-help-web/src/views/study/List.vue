@@ -1,6 +1,6 @@
 <template>
   <div class="list-container">
-    <h1 class="page-title">跑腿服务</h1>
+    <h1 class="page-title">学习互助</h1>
     <p class="page-desc">功能开发中，敬请期待...</p>
   </div>
 </template>

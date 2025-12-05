@@ -17,7 +17,7 @@
             <el-menu-item index="home">首页</el-menu-item>
             <el-menu-item index="lost-found">失物招领</el-menu-item>
             <el-menu-item index="goods">闲置交易</el-menu-item>
-            <el-menu-item index="task">跑腿服务</el-menu-item>
+            <el-menu-item index="study">学习互助</el-menu-item>
           </el-menu>
         </div>
         
@@ -124,7 +124,7 @@
               </div>
               <div class="stat-item">
                 <div class="stat-value">800+</div>
-                <div class="stat-label">跑腿服务</div>
+                <div class="stat-label">学习互助</div>
               </div>
             </div>
           </div>
@@ -289,59 +289,59 @@
       
       </section>
 
-      <!-- 跑腿服务模块 -->
-      <section class="task-section">
+      <!-- 学习互助模块 -->
+      <section class="study-section">
         <div class="section-header">
-          <h2 class="section-title">跑腿服务</h2>
+          <h2 class="section-title">学习互助</h2>
           <div class="section-actions">
-            <el-button type="primary" @click="handlePublish">发布任务</el-button>
-            <el-link type="primary" :underline="false" @click="goToRoute('/task/list')">查看更多</el-link>
+            <el-button type="primary" @click="handlePublish">发布问题</el-button>
+            <el-link type="primary" :underline="false" @click="goToRoute('/study/list')">查看更多</el-link>
           </div>
         </div>
 
-        <!-- 任务分类 -->
-        <div class="task-categories">
+        <!-- 问题分类 -->
+        <div class="study-categories">
           <el-tag
-            v-for="category in taskCategories"
+            v-for="category in studyCategories"
             :key="category.id"
-            :type="taskActiveCategory === category.id ? 'primary' : 'info'"
-            class="task-category-tag"
-            @click="taskActiveCategory = category.id"
+            :type="studyActiveCategory === category.id ? 'primary' : 'info'"
+            class="study-category-tag"
+            @click="studyActiveCategory = category.id"
           >
             {{ category.name }}
           </el-tag>
         </div>
 
-        <!-- 任务列表 -->
-        <div class="task-list">
-          <div v-for="task in taskList" :key="task.id" class="task-card">
-            <div class="task-icon" :class="task.colorClass">
-              <el-icon><component :is="task.icon" /></el-icon>
+        <!-- 问题列表 -->
+        <div class="study-list">
+          <div v-for="question in studyList" :key="question.id" class="study-card">
+            <div class="study-icon" :class="question.colorClass">
+              <el-icon><component :is="question.icon" /></el-icon>
             </div>
-            <div class="task-content">
-              <div class="task-header">
-                <h3 class="task-title">{{ task.title }}</h3>
-                <span class="task-reward">¥{{ task.reward }}</span>
+            <div class="study-content">
+              <div class="study-header">
+                <h3 class="study-title">{{ question.title }}</h3>
+                <span class="study-reward" v-if="question.reward">¥{{ question.reward }}</span>
               </div>
-              <p class="task-desc">{{ task.description }}</p>
-              <div class="task-meta">
+              <p class="study-desc">{{ question.description }}</p>
+              <div class="study-meta">
                 <span class="meta-item">
-                  <el-icon><Location /></el-icon>
-                  {{ task.route }}
+                  <el-icon><Collection /></el-icon>
+                  {{ question.category }}
                 </span>
                 <span class="meta-item">
                   <el-icon><Clock /></el-icon>
-                  {{ task.deadline }}
+                  {{ question.createTime }}
                 </span>
               </div>
-              <div class="task-footer">
-                <div class="task-user">
-                  <el-avatar :size="24" :src="getAvatarUrl(task.userAvatar)">{{ task.userName.charAt(0) }}</el-avatar>
-                  <span>{{ task.userName }}</span>
+              <div class="study-footer">
+                <div class="study-user">
+                  <el-avatar :size="24" :src="getAvatarUrl(question.userAvatar)">{{ question.userName.charAt(0) }}</el-avatar>
+                  <span>{{ question.userName }}</span>
                 </div>
-                <div class="task-actions">
-                  <el-button type="primary" size="small" text @click.stop="goToDetail('task', task.id)">查看详情</el-button>
-                  <el-button type="warning" size="small" @click.stop="handleAcceptTask(task)">立即接取</el-button>
+                <div class="study-actions">
+                  <el-button type="primary" size="small" text @click.stop="goToDetail('study', question.id)">查看详情</el-button>
+                  <el-button type="success" size="small" @click.stop="handleAnswerQuestion(question)">立即回答</el-button>
                 </div>
               </div>
             </div>
@@ -380,7 +380,7 @@
         <el-icon><ShoppingBag /></el-icon>
         <span>闲置</span>
       </div>
-      <div class="nav-item" :class="{ active: activeMenu === 'task' }" @click="goToRoute('/task/list')">
+      <div class="nav-item" :class="{ active: activeMenu === 'study' }" @click="goToRoute('/study/list')">
         <el-icon><User /></el-icon>
         <span>我的</span>
       </div>
@@ -446,7 +446,7 @@ import { debounce } from '@/utils'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, ArrowDown, User, Setting, SwitchButton, Menu, Tools,
-  HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star,
+  HomeFilled, Plus, ShoppingBag, Document, Message, Bell, ChatDotRound, Check, Star, Collection,
   Location, Clock, View, Folder, Star as LightbulbIcon, Link, Box as ComputerIcon, Document as NotebookIcon, ShoppingBag as TShirtIcon, Star as BasketballIcon,
   Message as HeadsetIcon, Edit as EditPenIcon, More, ShoppingCart, ShoppingBag as ForkSpoonIcon, Link as ConnectionIcon, User as UsersIcon, View as TrendChartsIcon,
   Close, ArrowUp, ArrowDown as ArrowDownIcon, Box, InfoFilled, Warning
@@ -481,7 +481,7 @@ const loadingNotifications = ref(false)
 const featureModules = ref([
   { id: 1, title: '失物招领', icon: markRaw(Search), path: '/lost-found/list', colorClass: 'icon-blue', description: '发布失物信息，寻找丢失物品' },
   { id: 2, title: '闲置交易', icon: markRaw(ShoppingBag), path: '/goods/list', colorClass: 'icon-green', description: '买卖闲置物品，让资源再利用' },
-  { id: 3, title: '跑腿服务', icon: markRaw(TrendChartsIcon), path: '/task/list', colorClass: 'icon-orange', description: '发布或接取任务，互帮互助' }
+  { id: 3, title: '学习互助', icon: markRaw(TrendChartsIcon), path: '/study/list', colorClass: 'icon-orange', description: '发布学习问题，互帮互助' }
 ])
 
 // 失物招领
@@ -507,28 +507,28 @@ const goodsList = ref([])
 const goodsLoading = ref(false)
 const negotiationPrice = ref({ current: 3999, offer: 3800, min: 3500 })
 
-// 跑腿服务
-const taskActiveCategory = ref('all')
-const taskCategories = ref([
+// 学习互助
+const studyActiveCategory = ref('all')
+const studyCategories = ref([
   { id: 'all', name: '全部' },
-  { id: 'express', name: '取快递' },
-  { id: 'food', name: '买饭' },
-  { id: 'file', name: '送文件' },
-  { id: 'queue', name: '代排队' },
-  { id: 'other', name: '其他' }
+  { id: 'MATH', name: '数学' },
+  { id: 'PHYSICS', name: '物理' },
+  { id: 'CHEMISTRY', name: '化学' },
+  { id: 'COMPUTER', name: '计算机' },
+  { id: 'ENGLISH', name: '英语' },
+  { id: 'OTHER', name: '其他' }
 ])
-const taskList = ref([
-  { id: 1, title: '取快递 - 顺丰快递', description: '快递单号：SF1234567890，放在南门快递点', route: '南门快递点 → 东区宿舍', deadline: '2025-07-20 18:00前', reward: 10, icon: markRaw(ShoppingCart), colorClass: 'icon-orange', userAvatar: '', userName: '周同学' },
-  { id: 2, title: '买饭 - 西区食堂', description: '一份红烧肉盖浇饭，不要辣，加一个煎蛋', route: '西区食堂 → 教学楼C301', deadline: '2025-07-20 12:00前', reward: 8, icon: markRaw(ForkSpoonIcon), colorClass: 'icon-orange', userAvatar: '', userName: '吴同学' },
-  { id: 3, title: '送文件 - 教务处', description: '将成绩单送到教务处张老师办公室，需要签字带回', route: '行政楼 → 教务处', deadline: '2025-07-20 16:00前', reward: 15, icon: markRaw(Document), colorClass: 'icon-orange', userAvatar: '', userName: '郑同学' }
+const studyList = ref([
+  { id: 1, title: '高等数学 - 求极限问题', description: '如何计算这个极限：lim(x→0) (sin x)/x', category: '数学', createTime: '2025-07-20', reward: 20, icon: markRaw(EditPenIcon), colorClass: 'icon-orange', userAvatar: '', userName: '张同学' },
+  { id: 2, title: '数据结构 - 二叉树遍历', description: '请问二叉树的前序、中序、后序遍历有什么区别？', category: '计算机', createTime: '2025-07-20', reward: 15, icon: markRaw(ComputerIcon), colorClass: 'icon-orange', userAvatar: '', userName: '李同学' },
+  { id: 3, title: '英语翻译 - 学术论文', description: '需要翻译一段学术论文摘要，关于人工智能的', category: '英语', createTime: '2025-07-20', reward: 30, icon: markRaw(NotebookIcon), colorClass: 'icon-orange', userAvatar: '', userName: '王同学' }
 ])
-const taskForm = ref({
-  type: '',
+const studyForm = ref({
+  category: '',
+  title: '',
   description: '',
-  reward: 10,
-  startLocation: '',
-  endLocation: '',
-  deadline: null
+  reward: 0,
+  images: []
 })
 
 
@@ -544,7 +544,7 @@ const handleMenuSelect = (index) => {
     'home': '/home',
     'lost-found': '/lost-found/list',
     'goods': '/goods/list',
-    'task': '/task/list'
+    'study': '/study/list'
   }
   if (routeMap[index]) {
     router.push(routeMap[index])
@@ -749,7 +749,7 @@ const getMessageIcon = (type) => {
     'ADMIN_AUDIT_REQUIRED': markRaw(Warning),
     'ADMIN_VERIFICATION_REQUIRED': markRaw(Warning),
     'ORDER_STATUS': markRaw(ShoppingBag),
-    'TASK_STATUS': markRaw(TrendChartsIcon),
+    'STUDY_STATUS': markRaw(TrendChartsIcon),
     'ANNOUNCEMENT': markRaw(Bell)
   }
   return iconMap[type] || markRaw(InfoFilled)
@@ -779,8 +779,8 @@ const updateActiveMenu = () => {
     activeMenu.value = 'lost-found'
   } else if (path.startsWith('/goods')) {
     activeMenu.value = 'goods'
-  } else if (path.startsWith('/task')) {
-    activeMenu.value = 'task'
+  } else if (path.startsWith('/study')) {
+    activeMenu.value = 'study'
   } else if (path.startsWith('/user')) {
     // 个人中心相关页面不激活任何菜单项
     activeMenu.value = ''
@@ -799,7 +799,7 @@ const keepAliveComponents = computed(() => {
     'Home',              // 首页
     'LostFoundList',     // 失物招领列表
     'GoodsList',         // 闲置交易列表
-    'TaskList',          // 跑腿服务列表
+    'StudyList',          // 学习互助列表
     'UserMessages',      // 消息通知（需要缓存以保持滚动位置）
     'UserPosts',         // 我的发布
     'UserProfile',       // 个人中心（可选，根据需求）
@@ -1085,26 +1085,25 @@ const handleSendOffer = () => {
   ElMessage.success('报价已发送')
 }
 
-// 接取任务
-const handleAcceptTask = (task) => {
-  ElMessage.success(`已接取任务：${task.title}`)
+// 回答问题
+const handleAnswerQuestion = (question) => {
+  ElMessage.success(`已开始回答：${question.title}`)
 }
 
-// 任务发布
-const handlePreviewTask = () => {
+// 问题发布
+const handlePreviewQuestion = () => {
   ElMessage.info('预览功能开发中')
 }
 
-const handleSubmitTask = () => {
-  ElMessage.success('任务发布成功')
+const handleSubmitQuestion = () => {
+  ElMessage.success('问题发布成功')
   // 重置表单
-  taskForm.value = {
-    type: '',
+  studyForm.value = {
+    category: '',
+    title: '',
     description: '',
-    reward: 10,
-    startLocation: '',
-    endLocation: '',
-    deadline: null
+    reward: 0,
+    images: []
   }
 }
 
@@ -1289,8 +1288,8 @@ onUnmounted(() => {
   width: 100% !important;
 }
 
-/* 确保跑腿服务菜单项始终显示 */
-:deep(.el-menu--horizontal .el-menu-item[index="task"]) {
+/* 确保学习互助菜单项始终显示 */
+:deep(.el-menu--horizontal .el-menu-item[index="study"]) {
   display: inline-flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -2062,7 +2061,7 @@ onUnmounted(() => {
   margin-bottom: 48px;
 }
 
-.task-categories {
+.study-categories {
   background-color: var(--color-bg-white);
   border-radius: var(--radius-md);
   padding: var(--spacing-lg);
@@ -2074,19 +2073,19 @@ onUnmounted(() => {
   gap: var(--spacing-sm);
 }
 
-.task-category-tag {
+.study-category-tag {
   cursor: pointer;
   transition: all 0.3s;
 }
 
-.task-list {
+.study-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.task-card {
+.study-card {
   background-color: var(--color-bg-white);
   border-radius: var(--radius-md);
   padding: var(--content-padding);
@@ -2096,7 +2095,7 @@ onUnmounted(() => {
   gap: var(--spacing-lg);
 }
 
-.task-icon {
+.study-icon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -2106,42 +2105,42 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.task-icon.icon-orange {
+.study-icon.icon-orange {
   background-color: rgba(255, 152, 0, 0.1);
   color: var(--color-secondary);
 }
 
-.task-content {
+.study-content {
   flex: 1;
 }
 
-.task-header {
+.study-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
 }
 
-.task-title {
+.study-title {
   font-size: 16px;
   font-weight: 500;
   color: var(--color-text-primary);
   margin: 0;
 }
 
-.task-reward {
+.study-reward {
   font-size: 18px;
   font-weight: bold;
   color: var(--color-secondary);
 }
 
-.task-desc {
+.study-desc {
   font-size: 14px;
   color: var(--color-text-regular);
   margin: 0 0 var(--spacing-md) 0;
 }
 
-.task-meta {
+.study-meta {
   display: flex;
   gap: var(--spacing-lg);
   font-size: 12px;
@@ -2149,13 +2148,13 @@ onUnmounted(() => {
   margin-bottom: var(--spacing-lg);
 }
 
-.task-footer {
+.study-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.task-user {
+.study-user {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -2163,12 +2162,12 @@ onUnmounted(() => {
   color: var(--color-text-regular);
 }
 
-.task-actions {
+.study-actions {
   display: flex;
   gap: 8px;
 }
 
-.task-publish-card {
+.study-publish-card {
   background-color: var(--color-bg-white);
   border-radius: var(--radius-md);
   padding: var(--content-padding);
@@ -2429,7 +2428,7 @@ onUnmounted(() => {
     min-width: 70px; /* 设置最小宽度 */
   }
   
-  /* 确保所有菜单项都显示，包括跑腿服务 */
+  /* 确保所有菜单项都显示，包括学习互助 */
   .header-center :deep(.el-menu--horizontal) {
     overflow: visible !important;
   }

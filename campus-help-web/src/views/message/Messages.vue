@@ -348,7 +348,7 @@ const getMessageTypeClass = (type) => {
     'ADMIN_AUDIT_REQUIRED': 'type-warning',
     'ADMIN_VERIFICATION_REQUIRED': 'type-warning',
     'ORDER_STATUS': 'type-info',
-    'TASK_STATUS': 'type-warning',
+    'STUDY_STATUS': 'type-warning',
     'ANNOUNCEMENT': 'type-primary'
   }
   return typeMap[type] || 'type-default'
@@ -367,7 +367,7 @@ const getMessageIcon = (type) => {
     'ADMIN_AUDIT_REQUIRED': Warning,
     'ADMIN_VERIFICATION_REQUIRED': Warning,
     'ORDER_STATUS': ShoppingBag,
-    'TASK_STATUS': TrendCharts,
+    'STUDY_STATUS': TrendCharts,
     'ANNOUNCEMENT': Bell
   }
   return iconMap[type] || InfoFilled

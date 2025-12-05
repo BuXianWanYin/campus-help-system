@@ -286,7 +286,7 @@ const getMessageTypeClass = (type) => {
     'ADMIN_AUDIT_REQUIRED': 'type-warning',
     'ADMIN_VERIFICATION_REQUIRED': 'type-warning',
     'ORDER_STATUS': 'type-info',
-    'TASK_STATUS': 'type-warning',
+    'STUDY_STATUS': 'type-warning',
     'ANNOUNCEMENT': 'type-primary'
   }
   return typeMap[type] || 'type-default'
@@ -305,7 +305,7 @@ const getMessageIcon = (type) => {
     'ADMIN_AUDIT_REQUIRED': markRaw(Warning),
     'ADMIN_VERIFICATION_REQUIRED': markRaw(Warning),
     'ORDER_STATUS': markRaw(InfoFilled),
-    'TASK_STATUS': markRaw(Warning),
+    'STUDY_STATUS': markRaw(Warning),
     'ANNOUNCEMENT': markRaw(Bell)
   }
   return iconMap[type] || markRaw(InfoFilled)

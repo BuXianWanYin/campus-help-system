@@ -6,7 +6,7 @@ import request from '@/utils/request'
 export const searchHistoryApi = {
   /**
    * 获取搜索历史列表
-   * @param {String} moduleType 模块类型：LOST_FOUND-失物招领，GOODS-闲置交易，TASK-跑腿服务
+   * @param {String} moduleType 模块类型：LOST_FOUND-失物招领，GOODS-闲置交易，STUDY-学习互助
    * @param {Number} limit 限制数量
    * @returns {Promise} 搜索历史列表
    */

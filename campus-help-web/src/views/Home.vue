@@ -4,7 +4,7 @@
       <h1 class="welcome-title">欢迎使用{{ appConfig.title || '校园帮系统' }}</h1>
       <div class="welcome-content">
         <p class="welcome-greeting">您好，{{ userStore.nickname || userStore.email }}！</p>
-        <p class="welcome-desc">欢迎来到{{ appConfig.title || '校园帮系统' }}，这里可以帮您解决失物招领、闲置交易、跑腿服务等校园互助需求。</p>
+        <p class="welcome-desc">欢迎来到{{ appConfig.title || '校园帮系统' }}，这里可以帮您解决失物招领、闲置交易、学习互助等校园互助需求。</p>
       </div>
     </div>
     
@@ -23,12 +23,12 @@
         <div class="feature-title">闲置交易</div>
         <div class="feature-desc">买卖闲置物品<br/>让资源再利用</div>
       </div>
-      <div class="feature-card" @click="goToTask">
+      <div class="feature-card" @click="goToStudy">
         <div class="feature-icon">
           <el-icon :size="40"><Box /></el-icon>
         </div>
-        <div class="feature-title">跑腿服务</div>
-        <div class="feature-desc">发布或接取任务<br/>互帮互助</div>
+        <div class="feature-title">学习互助</div>
+        <div class="feature-desc">发布学习问题<br/>互帮互助</div>
       </div>
     </div>
   </div>
@@ -74,8 +74,8 @@ const goToGoods = () => {
   router.push('/goods/list')
 }
 
-const goToTask = () => {
-  router.push('/task/list')
+const goToStudy = () => {
+  router.push('/study/list')
 }
 </script>
 

@@ -147,11 +147,11 @@ const routes = [
         }
       },
       {
-        path: 'task/list',
-        name: 'TaskList',
-        component: () => import('../views/task/List.vue'),
+        path: 'study/list',
+        name: 'StudyList',
+        component: () => import('../views/study/List.vue'),
         meta: {
-          title: '跑腿服务',
+          title: '学习互助',
           requiresAuth: true
         }
       },

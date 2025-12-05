@@ -23,13 +23,13 @@
             <div class="feature-icon">
               <el-icon :size="40"><Box /></el-icon>
             </div>
-            <div class="feature-title">跑腿服务</div>
+            <div class="feature-title">学习互助</div>
             <div class="feature-desc">发布或接取任务<br/>互帮互助</div>
           </div>
         </div>
         <div class="promo-text">
           <h1>连接校园，互助共享</h1>
-          <p>失物招领、闲置交易、跑腿服务，一站式解决您的校园互助需求</p>
+          <p>失物招领、闲置交易、学习互助，一站式解决您的校园互助需求</p>
         </div>
       </div>
     </div>

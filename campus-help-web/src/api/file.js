@@ -7,7 +7,7 @@ export const fileApi = {
   /**
    * 上传文件
    * @param {File} file 文件对象
-   * @param {String} module 模块名称（common-通用，lost-found-失物招领，goods-闲置交易，task-跑腿服务等）
+   * @param {String} module 模块名称（common-通用，lost-found-失物招领，goods-闲置交易，study-学习互助等）
    * @returns {Promise} 上传结果
    */
   upload(file, module = 'common') {
