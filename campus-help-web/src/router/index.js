@@ -192,6 +192,24 @@ const routes = [
         }
       },
       {
+        path: 'study/my-questions',
+        name: 'MyQuestions',
+        component: () => import('../views/study/MyQuestions.vue'),
+        meta: {
+          title: '我的问题',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'study/my-answers',
+        name: 'MyAnswers',
+        component: () => import('../views/study/MyAnswers.vue'),
+        meta: {
+          title: '我的回答',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'user/profile',
         name: 'UserProfile',
         component: () => import('../views/profile/Profile.vue'),

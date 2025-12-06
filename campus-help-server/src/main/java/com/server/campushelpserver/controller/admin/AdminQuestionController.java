@@ -91,5 +91,31 @@ public class AdminQuestionController {
         questionService.offshelfQuestion(questionId, reason.trim(), adminId);
         return Result.success("下架成功", null);
     }
+    
+    @Operation(summary = "获取问题下的所有回答", description = "获取指定问题下的所有回答列表（用于回答管理）")
+    @GetMapping("/{questionId}/answers")
+    public Result<java.util.List<com.server.campushelpserver.entity.study.StudyAnswer>> getAnswersByQuestionId(
+            @Parameter(description = "问题ID") @PathVariable Long questionId) {
+        java.util.List<com.server.campushelpserver.entity.study.StudyAnswer> answers = questionService.getAnswersByQuestionId(questionId);
+        return Result.success("查询成功", answers);
+    }
+    
+    @Operation(summary = "审核回答", description = "审核学习问题的回答（通过或拒绝）")
+    @PostMapping("/answer/{answerId}/audit")
+    public Result<Void> auditAnswer(
+            @Parameter(description = "回答ID") @PathVariable Long answerId,
+            @Parameter(description = "审核信息") @Validated @RequestBody QuestionAuditDTO dto) {
+        Long adminId = getCurrentAdminId();
+        
+        // 验证拒绝原因
+        if (!dto.getApproved() && (dto.getReason() == null || dto.getReason().trim().isEmpty())) {
+            throw new BusinessException("拒绝时必须填写拒绝原因");
+        }
+        
+        questionService.auditAnswer(answerId, dto.getApproved(), dto.getReason(), adminId);
+        
+        String message = dto.getApproved() ? "审核通过" : "审核拒绝";
+        return Result.success(message, null);
+    }
 }
 

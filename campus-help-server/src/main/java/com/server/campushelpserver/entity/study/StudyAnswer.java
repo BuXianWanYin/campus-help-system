@@ -52,6 +52,27 @@ public class StudyAnswer implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime acceptTime;
     
+    @TableField("audit_status")
+    @Schema(description = "审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝")
+    private String auditStatus;
+    
+    @TableField("audit_reason")
+    @Schema(description = "审核拒绝原因")
+    private String auditReason;
+    
+    @TableField("audit_time")
+    @Schema(description = "审核时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime auditTime;
+    
+    @TableField("audit_admin_id")
+    @Schema(description = "审核管理员ID")
+    private Long auditAdminId;
+    
+    @TableField("audit_trigger_reason")
+    @Schema(description = "触发人工审核原因（敏感词、发布频繁等）")
+    private String auditTriggerReason;
+    
     @TableField("like_count")
     @Schema(description = "点赞数量（可选功能）")
     private Integer likeCount;

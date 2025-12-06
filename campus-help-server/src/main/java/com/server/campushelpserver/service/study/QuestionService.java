@@ -113,5 +113,21 @@ public interface QuestionService extends IService<StudyQuestion> {
      */
     void offshelfQuestion(Long questionId, String reason, Long adminId);
     
+    /**
+     * 获取问题下的所有回答列表（管理员）
+     * @param questionId 问题ID
+     * @return 回答列表
+     */
+    java.util.List<StudyAnswer> getAnswersByQuestionId(Long questionId);
+    
+    /**
+     * 管理员审核回答
+     * @param answerId 回答ID
+     * @param approved 审核结果：true-通过，false-拒绝
+     * @param reason 拒绝原因（拒绝时必填）
+     * @param adminId 管理员ID
+     */
+    void auditAnswer(Long answerId, Boolean approved, String reason, Long adminId);
+    
 }
 

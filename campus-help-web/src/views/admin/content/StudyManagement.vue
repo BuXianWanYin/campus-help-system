@@ -94,7 +94,7 @@
           {{ formatDate(row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" min-width="180" fixed="right">
+      <el-table-column label="操作" min-width="280" fixed="right">
         <template #default="{ row }">
           <el-button
             type="success"
@@ -103,6 +103,14 @@
             @click="handleViewDetail(row)"
           >
             详情
+          </el-button>
+          <el-button
+            type="primary"
+            size="small"
+            :icon="ChatDotRound"
+            @click="handleManageAnswers(row)"
+          >
+            回答管理
           </el-button>
           <el-button
             v-if="row.status !== 'ADMIN_OFFSHELF' && row.status !== 'SOLVED' && row.status !== 'CANCELLED'"
@@ -177,13 +185,116 @@
         <el-button @click="detailDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- 回答管理对话框 -->
+    <el-dialog
+      v-model="answerDialogVisible"
+      :title="`回答管理 - ${currentQuestion?.title || ''}`"
+      width="1200px"
+      class="answer-dialog"
+    >
+      <div v-loading="answerLoading">
+        <div v-if="answerList.length === 0 && !answerLoading" class="empty-state">
+          <el-empty description="暂无回答" />
+        </div>
+        <el-table v-else :data="answerList" stripe style="width: 100%">
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column label="回答者" width="150">
+            <template #default="{ row }">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <el-avatar :size="32" :src="getAvatarUrl(row.user?.avatar)">
+                  {{ row.user?.nickname?.charAt(0) || 'U' }}
+                </el-avatar>
+                <span>{{ row.user?.nickname || '未知用户' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="content" label="回答内容" min-width="300" show-overflow-tooltip />
+          <el-table-column label="审核状态" width="120">
+            <template #default="{ row }">
+              <el-tag v-if="row.auditStatus === 'PENDING'" type="warning" size="small">待审核</el-tag>
+              <el-tag v-else-if="row.auditStatus === 'APPROVED'" type="success" size="small">已通过</el-tag>
+              <el-tag v-else-if="row.auditStatus === 'REJECTED'" type="danger" size="small">已拒绝</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="是否采纳" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="row.isAccepted === 1" type="success" size="small">已采纳</el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="回答时间" width="160">
+            <template #default="{ row }">
+              {{ formatDate(row.createTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.auditStatus === 'PENDING'"
+                type="success"
+                size="small"
+                :icon="Check"
+                @click="handleAuditAnswer(row, true)"
+              >
+                通过
+              </el-button>
+              <el-button
+                v-if="row.auditStatus === 'PENDING'"
+                type="danger"
+                size="small"
+                :icon="Close"
+                @click="handleAuditAnswer(row, false)"
+              >
+                拒绝
+              </el-button>
+              <el-tag v-else-if="row.auditStatus === 'APPROVED'" type="success" size="small">已审核</el-tag>
+              <el-tag v-else-if="row.auditStatus === 'REJECTED'" type="danger" size="small">已拒绝</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="answerDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 审核回答对话框 -->
+    <el-dialog
+      v-model="auditDialogVisible"
+      :title="auditForm.approved ? '审核通过' : '审核拒绝'"
+      width="500px"
+    >
+      <el-form :model="auditForm" label-width="100px">
+        <el-form-item label="审核结果">
+          <el-radio-group v-model="auditForm.approved">
+            <el-radio :label="true">通过</el-radio>
+            <el-radio :label="false">拒绝</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="!auditForm.approved" label="拒绝原因" required>
+          <el-input
+            v-model="auditForm.reason"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入拒绝原因"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="auditDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAuditAnswer">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View } from '@element-plus/icons-vue'
+import { View, ChatDotRound, Check, Close } from '@element-plus/icons-vue'
 import { questionApi, adminQuestionApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 
@@ -192,6 +303,18 @@ const questionList = ref([])
 const detailDialogVisible = ref(false)
 const currentItem = ref(null)
 const itemImages = ref([])
+
+// 回答管理相关
+const answerDialogVisible = ref(false)
+const currentQuestion = ref(null)
+const answerList = ref([])
+const answerLoading = ref(false)
+const auditDialogVisible = ref(false)
+const currentAnswer = ref(null)
+const auditForm = reactive({
+  approved: true,
+  reason: ''
+})
 
 const filters = reactive({
   category: '',
@@ -264,6 +387,62 @@ const handleViewDetail = (row) => {
     itemImages.value = []
   }
   detailDialogVisible.value = true
+}
+
+// 回答管理
+const handleManageAnswers = async (row) => {
+  currentQuestion.value = row
+  answerDialogVisible.value = true
+  answerList.value = []
+  answerLoading.value = true
+  
+  try {
+    const response = await adminQuestionApi.getAnswersByQuestionId(row.id)
+    if (response.code === 200) {
+      answerList.value = response.data || []
+    } else {
+      ElMessage.error(response.message || '获取回答列表失败')
+    }
+  } catch (error) {
+    console.error('获取回答列表失败:', error)
+    ElMessage.error('获取回答列表失败')
+  } finally {
+    answerLoading.value = false
+  }
+}
+
+// 审核回答
+const handleAuditAnswer = (row, approved) => {
+  currentAnswer.value = row
+  auditForm.approved = approved
+  auditForm.reason = ''
+  auditDialogVisible.value = true
+}
+
+// 确认审核回答
+const confirmAuditAnswer = async () => {
+  if (!auditForm.approved && (!auditForm.reason || auditForm.reason.trim().length === 0)) {
+    ElMessage.warning('拒绝时必须填写拒绝原因')
+    return
+  }
+  
+  try {
+    const response = await adminQuestionApi.auditAnswer(currentAnswer.value.id, {
+      approved: auditForm.approved,
+      reason: auditForm.reason.trim()
+    })
+    if (response.code === 200) {
+      ElMessage.success(auditForm.approved ? '审核通过' : '审核拒绝')
+      auditDialogVisible.value = false
+      // 刷新回答列表
+      handleManageAnswers(currentQuestion.value)
+    } else {
+      ElMessage.error(response.message || '审核失败')
+    }
+  } catch (error) {
+    console.error('审核失败:', error)
+    ElMessage.error('审核失败')
+  }
 }
 
 // 下架

@@ -290,11 +290,30 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             studyQuestionMapper.incrementViewCount(questionId);
         }
         
-        // 4. 查询回答列表
+        // 4. 查询回答列表（普通用户只能看到已审核通过的回答，管理员可以看到所有）
         LambdaQueryWrapper<StudyAnswer> answerWrapper = new LambdaQueryWrapper<>();
         answerWrapper.eq(StudyAnswer::getQuestionId, questionId)
-                     .eq(StudyAnswer::getDeleteFlag, 0)
-                     .orderByDesc(StudyAnswer::getIsAccepted) // 已采纳的回答在前
+                     .eq(StudyAnswer::getDeleteFlag, 0);
+        
+        // 检查是否是管理员
+        boolean isAdmin = false;
+        if (userId != null) {
+            try {
+                User currentUser = userMapper.selectById(userId);
+                if (currentUser != null && "ADMIN".equals(currentUser.getRole())) {
+                    isAdmin = true;
+                }
+            } catch (Exception e) {
+                // 获取用户信息失败，按普通用户处理
+            }
+        }
+        
+        // 普通用户只能看到已审核通过的回答
+        if (!isAdmin) {
+            answerWrapper.eq(StudyAnswer::getAuditStatus, "APPROVED");
+        }
+        
+        answerWrapper.orderByDesc(StudyAnswer::getIsAccepted) // 已采纳的回答在前
                      .orderByDesc(StudyAnswer::getCreateTime); // 按时间倒序
         
         List<StudyAnswer> answers = studyAnswerMapper.selectList(answerWrapper);
@@ -352,9 +371,6 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         
         // 5. 敏感词检测
         SensitiveWordCheckResult checkResult = sensitiveWordService.check(dto.getContent());
-        if (!checkResult.isPass() && !checkResult.isNeedManualReview()) {
-            throw new BusinessException(checkResult.getMessage());
-        }
         
         // 6. 创建回答
         StudyAnswer answer = new StudyAnswer();
@@ -380,30 +396,63 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         answer.setCreateTime(LocalDateTime.now());
         answer.setUpdateTime(LocalDateTime.now());
         
-        // 7. 保存回答
+        // 7. 判断审核状态（类似问题的审核机制）
+        if (!checkResult.isPass() && !checkResult.isNeedManualReview()) {
+            // 包含严重敏感词，自动拒绝
+            throw new BusinessException(checkResult.getMessage());
+        } else if (checkResult.isPass()) {
+            // 自动审核通过
+            answer.setAuditStatus("APPROVED");
+            answer.setAuditTime(LocalDateTime.now());
+        } else {
+            // 转人工审核
+            answer.setAuditStatus("PENDING");
+            StringBuilder reason = new StringBuilder();
+            if (!checkResult.isPass()) {
+                reason.append("包含敏感词；");
+            }
+            answer.setAuditTriggerReason(reason.toString());
+        }
+        
+        // 8. 保存回答
         studyAnswerMapper.insert(answer);
         
-        // 8. 更新问题的回答数量和最后回答时间
-        question.setAnswerCount((question.getAnswerCount() == null ? 0 : question.getAnswerCount()) + 1);
-        question.setLastAnswerTime(LocalDateTime.now());
-        if ("PENDING_ANSWER".equals(question.getStatus())) {
-            question.setStatus("ANSWERED");
-        }
-        question.setUpdateTime(LocalDateTime.now());
-        studyQuestionMapper.updateById(question);
-        
-        // 9. 发送系统消息通知问题发布者
-        try {
-            systemMessageService.sendMessage(
-                question.getUserId(),
-                "QUESTION_ANSWERED",
-                "您的问题有新回答",
-                "您的问题《" + question.getTitle() + "》收到了新的回答",
-                "STUDY_QUESTION",
-                questionId
-            );
-        } catch (Exception e) {
-            System.err.println("发送系统消息失败: " + e.getMessage());
+        // 9. 如果审核通过，更新问题的回答数量和最后回答时间
+        if ("APPROVED".equals(answer.getAuditStatus())) {
+            question.setAnswerCount((question.getAnswerCount() == null ? 0 : question.getAnswerCount()) + 1);
+            question.setLastAnswerTime(LocalDateTime.now());
+            if ("PENDING_ANSWER".equals(question.getStatus())) {
+                question.setStatus("ANSWERED");
+            }
+            question.setUpdateTime(LocalDateTime.now());
+            studyQuestionMapper.updateById(question);
+            
+            // 10. 发送系统消息通知问题发布者
+            try {
+                systemMessageService.sendMessage(
+                    question.getUserId(),
+                    "QUESTION_ANSWERED",
+                    "您的问题有新回答",
+                    "您的问题《" + question.getTitle() + "》收到了新的回答",
+                    "STUDY_QUESTION",
+                    questionId
+                );
+            } catch (Exception e) {
+                System.err.println("发送系统消息失败: " + e.getMessage());
+            }
+        } else {
+            // 11. 如果需要人工审核，发送消息给所有管理员
+            try {
+                systemMessageService.sendMessageToAllAdmins(
+                    "ADMIN_AUDIT_REQUIRED",
+                    "新的回答待审核",
+                    "问题《" + question.getTitle() + "》收到了新的回答，需要审核，触发原因：" + answer.getAuditTriggerReason(),
+                    "STUDY_ANSWER",
+                    answer.getId()
+                );
+            } catch (Exception e) {
+                System.err.println("发送管理员审核通知失败: " + e.getMessage());
+            }
         }
         
         // 10. 异步发送邮件通知给问题发布者
@@ -831,6 +880,95 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
                 simpleUser.setNickname(user.getNickname());
                 simpleUser.setAvatar(user.getAvatar());
                 answer.setUser(simpleUser);
+            }
+        }
+    }
+    
+    @Override
+    public java.util.List<StudyAnswer> getAnswersByQuestionId(Long questionId) {
+        LambdaQueryWrapper<StudyAnswer> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StudyAnswer::getQuestionId, questionId)
+               .eq(StudyAnswer::getDeleteFlag, 0)
+               .orderByDesc(StudyAnswer::getIsAccepted)
+               .orderByDesc(StudyAnswer::getCreateTime);
+        
+        java.util.List<StudyAnswer> answers = studyAnswerMapper.selectList(wrapper);
+        
+        // 填充用户信息
+        if (answers != null && !answers.isEmpty()) {
+            for (StudyAnswer answer : answers) {
+                fillAnswerUserInfo(answer);
+            }
+        }
+        
+        return answers;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditAnswer(Long answerId, Boolean approved, String reason, Long adminId) {
+        // 1. 查询回答
+        StudyAnswer answer = studyAnswerMapper.selectById(answerId);
+        if (answer == null || answer.getDeleteFlag() == 1) {
+            throw new BusinessException("回答不存在");
+        }
+        
+        // 2. 验证审核状态
+        if (!"PENDING".equals(answer.getAuditStatus())) {
+            throw new BusinessException("该回答已审核，无需重复审核");
+        }
+        
+        // 3. 更新审核结果
+        answer.setAuditStatus(approved ? "APPROVED" : "REJECTED");
+        answer.setAuditTime(LocalDateTime.now());
+        answer.setAuditAdminId(adminId);
+        if (!approved) {
+            answer.setAuditReason(reason);
+        }
+        answer.setUpdateTime(LocalDateTime.now());
+        studyAnswerMapper.updateById(answer);
+        
+        // 4. 如果审核通过，更新问题的回答数量和最后回答时间
+        if (approved) {
+            StudyQuestion question = studyQuestionMapper.selectById(answer.getQuestionId());
+            if (question != null) {
+                question.setAnswerCount((question.getAnswerCount() == null ? 0 : question.getAnswerCount()) + 1);
+                question.setLastAnswerTime(LocalDateTime.now());
+                if ("PENDING_ANSWER".equals(question.getStatus())) {
+                    question.setStatus("ANSWERED");
+                }
+                question.setUpdateTime(LocalDateTime.now());
+                studyQuestionMapper.updateById(question);
+                
+                // 5. 发送系统消息通知问题发布者
+                try {
+                    systemMessageService.sendMessage(
+                        question.getUserId(),
+                        "QUESTION_ANSWERED",
+                        "您的问题有新回答",
+                        "您的问题《" + question.getTitle() + "》收到了新的回答",
+                        "STUDY_QUESTION",
+                        question.getId()
+                    );
+                } catch (Exception e) {
+                    System.err.println("发送系统消息失败: " + e.getMessage());
+                }
+            }
+        } else {
+            // 6. 如果审核拒绝，发送系统消息通知回答者
+            try {
+                StudyQuestion question = studyQuestionMapper.selectById(answer.getQuestionId());
+                String questionTitle = question != null ? question.getTitle() : "未知问题";
+                systemMessageService.sendMessage(
+                    answer.getUserId(),
+                    "ANSWER_REJECTED",
+                    "您的回答审核未通过",
+                    "您对问题《" + questionTitle + "》的回答审核未通过，原因：" + reason,
+                    "STUDY_ANSWER",
+                    answerId
+                );
+            } catch (Exception e) {
+                System.err.println("发送系统消息失败: " + e.getMessage());
             }
         }
     }

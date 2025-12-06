@@ -122,6 +122,25 @@ export const adminQuestionApi = {
     return request.post(`/admin/question/${questionId}/offshelf`, null, {
       params: { reason }
     })
+  },
+  
+  /**
+   * 获取问题下的所有回答
+   * @param {Number} questionId 问题ID
+   * @returns {Promise} 回答列表
+   */
+  getAnswersByQuestionId(questionId) {
+    return request.get(`/admin/question/${questionId}/answers`)
+  },
+  
+  /**
+   * 审核回答
+   * @param {Number} answerId 回答ID
+   * @param {Object} data 审核信息（approved: true/false, reason: 拒绝原因）
+   * @returns {Promise} 审核结果
+   */
+  auditAnswer(answerId, data) {
+    return request.post(`/admin/question/answer/${answerId}/audit`, data)
   }
 }
 
