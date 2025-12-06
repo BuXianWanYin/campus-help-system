@@ -317,7 +317,7 @@ const currentItem = ref(null)
 const itemImages = ref([])
 
 const filters = reactive({
-  auditStatus: 'ALL', // 默认显示全部
+  auditStatus: 'PENDING', // 默认显示待审核
   type: '',
   category: '',
   location: '',
@@ -335,7 +335,7 @@ const auditForm = reactive({
   auditReason: ''
 })
 
-// 获取待审核列表
+// 获取审核列表
 const fetchLostFoundList = async () => {
   loading.value = true
   try {
@@ -349,8 +349,17 @@ const fetchLostFoundList = async () => {
       keyword: filters.keyword || undefined
     })
     if (response.code === 200) {
-      lostFoundList.value = response.data.records || []
+      const records = response.data.records || []
+      lostFoundList.value = records
       pagination.total = response.data.total || 0
+      
+      // 如果当前筛选的是待审核，但没有数据，自动切换到全部
+      if (filters.auditStatus === 'PENDING' && records.length === 0 && pagination.current === 1) {
+        filters.auditStatus = 'ALL'
+        // 重新获取全部数据
+        fetchLostFoundList()
+        return
+      }
     }
   } catch (error) {
     ElMessage.error(error.message || '获取列表失败')
@@ -431,7 +440,7 @@ const handleFilter = () => {
 
 // 重置
 const handleReset = () => {
-  filters.auditStatus = 'ALL'
+  filters.auditStatus = 'PENDING'
   filters.type = ''
   filters.category = ''
   filters.location = ''

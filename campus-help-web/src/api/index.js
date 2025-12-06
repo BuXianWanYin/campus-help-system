@@ -21,6 +21,9 @@ export { messageApi, chatApi } from './message'
 // 失物招领相关 API
 export { lostFoundApi } from './lostFound'
 
+// 学习互助相关 API
+export { questionApi, adminQuestionApi } from './question'
+
 // 搜索历史相关 API
 export { searchHistoryApi } from './searchHistory'
 

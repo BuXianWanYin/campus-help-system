@@ -563,9 +563,15 @@ const handleSearch = () => {
 
 // 处理发布
 const handlePublish = () => {
-  // 根据当前页面或上下文跳转到对应的发布页面
-  // 目前默认跳转到失物发布页面
-  router.push('/lost-found/publish')
+  // 根据当前激活的菜单项跳转到对应的发布页面
+  if (activeMenu.value === 'study') {
+    router.push('/study/publish')
+  } else if (activeMenu.value === 'goods') {
+    router.push('/goods/publish')
+  } else {
+    // 默认跳转到失物发布页面
+    router.push('/lost-found/publish')
+  }
 }
 
 // 处理用户菜单命令

@@ -178,7 +178,7 @@ const currentUser = ref(null)
 const proofImages = ref([])
 
 const filters = reactive({
-  status: ''
+  status: 'PENDING' // 默认显示待审核
 })
 
 const pagination = reactive({
@@ -192,7 +192,7 @@ const auditForm = reactive({
   auditReason: ''
 })
 
-// 获取待审核列表
+// 获取审核列表
 const fetchVerificationList = async () => {
   loading.value = true
   try {
@@ -202,8 +202,17 @@ const fetchVerificationList = async () => {
       status: filters.status || undefined
     })
     if (response.code === 200) {
-      verificationList.value = response.data.records || []
+      const records = response.data.records || []
+      verificationList.value = records
       pagination.total = response.data.total || 0
+      
+      // 如果当前筛选的是待审核，但没有数据，自动切换到全部
+      if (filters.status === 'PENDING' && records.length === 0 && pagination.current === 1) {
+        filters.status = ''
+        // 重新获取全部数据
+        fetchVerificationList()
+        return
+      }
     }
   } catch (error) {
     ElMessage.error(error.message || '获取列表失败')
@@ -279,7 +288,7 @@ const handleFilter = () => {
 
 // 重置
 const handleReset = () => {
-  filters.status = ''
+  filters.status = 'PENDING'
   pagination.current = 1
   fetchVerificationList()
 }

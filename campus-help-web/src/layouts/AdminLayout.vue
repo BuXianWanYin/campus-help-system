@@ -123,6 +123,10 @@
             <el-icon><DocumentChecked /></el-icon>
             <span>商品审核</span>
           </el-menu-item>
+          <el-menu-item index="/admin/question-audit">
+            <el-icon><DocumentChecked /></el-icon>
+            <span>学习问题审核</span>
+          </el-menu-item>
           <el-menu-item index="/admin/messages">
             <el-icon><Message /></el-icon>
             <span>消息通知</span>

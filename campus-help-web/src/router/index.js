@@ -156,6 +156,24 @@ const routes = [
         }
       },
       {
+        path: 'study/publish',
+        name: 'StudyPublish',
+        component: () => import('../views/study/Publish.vue'),
+        meta: {
+          title: '发布问题',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'study/detail/:id',
+        name: 'StudyDetail',
+        component: () => import('../views/study/Detail.vue'),
+        meta: {
+          title: '问题详情',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'user/profile',
         name: 'UserProfile',
         component: () => import('../views/profile/Profile.vue'),
@@ -258,6 +276,16 @@ const routes = [
         component: () => import('../views/admin/GoodsAudit.vue'),
         meta: {
           title: '商品审核',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'question-audit',
+        name: 'AdminQuestionAudit',
+        component: () => import('../views/admin/QuestionAudit.vue'),
+        meta: {
+          title: '学习问题审核',
           requiresAuth: true,
           requiresAdmin: true
         }
