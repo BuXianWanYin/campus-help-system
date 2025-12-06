@@ -18,6 +18,7 @@ import com.server.campushelpserver.mapper.study.StudyAnswerMapper;
 import com.server.campushelpserver.mapper.user.UserMapper;
 import com.server.campushelpserver.service.common.PublishFrequencyService;
 import com.server.campushelpserver.service.message.SystemMessageService;
+import com.server.campushelpserver.service.message.EmailService;
 import com.server.campushelpserver.service.study.QuestionService;
 import com.server.campushelpserver.service.sensitive.SensitiveWordService;
 import com.server.campushelpserver.util.SensitiveWordCheckResult;
@@ -28,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -59,6 +59,9 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
     @Autowired
     private SystemMessageService systemMessageService;
     
+    @Autowired
+    private EmailService emailService;
+    
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long publishQuestion(QuestionDTO dto, Long userId) {
@@ -69,16 +72,10 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         // 2. 发布频率检测
         boolean frequencyOk = publishFrequencyService.checkFrequency(userId, "STUDY_QUESTION");
         
-        // 3. 用户信用检测（新注册用户7天内）
+        // 3. 验证用户存在
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
-        }
-        
-        boolean newUser = false;
-        if (user.getCreateTime() != null) {
-            Duration duration = Duration.between(user.getCreateTime(), LocalDateTime.now());
-            newUser = duration.toDays() < 7;
         }
         
         // 4. 创建问题
@@ -116,7 +113,7 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             question.setAuditStatus("REJECTED");
             question.setAuditReason(checkResult.getMessage());
             question.setAuditTime(LocalDateTime.now());
-        } else if (checkResult.isPass() && frequencyOk && !newUser) {
+        } else if (checkResult.isPass() && frequencyOk) {
             // 自动审核通过
             question.setStatus("PENDING_ANSWER");
             question.setAuditStatus("APPROVED");
@@ -133,9 +130,6 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             }
             if (!frequencyOk) {
                 reason.append("发布频繁；");
-            }
-            if (newUser) {
-                reason.append("新注册用户；");
             }
             question.setAuditTriggerReason(reason.toString());
         }
@@ -391,6 +385,22 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             System.err.println("发送系统消息失败: " + e.getMessage());
         }
         
+        // 10. 异步发送邮件通知给问题发布者
+        try {
+            User questionPublisher = userMapper.selectById(question.getUserId());
+            if (questionPublisher != null && questionPublisher.getEmail() != null) {
+                String publisherNickname = questionPublisher.getNickname() != null ? questionPublisher.getNickname() : "用户";
+                emailService.sendQuestionAnsweredEmailAsync(
+                    questionPublisher.getEmail(),
+                    publisherNickname,
+                    question.getTitle()
+                );
+            }
+        } catch (Exception e) {
+            // 发送邮件失败不影响回答的创建，只记录日志
+            System.err.println("发送邮件通知失败: " + e.getMessage());
+        }
+        
         return answer.getId();
     }
     
@@ -461,6 +471,22 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         } catch (Exception e) {
             System.err.println("发送系统消息失败: " + e.getMessage());
         }
+        
+        // 10. 异步发送邮件通知给回答者
+        try {
+            User answerer = userMapper.selectById(answer.getUserId());
+            if (answerer != null && answerer.getEmail() != null) {
+                String answererNickname = answerer.getNickname() != null ? answerer.getNickname() : "用户";
+                emailService.sendAnswerAcceptedEmailAsync(
+                    answerer.getEmail(),
+                    answererNickname,
+                    question.getTitle()
+                );
+            }
+        } catch (Exception e) {
+            // 发送邮件失败不影响回答采纳，只记录日志
+            System.err.println("发送邮件通知失败: " + e.getMessage());
+        }
     }
     
     @Override
@@ -518,16 +544,10 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         // 5. 发布频率检测
         boolean frequencyOk = publishFrequencyService.checkFrequency(userId, "STUDY_QUESTION");
         
-        // 6. 用户信用检测（新注册用户7天内）
+        // 6. 验证用户存在
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
-        }
-        
-        boolean newUser = false;
-        if (user.getCreateTime() != null) {
-            Duration duration = Duration.between(user.getCreateTime(), LocalDateTime.now());
-            newUser = duration.toDays() < 7;
         }
         
         // 7. 更新问题信息
@@ -554,8 +574,8 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         boolean wasRejected = "REJECTED".equals(question.getStatus());
         boolean needReaudit = false;
         
-        // 9. 如果包含敏感词、发布频繁、新用户，需要重新审核
-        if (!checkResult.isPass() || !frequencyOk || newUser) {
+        // 9. 如果包含敏感词或发布频繁，需要重新审核
+        if (!checkResult.isPass() || !frequencyOk) {
             question.setStatus("PENDING_REVIEW");
             question.setAuditStatus("PENDING");
             question.setAuditTriggerReason(null);
@@ -570,9 +590,6 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             }
             if (!frequencyOk) {
                 reason.append("发布频繁；");
-            }
-            if (newUser) {
-                reason.append("新注册用户；");
             }
             if (reason.length() > 0) {
                 question.setAuditTriggerReason(reason.toString());

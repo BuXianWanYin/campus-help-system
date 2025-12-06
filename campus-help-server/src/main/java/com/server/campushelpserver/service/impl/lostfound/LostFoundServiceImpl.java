@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -76,16 +75,10 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         // 2. 发布频率检测
         boolean frequencyOk = publishFrequencyService.checkFrequency(userId, "LOST_FOUND");
         
-        // 3. 用户信用检测（新注册用户7天内）
+        // 3. 验证用户存在
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
-        }
-        
-        boolean newUser = false;
-        if (user.getCreateTime() != null) {
-            Duration duration = Duration.between(user.getCreateTime(), LocalDateTime.now());
-            newUser = duration.toDays() < 7;
         }
         
         // 4. 创建失物信息
@@ -120,7 +113,7 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             lostFound.setAuditStatus("REJECTED");
             lostFound.setAuditReason(checkResult.getMessage()); // 自动填充拒绝原因
             lostFound.setAuditTime(LocalDateTime.now());
-        } else if (checkResult.isPass() && frequencyOk && !newUser) {
+        } else if (checkResult.isPass() && frequencyOk) {
             // 自动审核通过
             lostFound.setStatus("PENDING_CLAIM");
             lostFound.setAuditStatus("APPROVED");
@@ -137,9 +130,6 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             }
             if (!frequencyOk) {
                 reason.append("发布频繁；");
-            }
-            if (newUser) {
-                reason.append("新注册用户；");
             }
             lostFound.setAuditTriggerReason(reason.toString());
         }

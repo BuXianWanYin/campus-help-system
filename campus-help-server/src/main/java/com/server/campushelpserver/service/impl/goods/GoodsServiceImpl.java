@@ -26,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -95,13 +94,6 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         // 6. 发布频率检测
         boolean frequencyOk = publishFrequencyService.checkFrequency(userId, "GOODS");
         
-        // 7. 用户信用检测（新注册用户7天内）
-        boolean newUser = false;
-        if (user.getCreateTime() != null) {
-            Duration duration = Duration.between(user.getCreateTime(), LocalDateTime.now());
-            newUser = duration.toDays() < 7;
-        }
-        
         // 8. 创建商品信息
         Goods goods = new Goods();
         BeanUtils.copyProperties(dto, goods);
@@ -136,7 +128,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             goods.setAuditStatus("REJECTED");
             goods.setAuditReason(checkResult.getMessage());
             goods.setAuditTime(LocalDateTime.now());
-        } else if (checkResult.isPass() && frequencyOk && !newUser) {
+        } else if (checkResult.isPass() && frequencyOk) {
             // 自动审核通过
             goods.setStatus("ON_SALE");
             goods.setAuditStatus("APPROVED");
@@ -153,9 +145,6 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             }
             if (!frequencyOk) {
                 reason.append("发布频繁；");
-            }
-            if (newUser) {
-                reason.append("新注册用户；");
             }
             goods.setAuditTriggerReason(reason.toString());
         }

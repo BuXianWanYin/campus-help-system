@@ -77,5 +77,30 @@ public interface EmailService {
      * @param reason 拒绝原因
      */
     void sendClaimRejectedEmailAsync(String to, String nickname, String itemTitle, String reason);
+    
+    /**
+     * 异步发送订单创建邮件（通知卖家）
+     * @param to 收件人邮箱（卖家邮箱）
+     * @param nickname 卖家昵称
+     * @param goodsTitle 商品标题
+     * @param orderNo 订单号
+     */
+    void sendOrderCreatedEmailAsync(String to, String nickname, String goodsTitle, String orderNo);
+    
+    /**
+     * 异步发送问题被回答邮件（通知问题发布者）
+     * @param to 收件人邮箱（问题发布者邮箱）
+     * @param nickname 问题发布者昵称
+     * @param questionTitle 问题标题
+     */
+    void sendQuestionAnsweredEmailAsync(String to, String nickname, String questionTitle);
+    
+    /**
+     * 异步发送回答被采纳邮件（通知回答者）
+     * @param to 收件人邮箱（回答者邮箱）
+     * @param nickname 回答者昵称
+     * @param questionTitle 问题标题
+     */
+    void sendAnswerAcceptedEmailAsync(String to, String nickname, String questionTitle);
 }
 

@@ -19,6 +19,7 @@ import com.server.campushelpserver.mapper.order.OrderMapper;
 import com.server.campushelpserver.mapper.user.UserMapper;
 import com.server.campushelpserver.service.chat.ChatSessionService;
 import com.server.campushelpserver.service.message.SystemMessageService;
+import com.server.campushelpserver.service.message.EmailService;
 import com.server.campushelpserver.service.order.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     
     @Autowired
     private SystemMessageService systemMessageService;
+    
+    @Autowired
+    private EmailService emailService;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -168,6 +172,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             "ORDER",
             order.getId()
         );
+        
+        // 14. 异步发送邮件通知给卖家
+        try {
+            User seller = userMapper.selectById(goods.getUserId());
+            if (seller != null && seller.getEmail() != null) {
+                String sellerNickname = seller.getNickname() != null ? seller.getNickname() : "用户";
+                emailService.sendOrderCreatedEmailAsync(
+                    seller.getEmail(),
+                    sellerNickname,
+                    goods.getTitle(),
+                    orderNo
+                );
+            }
+        } catch (Exception e) {
+            // 发送邮件失败不影响订单创建，只记录日志
+            System.err.println("发送邮件通知失败: " + e.getMessage());
+        }
         
         return order.getId();
     }

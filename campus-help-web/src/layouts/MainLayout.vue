@@ -356,9 +356,7 @@
       <!-- 路由视图（其他页面） -->
       <router-view v-if="!isHomePage" v-slot="{ Component, route }">
         <transition name="fade" mode="out-in">
-          <keep-alive :include="keepAliveComponents">
-            <component :is="Component" :key="route.fullPath" v-if="Component" />
-          </keep-alive>
+          <component :is="Component" :key="route.fullPath" v-if="Component" />
         </transition>
       </router-view>
     </main>
@@ -824,20 +822,6 @@ const updateActiveMenu = () => {
   }
 }
 
-// 需要缓存的组件列表（列表页通常需要缓存，详情页和编辑页不需要）
-const keepAliveComponents = computed(() => {
-  // 可以根据路由 meta 动态配置，或者直接列出需要缓存的组件名称
-  return [
-    'Home',              // 首页
-    'LostFoundList',     // 失物招领列表
-    'GoodsList',         // 闲置交易列表
-    'StudyList',          // 学习互助列表
-    'UserMessages',      // 消息通知（需要缓存以保持滚动位置）
-    'UserPosts',         // 我的发布
-    'UserProfile',       // 个人中心（可选，根据需求）
-    'UserChat'           // 聊天页面（需要缓存以保持会话状态）
-  ]
-})
 
 // 处理首页数据刷新（由 Home.vue 的 onActivated 触发）
 const handleRefreshHomeData = () => {

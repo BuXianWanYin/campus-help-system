@@ -147,5 +147,62 @@ public class EmailServiceImpl implements EmailService {
     public void sendClaimRejectedEmailAsync(String to, String nickname, String itemTitle, String reason) {
         sendClaimRejectedEmail(to, nickname, itemTitle, reason);
     }
+    
+    @Override
+    @Async("emailExecutor")
+    public void sendOrderCreatedEmailAsync(String to, String nickname, String goodsTitle, String orderNo) {
+        String subject = "收到新订单通知";
+        String content = String.format(
+            "尊敬的%s，\n\n" +
+            "恭喜您！您的商品《%s》被购买了。\n\n" +
+            "订单号：%s\n\n" +
+            "请及时登录校园帮系统查看订单详情，并与买家沟通交易事宜。\n\n" +
+            "建议操作：\n" +
+            "1. 登录系统，进入\"我的交易\"页面\n" +
+            "2. 查看订单详情和买家信息\n" +
+            "3. 根据交易方式（邮寄/自提）安排发货或约定交易时间\n" +
+            "4. 通过系统聊天功能与买家沟通\n\n" +
+            "感谢您使用校园帮系统！\n\n" +
+            "此邮件由系统自动发送，请勿回复。",
+            nickname, goodsTitle, orderNo
+        );
+        sendEmail(to, subject, content);
+    }
+    
+    @Override
+    @Async("emailExecutor")
+    public void sendQuestionAnsweredEmailAsync(String to, String nickname, String questionTitle) {
+        String subject = "您的问题收到新回答";
+        String content = String.format(
+            "尊敬的%s，\n\n" +
+            "您发布的学习问题《%s》收到了新的回答。\n\n" +
+            "请及时登录校园帮系统查看回答详情，如果回答有帮助，可以采纳该回答。\n\n" +
+            "建议操作：\n" +
+            "1. 登录系统，进入\"我的发布\"页面\n" +
+            "2. 查看问题详情和所有回答\n" +
+            "3. 选择最满意的回答进行采纳\n" +
+            "4. 如果问题已解决，可以将问题状态标记为已解决\n\n" +
+            "感谢您使用校园帮系统！\n\n" +
+            "此邮件由系统自动发送，请勿回复。",
+            nickname, questionTitle
+        );
+        sendEmail(to, subject, content);
+    }
+    
+    @Override
+    @Async("emailExecutor")
+    public void sendAnswerAcceptedEmailAsync(String to, String nickname, String questionTitle) {
+        String subject = "您的回答被采纳";
+        String content = String.format(
+            "尊敬的%s，\n\n" +
+            "恭喜您！您对学习问题《%s》的回答已被提问者采纳。\n\n" +
+            "您的回答帮助了其他同学，感谢您的贡献！\n\n" +
+            "如果问题设置了悬赏，相应的奖励将会发放到您的账户。\n\n" +
+            "感谢您使用校园帮系统，继续为校园学习互助贡献力量！\n\n" +
+            "此邮件由系统自动发送，请勿回复。",
+            nickname, questionTitle
+        );
+        sendEmail(to, subject, content);
+    }
 }
 
