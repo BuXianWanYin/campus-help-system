@@ -48,6 +48,9 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
     private UserMapper userMapper;
     
     @Autowired
+    private com.server.campushelpserver.service.user.UserService userService;
+    
+    @Autowired
     private SensitiveWordService sensitiveWordService;
     
     @Autowired
@@ -169,12 +172,30 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         Page<StudyQuestion> page = new Page<>(searchDTO.getPageNum(), searchDTO.getPageSize());
         LambdaQueryWrapper<StudyQuestion> wrapper = new LambdaQueryWrapper<>();
         
+        // 检查是否是管理员
+        boolean isAdmin = false;
+        try {
+            String email = com.server.campushelpserver.util.SecurityUtils.getCurrentUserEmail();
+            if (email != null) {
+                User currentUser = userService.getUserByEmail(email);
+                if (currentUser != null && "ADMIN".equals(currentUser.getRole())) {
+                    isAdmin = true;
+                }
+            }
+        } catch (Exception e) {
+            // 获取用户信息失败，按普通用户处理
+        }
+        
         // 只查询已审核通过且未删除的问题
         wrapper.eq(StudyQuestion::getAuditStatus, "APPROVED")
                .ne(StudyQuestion::getStatus, "CANCELLED")
                .ne(StudyQuestion::getStatus, "REJECTED")
-               .ne(StudyQuestion::getStatus, "ADMIN_OFFSHELF")
                .eq(StudyQuestion::getDeleteFlag, 0);
+        
+        // 管理员可以看到已下架的问题，普通用户看不到
+        if (!isAdmin) {
+            wrapper.ne(StudyQuestion::getStatus, "ADMIN_OFFSHELF");
+        }
         
         // 关键词搜索（标题或描述）
         if (StringUtils.hasText(searchDTO.getKeyword())) {

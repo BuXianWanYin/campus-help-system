@@ -109,20 +109,19 @@
               <p class="banner-desc">一站式校园互助平台，让校园生活更便捷</p>
               <div class="banner-actions">
                 <el-button class="banner-btn-primary" size="large" @click="handlePublish">立即发布</el-button>
-                <el-button class="banner-btn-secondary" size="large" @click="goToRoute('/about')">了解更多</el-button>
               </div>
             </div>
             <div class="banner-stats">
               <div class="stat-item">
-                <div class="stat-value">1200+</div>
+                <div class="stat-value">{{ formatStatNumber(homeStats.lostFoundCount) }}</div>
                 <div class="stat-label">失物招领</div>
               </div>
               <div class="stat-item">
-                <div class="stat-value">3500+</div>
+                <div class="stat-value">{{ formatStatNumber(homeStats.goodsCount) }}</div>
                 <div class="stat-label">闲置交易</div>
               </div>
               <div class="stat-item">
-                <div class="stat-value">800+</div>
+                <div class="stat-value">{{ formatStatNumber(homeStats.studyCount) }}</div>
                 <div class="stat-label">学习互助</div>
               </div>
             </div>
@@ -516,12 +515,31 @@ const studyCategories = ref([
   { id: 'MATH', name: '数学' },
   { id: 'PHYSICS', name: '物理' },
   { id: 'CHEMISTRY', name: '化学' },
+  { id: 'BIOLOGY', name: '生物' },
   { id: 'COMPUTER', name: '计算机' },
   { id: 'ENGLISH', name: '英语' },
+  { id: 'LITERATURE', name: '文学' },
+  { id: 'HISTORY', name: '历史' },
+  { id: 'PHILOSOPHY', name: '哲学' },
+  { id: 'ECONOMICS', name: '经济' },
+  { id: 'MANAGEMENT', name: '管理' },
+  { id: 'LAW', name: '法律' },
+  { id: 'EDUCATION', name: '教育' },
+  { id: 'ART', name: '艺术' },
+  { id: 'ENGINEERING', name: '工程' },
+  { id: 'MEDICINE', name: '医学' },
+  { id: 'AGRICULTURE', name: '农学' },
   { id: 'OTHER', name: '其他' }
 ])
 const studyList = ref([])
 const studyLoading = ref(false)
+
+// 首页统计数据
+const homeStats = ref({
+  lostFoundCount: 0,
+  goodsCount: 0,
+  studyCount: 0
+})
 const studyForm = ref({
   category: '',
   title: '',
@@ -924,6 +942,7 @@ const handleRefreshHomeData = () => {
   if (path === '/home' || path === '/') {
       // 延迟一下确保页面已渲染
       nextTick(() => {
+        fetchHomeStats()
         fetchLostFoundList()
         fetchGoodsList()
         fetchStudyList()
@@ -943,6 +962,7 @@ watch(() => route.path, (newPath, oldPath) => {
       studyList.value = []
       // 立即刷新数据
       nextTick(() => {
+        fetchHomeStats()
         fetchLostFoundList()
         fetchGoodsList()
         fetchStudyList()
@@ -1330,6 +1350,60 @@ watch(() => studyActiveCategory.value, () => {
 })
 
 /**
+ * 获取首页统计数据
+ */
+const fetchHomeStats = async () => {
+  try {
+    // 通过调用各个模块的API获取统计数据（只获取总数）
+    const [lostFoundRes, goodsRes, studyRes] = await Promise.allSettled([
+      lostFoundApi.getList({ pageNum: 1, pageSize: 1 }),
+      goodsApi.getList({ pageNum: 1, pageSize: 1 }),
+      questionApi.getList({ pageNum: 1, pageSize: 1 })
+    ])
+    
+    // 获取失物招领总数
+    if (lostFoundRes.status === 'fulfilled' && lostFoundRes.value.code === 200) {
+      const data = lostFoundRes.value.data
+      if (data && typeof data.total === 'number') {
+        homeStats.value.lostFoundCount = data.total
+      } else if (data && data.total !== undefined) {
+        homeStats.value.lostFoundCount = parseInt(data.total) || 0
+      }
+    }
+    
+    // 获取商品总数
+    if (goodsRes.status === 'fulfilled' && goodsRes.value.code === 200) {
+      const data = goodsRes.value.data
+      if (data && typeof data.total === 'number') {
+        homeStats.value.goodsCount = data.total
+      } else if (data && data.total !== undefined) {
+        homeStats.value.goodsCount = parseInt(data.total) || 0
+      }
+    }
+    
+    // 获取学习问题总数
+    if (studyRes.status === 'fulfilled' && studyRes.value.code === 200) {
+      const data = studyRes.value.data
+      if (data && typeof data.total === 'number') {
+        homeStats.value.studyCount = data.total
+      } else if (data && data.total !== undefined) {
+        homeStats.value.studyCount = parseInt(data.total) || 0
+      }
+    }
+  } catch (error) {
+    console.error('获取首页统计数据失败:', error)
+  }
+}
+
+/**
+ * 格式化统计数字（添加+号）
+ */
+const formatStatNumber = (num) => {
+  if (!num || num === 0) return '0'
+  return num >= 1000 ? `${(num / 1000).toFixed(1)}k+` : `${num}+`
+}
+
+/**
  * 处理类型切换
  */
 const handleTypeChange = () => {
@@ -1440,6 +1514,7 @@ onMounted(async () => {
   const path = route.path
   if (path === '/home' || path === '/') {
     setTimeout(() => {
+      fetchHomeStats()
       fetchLostFoundList()
       fetchGoodsList()
       fetchStudyList()

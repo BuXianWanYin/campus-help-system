@@ -204,11 +204,33 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             wrapper.eq(Goods::getCondition, searchDTO.getCondition());
         }
         
-        // 状态筛选（默认只显示在售商品）
+        // 检查是否是管理员
+        boolean isAdmin = false;
+        try {
+            String email = com.server.campushelpserver.util.SecurityUtils.getCurrentUserEmail();
+            if (email != null) {
+                User currentUser = userService.getUserByEmail(email);
+                if (currentUser != null && "ADMIN".equals(currentUser.getRole())) {
+                    isAdmin = true;
+                }
+            }
+        } catch (Exception e) {
+            // 获取用户信息失败，按普通用户处理
+        }
+        
+        // 状态筛选
         if (StringUtils.hasText(searchDTO.getStatus())) {
             wrapper.eq(Goods::getStatus, searchDTO.getStatus());
         } else {
-            wrapper.eq(Goods::getStatus, "ON_SALE");
+            // 管理员：不指定状态时显示所有已审核通过的状态（包括已下架）
+            // 普通用户：只显示在售商品
+            if (isAdmin) {
+                // 管理员可以看到所有已审核通过的状态：ON_SALE, SOLD_OUT, CLOSED, ADMIN_OFFSHELF
+                wrapper.in(Goods::getStatus, "ON_SALE", "SOLD_OUT", "CLOSED", "ADMIN_OFFSHELF");
+            } else {
+                // 普通用户只显示在售商品
+                wrapper.eq(Goods::getStatus, "ON_SALE");
+            }
         }
         
         // 价格区间筛选
@@ -219,7 +241,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             wrapper.le(Goods::getCurrentPrice, searchDTO.getMaxPrice());
         }
         
-        // 不显示待审核和已拒绝的（普通用户看不到）
+        // 不显示待审核和已拒绝的（普通用户和管理员都看不到，这些在审核页面管理）
         wrapper.notIn(Goods::getStatus, "PENDING_REVIEW", "REJECTED");
         
         // 排序
