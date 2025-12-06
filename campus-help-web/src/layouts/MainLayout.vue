@@ -41,9 +41,11 @@
           
           <el-dropdown @command="handleCommand" trigger="click">
             <span class="user-info">
-              <el-avatar :size="32" :src="getAvatarUrl(userStore.userInfo?.avatar)">
-                {{ userStore.nickname?.charAt(0) || 'U' }}
-              </el-avatar>
+              <el-badge :value="chatUnreadCount" :hidden="chatUnreadCount === 0" :max="99" class="user-avatar-badge">
+                <el-avatar :size="32" :src="getAvatarUrl(userStore.userInfo?.avatar)">
+                  {{ userStore.nickname?.charAt(0) || 'U' }}
+                </el-avatar>
+              </el-badge>
               <span class="nickname">{{ userStore.nickname || userStore.email }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
@@ -76,7 +78,8 @@
                   </el-dropdown-item>
                   <el-dropdown-item command="chat">
                     <el-icon><ChatDotRound /></el-icon>
-                    聊天
+                    <span>聊天</span>
+                    <el-badge v-if="chatUnreadCount > 0" :value="chatUnreadCount > 99 ? '99+' : chatUnreadCount" :max="99" class="chat-badge" />
                   </el-dropdown-item>
                   <el-dropdown-item command="settings">
                     <el-icon><Setting /></el-icon>
@@ -452,7 +455,7 @@ import {
 } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
-import { messageApi, lostFoundApi, goodsApi, questionApi } from '@/api'
+import { messageApi, chatApi, lostFoundApi, goodsApi, questionApi } from '@/api'
 import wsManager from '@/utils/websocket'
 import { getToken } from '@/utils/auth'
 
@@ -471,7 +474,8 @@ const searchKeyword = ref('')
 const activeMenu = ref('') // 初始为空，避免默认激活首页
 const showMobileMenu = ref(false)
 const showNotificationPanel = ref(false)
-const unreadCount = ref(0)
+const unreadCount = ref(0) // 系统消息未读数量
+const chatUnreadCount = ref(0) // 聊天消息未读数量
 const notifications = ref([])
 const isMobile = ref(false)
 const loadingNotifications = ref(false)
@@ -660,6 +664,27 @@ const fetchUnreadCount = async () => {
   }
 }
 
+// 获取聊天未读消息数量
+const fetchChatUnreadCount = async () => {
+  if (!userStore.isLoggedIn) return
+  try {
+    const response = await chatApi.getSessionList()
+    if (response.code === 200) {
+      const sessions = response.data || []
+      // 累加所有会话的未读数量
+      let total = 0
+      sessions.forEach(session => {
+        if (session.unreadCount && session.unreadCount > 0) {
+          total += session.unreadCount
+        }
+      })
+      chatUnreadCount.value = total
+    }
+  } catch (error) {
+    console.error('获取聊天未读数量失败:', error)
+  }
+}
+
 // 获取最新消息列表（用于通知面板）
 const fetchRecentMessages = async () => {
   if (!userStore.isLoggedIn) return
@@ -793,6 +818,8 @@ const handleChatMessage = (message) => {
     
     // 刷新未读数量
     fetchUnreadCount()
+    // 刷新聊天未读数量
+    fetchChatUnreadCount()
   }
 }
 
@@ -852,6 +879,18 @@ watch(() => route.path, (newPath, oldPath) => {
         fetchGoodsList()
         fetchStudyList()
       })
+  }
+  
+  // 如果离开聊天页面，刷新聊天未读数量
+  if (oldPath === '/user/chat' && newPath !== '/user/chat') {
+    fetchChatUnreadCount()
+  }
+  
+  // 如果进入聊天页面，延迟刷新聊天未读数量（给页面时间标记已读）
+  if (newPath === '/user/chat' && userStore.isLoggedIn) {
+    setTimeout(() => {
+      fetchChatUnreadCount()
+    }, 1000)
   }
 }, { immediate: true })
 
@@ -1311,6 +1350,7 @@ onMounted(async () => {
   // 如果用户已登录，加载消息和连接WebSocket
   if (userStore.isLoggedIn) {
     await fetchUnreadCount()
+    await fetchChatUnreadCount()
     await fetchRecentMessages()
     
     // 连接WebSocket
@@ -1521,6 +1561,46 @@ onUnmounted(() => {
 
 .message-badge {
   margin-left: 8px;
+}
+
+.chat-badge {
+  margin-left: 8px;
+}
+
+.user-avatar-badge {
+  display: inline-flex;
+  align-items: center;
+}
+
+:deep(.user-avatar-badge .el-badge__content) {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 140px;
+}
+
+.user-avatar-badge {
+  display: inline-flex;
+  align-items: center;
+}
+
+:deep(.user-avatar-badge .el-badge__content) {
+  position: absolute;
+  top: 14px;
+  right: -53px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 140px;
 }
 
 /* 主内容区 */
