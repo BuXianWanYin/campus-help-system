@@ -39,65 +39,64 @@ campus-help-server/
 │   │   ├── JacksonConfig.java             # Jackson配置
 │   │   └── AsyncConfig.java               # 异步任务配置
 │   ├── controller/                         # 控制器层
-│   │   ├── auth/                          # 认证相关
-│   │   │   └── AuthController.java        # 认证控制器
 │   │   ├── user/                           # 用户管理
 │   │   │   └── UserController.java        # 用户控制器
-│   │   ├── lostfound/                     # 失物招领
-│   │   │   └── LostFoundController.java   # 失物招领控制器
-│   │   ├── goods/                          # 闲置交易
-│   │   │   └── GoodsController.java       # 商品控制器
-│   │   ├── order/                          # 订单管理
-│   │   │   └── OrderController.java       # 订单控制器
-│   │   ├── study/                          # 学习互助
-│   │   │   └── QuestionController.java    # 问题控制器
-│   │   ├── address/                        # 地址管理
-│   │   │   └── AddressController.java     # 地址控制器
-│   │   ├── chat/                          # 聊天功能
-│   │   │   └── ChatController.java        # 聊天控制器
-│   │   ├── message/                       # 系统消息
-│   │   │   └── SystemMessageController.java # 系统消息控制器
-│   │   ├── search/                         # 搜索历史
-│   │   │   └── SearchHistoryController.java # 搜索历史控制器
 │   │   ├── admin/                         # 管理员后台
 │   │   │   ├── AdminController.java       # 管理员控制器
 │   │   │   ├── AdminQuestionController.java # 问题审核控制器
 │   │   │   └── SensitiveWordController.java # 敏感词管理控制器
-│   │   └── common/                        # 通用接口
-│   │       └── FileController.java        # 文件上传控制器
+│   │   ├── AuthController.java            # 认证控制器
+│   │   ├── LostFoundController.java       # 失物招领控制器
+│   │   ├── GoodsController.java           # 商品控制器
+│   │   ├── OrderController.java           # 订单控制器
+│   │   ├── QuestionController.java        # 问题控制器
+│   │   ├── AddressController.java         # 地址控制器
+│   │   ├── ChatController.java            # 聊天控制器
+│   │   ├── SystemMessageController.java   # 系统消息控制器
+│   │   ├── SearchHistoryController.java   # 搜索历史控制器
+│   │   └── FileController.java            # 文件上传控制器
 │   ├── service/                            # 服务层
 │   │   ├── impl/                          # 服务实现
 │   │   │   ├── user/                      # 用户服务实现
-│   │   │   ├── lostfound/                 # 失物招领服务实现
-│   │   │   ├── goods/                     # 商品服务实现
-│   │   │   ├── order/                     # 订单服务实现
-│   │   │   ├── study/                     # 学习互助服务实现
-│   │   │   ├── address/                   # 地址服务实现
-│   │   │   ├── chat/                      # 聊天服务实现
-│   │   │   ├── message/                   # 消息服务实现
-│   │   │   ├── search/                    # 搜索服务实现
-│   │   │   └── sensitive/                 # 敏感词服务实现
+│   │   │   ├── admin/                     # 管理员服务实现（如有）
+│   │   │   ├── AddressServiceImpl.java    # 地址服务实现
+│   │   │   ├── LostFoundServiceImpl.java  # 失物招领服务实现
+│   │   │   ├── GoodsServiceImpl.java      # 商品服务实现
+│   │   │   ├── OrderServiceImpl.java      # 订单服务实现
+│   │   │   ├── QuestionServiceImpl.java   # 学习互助服务实现
+│   │   │   ├── ChatSessionServiceImpl.java # 聊天服务实现
+│   │   │   ├── EmailServiceImpl.java      # 邮件服务实现
+│   │   │   ├── SystemMessageServiceImpl.java # 系统消息服务实现
+│   │   │   ├── SearchHistoryServiceImpl.java # 搜索服务实现
+│   │   │   ├── SensitiveWordServiceImpl.java # 敏感词服务实现
+│   │   │   └── PublishFrequencyServiceImpl.java # 发布频率检测服务实现
 │   │   ├── user/                          # 用户服务接口
-│   │   ├── lostfound/                     # 失物招领服务接口
-│   │   ├── goods/                         # 商品服务接口
-│   │   ├── order/                         # 订单服务接口
-│   │   ├── study/                         # 学习互助服务接口
-│   │   ├── address/                       # 地址服务接口
-│   │   ├── chat/                          # 聊天服务接口
-│   │   ├── message/                       # 消息服务接口
-│   │   ├── search/                        # 搜索服务接口
-│   │   ├── sensitive/                     # 敏感词服务接口
-│   │   └── common/                        # 通用服务
+│   │   ├── AddressService.java            # 地址服务接口
+│   │   ├── LostFoundService.java          # 失物招领服务接口
+│   │   ├── GoodsService.java              # 商品服务接口
+│   │   ├── OrderService.java              # 订单服务接口
+│   │   ├── QuestionService.java           # 学习互助服务接口
+│   │   ├── ChatSessionService.java        # 聊天服务接口
+│   │   ├── EmailService.java              # 邮件服务接口
+│   │   ├── SystemMessageService.java      # 系统消息服务接口
+│   │   ├── SearchHistoryService.java      # 搜索服务接口
+│   │   ├── SensitiveWordService.java      # 敏感词服务接口
+│   │   └── PublishFrequencyService.java   # 发布频率检测服务接口
 │   ├── mapper/                             # 数据访问层
 │   │   ├── user/                          # 用户Mapper
-│   │   ├── lostfound/                     # 失物招领Mapper
-│   │   ├── goods/                         # 商品Mapper
-│   │   ├── order/                         # 订单Mapper
-│   │   ├── study/                         # 学习互助Mapper
-│   │   ├── address/                       # 地址Mapper
-│   │   ├── chat/                          # 聊天Mapper
-│   │   ├── message/                       # 消息Mapper
-│   │   ├── search/                        # 搜索Mapper
+│   │   │   └── UserMapper.java            # 用户Mapper接口
+│   │   ├── AddressMapper.java            # 地址Mapper接口
+│   │   ├── LostFoundMapper.java          # 失物招领Mapper接口
+│   │   ├── ClaimRecordMapper.java        # 认领记录Mapper接口
+│   │   ├── GoodsMapper.java              # 商品Mapper接口
+│   │   ├── OrderMapper.java              # 订单Mapper接口
+│   │   ├── StudyQuestionMapper.java      # 学习问题Mapper接口
+│   │   ├── StudyAnswerMapper.java        # 学习回答Mapper接口
+│   │   ├── ChatSessionMapper.java        # 聊天会话Mapper接口
+│   │   ├── ChatMessageMapper.java        # 聊天消息Mapper接口
+│   │   ├── SystemMessageMapper.java      # 系统消息Mapper接口
+│   │   ├── SearchHistoryMapper.java       # 搜索历史Mapper接口
+│   │   └── SensitiveWordMapper.java      # 敏感词Mapper接口
 │   │   └── sensitive/                     # 敏感词Mapper
 │   ├── entity/                             # 实体类
 │   │   ├── user/                          # 用户实体
@@ -388,8 +387,7 @@ campus-help-server/
 ## API 接口文档
 
 启动项目后，访问 Swagger UI：
-- 地址: `http://localhost:8081/swagger-ui.html`
-- API文档: `http://localhost:8081/v3/api-docs`
+- 地址: `http://localhost:8081/swagger-ui/index.html`
 
 ## 数据库
 
