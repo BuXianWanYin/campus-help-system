@@ -238,24 +238,78 @@ public class ChatSessionServiceImpl implements ChatSessionService {
                     .set(ChatSession::getUpdateTime, LocalDateTime.now());
         chatSessionMapper.update(null, updateWrapper);
         
-        // 7. 通过WebSocket实时推送给接收者
+        // 7. 填充发送者信息（用于前端显示昵称）
+        User sender = userMapper.selectById(senderId);
+        if (sender != null) {
+            // 创建一个简化的发送者对象（只包含必要字段）
+            User simpleSender = new User();
+            simpleSender.setId(sender.getId());
+            simpleSender.setNickname(sender.getNickname());
+            simpleSender.setAvatar(sender.getAvatar());
+            // 使用反射或者创建一个DTO，这里我们直接创建一个Map来传递发送者信息
+            // 由于ChatMessage没有sender字段，我们需要在推送时手动添加
+            // 但ChatMessage是实体类，不适合添加临时字段，所以我们将发送者信息通过消息体传递
+            // 前端需要能够识别并提取发送者信息
+        }
+        
+        // 8. 通过WebSocket实时推送给接收者（包含发送者信息）
         try {
+            // 创建一个包含消息和发送者信息的Map
+            java.util.Map<String, Object> messageWithSender = new java.util.HashMap<>();
+            messageWithSender.put("id", message.getId());
+            messageWithSender.put("sessionId", message.getSessionId());
+            messageWithSender.put("senderId", message.getSenderId());
+            messageWithSender.put("receiverId", message.getReceiverId());
+            messageWithSender.put("messageType", message.getMessageType());
+            messageWithSender.put("content", message.getContent());
+            messageWithSender.put("images", message.getImages());
+            messageWithSender.put("isRead", message.getIsRead());
+            messageWithSender.put("createTime", message.getCreateTime());
+            // 添加发送者信息
+            if (sender != null) {
+                java.util.Map<String, Object> senderInfo = new java.util.HashMap<>();
+                senderInfo.put("id", sender.getId());
+                senderInfo.put("nickname", sender.getNickname());
+                senderInfo.put("avatar", sender.getAvatar());
+                messageWithSender.put("sender", senderInfo);
+            }
+            
             messagingTemplate.convertAndSendToUser(
                 receiverId.toString(),
                 "/queue/chat",
-                message
+                messageWithSender
             );
         } catch (Exception e) {
             // WebSocket推送失败不影响消息保存，只记录日志
             System.err.println("WebSocket推送聊天消息失败: " + e.getMessage());
         }
         
-        // 9. 同时推送给发送者（用于实时确认消息已发送）
+        // 9. 同时推送给发送者（用于实时确认消息已发送，包含发送者信息）
         try {
+            // 创建一个包含消息和发送者信息的Map
+            java.util.Map<String, Object> messageWithSender = new java.util.HashMap<>();
+            messageWithSender.put("id", message.getId());
+            messageWithSender.put("sessionId", message.getSessionId());
+            messageWithSender.put("senderId", message.getSenderId());
+            messageWithSender.put("receiverId", message.getReceiverId());
+            messageWithSender.put("messageType", message.getMessageType());
+            messageWithSender.put("content", message.getContent());
+            messageWithSender.put("images", message.getImages());
+            messageWithSender.put("isRead", message.getIsRead());
+            messageWithSender.put("createTime", message.getCreateTime());
+            // 添加发送者信息
+            if (sender != null) {
+                java.util.Map<String, Object> senderInfo = new java.util.HashMap<>();
+                senderInfo.put("id", sender.getId());
+                senderInfo.put("nickname", sender.getNickname());
+                senderInfo.put("avatar", sender.getAvatar());
+                messageWithSender.put("sender", senderInfo);
+            }
+            
             messagingTemplate.convertAndSendToUser(
                 senderId.toString(),
                 "/queue/chat",
-                message
+                messageWithSender
             );
         } catch (Exception e) {
             // WebSocket推送失败不影响消息保存，只记录日志

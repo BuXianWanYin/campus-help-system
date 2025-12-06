@@ -75,12 +75,14 @@ class WebSocketManager {
           setTimeout(() => {
             if (this.stompClient && this.stompClient.connected) {
               this.subscribeToSystemMessages()
+              // 如果有聊天消息处理器，自动订阅聊天消息
+              if (this.chatMessageHandlers.length > 0) {
+                this.subscribeChatMessages()
+              }
             } else {
               console.warn('STOMP 客户端未就绪，无法订阅系统消息')
             }
           }, 100)
-          // 订阅聊天消息 (如果需要，可以在这里或在Chat页面中订阅)
-          // this.subscribeChatMessages()
         },
         (error) => {
           console.error('WebSocket STOMP 连接失败:', error)
@@ -159,19 +161,22 @@ class WebSocketManager {
   
   /**
    * 订阅聊天消息（支持多个处理器）
+   * @param {Function} handler - 可选的处理器（如果提供，会添加到处理器列表）
    */
   subscribeChatMessages(handler) {
-    if (!this.stompClient || !this.stompClient.connected) {
-      console.warn('WebSocket未连接，无法订阅聊天消息')
-      return null
-    }
-    
-    // 添加处理器到列表
+    // 添加处理器到列表（无论连接是否建立，都可以先添加）
     if (handler && typeof handler === 'function') {
       // 避免重复添加同一个处理器
       if (!this.chatMessageHandlers.includes(handler)) {
         this.chatMessageHandlers.push(handler)
+        console.log('已添加聊天消息处理器，当前处理器数量:', this.chatMessageHandlers.length)
       }
+    }
+    
+    // 如果WebSocket未连接，只添加处理器，不创建订阅
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.log('WebSocket未连接，聊天消息处理器已添加，将在连接成功后自动订阅')
+      return null
     }
     
     // 如果已经有订阅，不需要重复订阅
@@ -184,6 +189,7 @@ class WebSocketManager {
     const subscription = this.stompClient.subscribe('/user/queue/chat', (message) => {
       try {
         const data = JSON.parse(message.body)
+        console.log('[WebSocket] 收到聊天消息:', data.id, '会话:', data.sessionId)
         // 调用所有注册的处理器
         this.chatMessageHandlers.forEach(handler => {
           if (typeof handler === 'function') {
@@ -201,6 +207,7 @@ class WebSocketManager {
     
     this.chatSubscription = subscription // 保存引用用于后续取消
     this.subscriptions.push(subscription)
+    console.log('聊天消息订阅成功')
     return subscription
   }
   

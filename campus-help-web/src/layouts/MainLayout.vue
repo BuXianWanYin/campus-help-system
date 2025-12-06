@@ -480,6 +480,9 @@ const notifications = ref([])
 const isMobile = ref(false)
 const loadingNotifications = ref(false)
 
+// 会话未读数量缓存（用于实时更新，避免频繁请求接口）
+const sessionUnreadCountMap = ref(new Map()) // Map<sessionId, unreadCount>
+
 // 功能模块（使用 markRaw 避免图标组件被响应式化）
 const featureModules = ref([
   { id: 1, title: '失物招领', icon: markRaw(Search), path: '/lost-found/list', colorClass: 'icon-blue', description: '发布失物信息，寻找丢失物品' },
@@ -664,24 +667,48 @@ const fetchUnreadCount = async () => {
   }
 }
 
-// 获取聊天未读消息数量
+// 获取聊天未读消息数量（初始化和刷新时使用）
 const fetchChatUnreadCount = async () => {
   if (!userStore.isLoggedIn) return
   try {
     const response = await chatApi.getSessionList()
     if (response.code === 200) {
       const sessions = response.data || []
-      // 累加所有会话的未读数量
-      let total = 0
+      // 更新会话未读数量缓存
+      sessionUnreadCountMap.value.clear()
       sessions.forEach(session => {
-        if (session.unreadCount && session.unreadCount > 0) {
-          total += session.unreadCount
+        if (session.id && session.unreadCount !== undefined) {
+          sessionUnreadCountMap.value.set(session.id, session.unreadCount || 0)
         }
       })
-      chatUnreadCount.value = total
+      // 累加所有会话的未读数量
+      updateChatUnreadTotal()
     }
   } catch (error) {
     console.error('获取聊天未读数量失败:', error)
+  }
+}
+
+// 根据缓存更新总未读数量
+const updateChatUnreadTotal = () => {
+  let total = 0
+  sessionUnreadCountMap.value.forEach(count => {
+    if (count > 0) {
+      total += count
+    }
+  })
+  chatUnreadCount.value = total
+  // 调试日志（开发环境）
+  if (import.meta.env.DEV) {
+    console.log('[聊天未读数] 更新总未读数:', total, '会话详情:', Array.from(sessionUnreadCountMap.value.entries()))
+  }
+}
+
+// 更新指定会话的未读数量（用于WebSocket实时更新）
+const updateSessionUnreadCount = (sessionId, count) => {
+  if (sessionId) {
+    sessionUnreadCountMap.value.set(sessionId, count || 0)
+    updateChatUnreadTotal()
   }
 }
 
@@ -799,28 +826,76 @@ const handleChatMessage = (message) => {
     return
   }
   
-  // 如果当前在聊天页面，不显示提示（Chat.vue会处理）
+  const currentUserId = userStore.userInfo?.id
+  const isCurrentUserSender = message.senderId === currentUserId
+  const isCurrentUserReceiver = message.receiverId === currentUserId
   const path = route.path
-  if (path === '/user/chat') {
-    return
+  const isInChatPage = path === '/user/chat'
+  
+  // 如果当前用户是接收者，且不是自己发送的消息（收到对方的消息）
+  if (isCurrentUserReceiver && !isCurrentUserSender) {
+    // 获取当前会话ID（从路由查询参数）
+    const currentSessionId = route.query.sessionId ? parseInt(route.query.sessionId) : null
+    
+    if (import.meta.env.DEV) {
+      console.log('[MainLayout] 收到聊天消息:', {
+        messageId: message.id,
+        sessionId: message.sessionId,
+        senderId: message.senderId,
+        receiverId: message.receiverId,
+        isInChatPage,
+        currentSessionId,
+        isOtherSession: message.sessionId !== currentSessionId
+      })
+    }
+    
+    // 如果不在聊天页面，或者不在当前会话中，增加未读数量
+    if (!isInChatPage || message.sessionId !== currentSessionId) {
+      // 实时更新未读数量（+1）
+      // 先确保该会话在缓存中存在
+      if (!sessionUnreadCountMap.value.has(message.sessionId)) {
+        // 如果缓存中没有，从0开始（可能是新会话）
+        sessionUnreadCountMap.value.set(message.sessionId, 0)
+        if (import.meta.env.DEV) {
+          console.log('[MainLayout] 初始化新会话未读数:', message.sessionId)
+        }
+      }
+      const currentCount = sessionUnreadCountMap.value.get(message.sessionId) || 0
+      if (import.meta.env.DEV) {
+        console.log('[MainLayout] 更新未读数: 会话', message.sessionId, '从', currentCount, '到', currentCount + 1)
+      }
+      updateSessionUnreadCount(message.sessionId, currentCount + 1)
+      
+      // 如果不在聊天页面，显示提示
+      if (!isInChatPage) {
+        const senderName = message.sender?.nickname || message.senderName || `用户${message.senderId}` || '用户'
+        ElMessage.success({
+          message: `收到来自 ${senderName} 的新消息`,
+          duration: 3000,
+          showClose: true,
+          onClick: () => {
+            router.push({ path: '/user/chat', query: { sessionId: message.sessionId } })
+          }
+        })
+      }
+    }
+    // 如果当前正在查看该会话，未读数量应该为0（Chat.vue会处理，这里确保同步）
+    else if (message.sessionId === currentSessionId) {
+      updateSessionUnreadCount(message.sessionId, 0)
+    }
+  }
+  // 如果当前用户是发送者（自己发送的消息），不需要更新未读数量
+  // 但如果是自己发送的消息，并且正在查看该会话，确保未读数量为0
+  else if (isCurrentUserSender && isInChatPage) {
+    const currentSessionId = route.query.sessionId ? parseInt(route.query.sessionId) : null
+    if (message.sessionId === currentSessionId) {
+      // 自己发送的消息，当前会话的未读数量应该为0
+      updateSessionUnreadCount(message.sessionId, 0)
+    }
   }
   
-  // 如果不是自己发送的消息，显示提示并刷新未读数量
-  if (message.senderId !== userStore.userInfo?.id) {
-    // 获取发送者名称（从sender对象或直接字段获取）
-    const senderName = message.sender?.nickname || message.senderName || `用户${message.senderId}` || '用户'
-    
-    ElMessage.success({
-      message: `收到来自 ${senderName} 的新消息`,
-      duration: 3000,
-      showClose: true
-    })
-    
-    // 刷新未读数量
-    fetchUnreadCount()
-    // 刷新聊天未读数量
-    fetchChatUnreadCount()
-  }
+  // 刷新系统消息未读数量
+  fetchUnreadCount()
 }
 
 // 更新当前激活菜单
@@ -881,18 +956,49 @@ watch(() => route.path, (newPath, oldPath) => {
       })
   }
   
-  // 如果离开聊天页面，刷新聊天未读数量
-  if (oldPath === '/user/chat' && newPath !== '/user/chat') {
-    fetchChatUnreadCount()
-  }
-  
   // 如果进入聊天页面，延迟刷新聊天未读数量（给页面时间标记已读）
   if (newPath === '/user/chat' && userStore.isLoggedIn) {
+    // 如果进入特定会话，该会话的未读数量应该为0
+    const sessionId = route.query.sessionId ? parseInt(route.query.sessionId) : null
+    if (sessionId) {
+      updateSessionUnreadCount(sessionId, 0)
+    }
+    // 延迟刷新，确保后端已标记为已读
     setTimeout(() => {
       fetchChatUnreadCount()
-    }, 1000)
+    }, 500)
+  }
+  
+  // 如果离开聊天页面，刷新聊天未读数量（确保数据准确）
+  if (oldPath === '/user/chat' && newPath !== '/user/chat') {
+    // 离开时刷新一次，确保准确性
+    fetchChatUnreadCount()
   }
 }, { immediate: true })
+
+// 监听聊天会话未读数更新事件（由Chat.vue触发）
+const handleChatUnreadUpdate = (event) => {
+  if (event.detail) {
+    if (event.detail.refreshAll) {
+      // 刷新所有会话的未读数量
+      fetchChatUnreadCount()
+    } else if (event.detail.sessionId !== undefined) {
+      const { sessionId, unreadCount } = event.detail
+      if (import.meta.env.DEV) {
+        console.log('[MainLayout] 收到Chat.vue的未读数更新事件:', { sessionId, unreadCount })
+      }
+      updateSessionUnreadCount(sessionId, unreadCount || 0)
+    }
+  }
+}
+
+// 监听会话切换事件（由Chat.vue触发）
+const handleChatSessionChange = (event) => {
+  if (event.detail && event.detail.sessionId) {
+    // 切换到新会话时，该会话的未读数量应该为0
+    updateSessionUnreadCount(event.detail.sessionId, 0)
+  }
+}
 
 // 跳转到功能模块
 const goToModule = (path) => {
@@ -1356,11 +1462,17 @@ onMounted(async () => {
     // 连接WebSocket
     const token = getToken()
     if (token) {
-      wsManager.connect(token)
+      // 先添加处理器（无论连接是否建立，都可以先添加）
       wsManager.addMessageHandler(handleWebSocketMessage)
-      // 订阅聊天消息（支持多处理器）
-      wsManager.subscribeChatMessages(handleChatMessage)
+      wsManager.subscribeChatMessages(handleChatMessage) // 添加处理器，连接成功后会自动订阅
+      // 然后连接WebSocket（连接成功后会自动订阅）
+      wsManager.connect(token)
     }
+    
+    // 监听聊天未读数更新事件
+    window.addEventListener('chat-unread-update', handleChatUnreadUpdate)
+    // 监听会话切换事件
+    window.addEventListener('chat-session-change', handleChatSessionChange)
   }
   
   // 监听通知面板显示，自动刷新消息
@@ -1380,6 +1492,9 @@ onUnmounted(() => {
   wsManager.removeChatMessageHandler(handleChatMessage)
   // 移除事件监听
   window.removeEventListener('refresh-home-data', handleRefreshHomeData)
+  // 移除聊天未读数更新事件监听
+  window.removeEventListener('chat-unread-update', handleChatUnreadUpdate)
+  window.removeEventListener('chat-session-change', handleChatSessionChange)
 })
 </script>
 

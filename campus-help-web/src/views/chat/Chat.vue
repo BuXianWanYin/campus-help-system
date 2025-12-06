@@ -469,6 +469,11 @@ const fetchSessions = async (autoSelectFromUrl = false, forceRefresh = false) =>
           } else {
             console.warn('未找到会话:', sessionId, '所有会话:', sessions.value.map(s => s.id))
           }
+        } else {
+          // 如果没有sessionId，通知MainLayout刷新所有会话的未读数量
+          window.dispatchEvent(new CustomEvent('chat-unread-update', {
+            detail: { refreshAll: true }
+          }))
         }
       }
     } else {
@@ -510,6 +515,13 @@ const selectSession = async (session) => {
   const targetSession = sessions.value.find(s => s.id === session.id)
   if (targetSession) {
     targetSession.unreadCount = 0
+    // 通知MainLayout更新未读数量
+    window.dispatchEvent(new CustomEvent('chat-session-change', {
+      detail: { sessionId: session.id }
+    }))
+    window.dispatchEvent(new CustomEvent('chat-unread-update', {
+      detail: { sessionId: session.id, unreadCount: 0 }
+    }))
   }
   
   // 如果是商品类型会话，尝试获取关联订单
@@ -805,6 +817,10 @@ const debouncedUpdateSessions = () => {
       const targetSession = sessions.value.find(s => s.id === currentSessionId.value)
       if (targetSession) {
         targetSession.unreadCount = 0
+        // 通知MainLayout更新未读数量
+        window.dispatchEvent(new CustomEvent('chat-unread-update', {
+          detail: { sessionId: currentSessionId.value, unreadCount: 0 }
+        }))
       }
     }
     sessionUpdateTimer = null
@@ -861,6 +877,10 @@ const handleChatMessage = (message) => {
     const targetSession = sessions.value.find(s => s.id === currentSessionId.value)
     if (targetSession) {
       targetSession.unreadCount = 0
+      // 通知MainLayout更新未读数量
+      window.dispatchEvent(new CustomEvent('chat-unread-update', {
+        detail: { sessionId: currentSessionId.value, unreadCount: 0 }
+      }))
     }
     
     // 如果消息不存在，添加到消息列表
@@ -907,6 +927,13 @@ const handleChatMessage = (message) => {
     // 其他会话的新消息
     const session = sessions.value.find(s => s.id === message.sessionId)
     if (session && message.senderId !== userStore.userInfo?.id) {
+      // 更新该会话的未读数量（+1）
+      const currentCount = session.unreadCount || 0
+      session.unreadCount = currentCount + 1
+      // 通知MainLayout更新未读数量
+      window.dispatchEvent(new CustomEvent('chat-unread-update', {
+        detail: { sessionId: message.sessionId, unreadCount: session.unreadCount }
+      }))
       // 只对接收到的消息显示通知，不显示自己发送的（使用防重复机制）
       debouncedShowNotification(
         session.otherUser?.nickname || '用户',
