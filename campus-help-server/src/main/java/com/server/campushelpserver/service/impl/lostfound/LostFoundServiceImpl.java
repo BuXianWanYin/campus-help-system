@@ -364,7 +364,9 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         try {
             User publisher = userMapper.selectById(lostFound.getUserId());
             if (publisher != null && publisher.getEmail() != null) {
-                String publisherNickname = publisher.getNickname() != null ? publisher.getNickname() : "用户";
+                String publisherNickname = (publisher.getNickname() != null && !publisher.getNickname().trim().isEmpty()) 
+                    ? publisher.getNickname() 
+                    : publisher.getEmail();
                 emailService.sendClaimApplyEmailAsync(
                     publisher.getEmail(),
                     publisherNickname,
@@ -461,7 +463,9 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         try {
             User claimer = userMapper.selectById(record.getClaimerId());
             if (claimer != null && claimer.getEmail() != null) {
-                String claimerNickname = claimer.getNickname() != null ? claimer.getNickname() : "用户";
+                String claimerNickname = (claimer.getNickname() != null && !claimer.getNickname().trim().isEmpty()) 
+                    ? claimer.getNickname() 
+                    : claimer.getEmail();
                 emailService.sendClaimConfirmedEmailAsync(
                     claimer.getEmail(),
                     claimerNickname,
@@ -541,7 +545,9 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         try {
             User claimer = userMapper.selectById(record.getClaimerId());
             if (claimer != null && claimer.getEmail() != null) {
-                String claimerNickname = claimer.getNickname() != null ? claimer.getNickname() : "用户";
+                String claimerNickname = (claimer.getNickname() != null && !claimer.getNickname().trim().isEmpty()) 
+                    ? claimer.getNickname() 
+                    : claimer.getEmail();
                 emailService.sendClaimRejectedEmailAsync(
                     claimer.getEmail(),
                     claimerNickname,

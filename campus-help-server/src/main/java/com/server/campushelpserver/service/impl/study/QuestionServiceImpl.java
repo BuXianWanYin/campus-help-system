@@ -459,7 +459,9 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         try {
             User questionPublisher = userMapper.selectById(question.getUserId());
             if (questionPublisher != null && questionPublisher.getEmail() != null) {
-                String publisherNickname = questionPublisher.getNickname() != null ? questionPublisher.getNickname() : "用户";
+                String publisherNickname = (questionPublisher.getNickname() != null && !questionPublisher.getNickname().trim().isEmpty()) 
+                    ? questionPublisher.getNickname() 
+                    : questionPublisher.getEmail();
                 emailService.sendQuestionAnsweredEmailAsync(
                     questionPublisher.getEmail(),
                     publisherNickname,
@@ -546,7 +548,9 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         try {
             User answerer = userMapper.selectById(answer.getUserId());
             if (answerer != null && answerer.getEmail() != null) {
-                String answererNickname = answerer.getNickname() != null ? answerer.getNickname() : "用户";
+                String answererNickname = (answerer.getNickname() != null && !answerer.getNickname().trim().isEmpty()) 
+                    ? answerer.getNickname() 
+                    : answerer.getEmail();
                 emailService.sendAnswerAcceptedEmailAsync(
                     answerer.getEmail(),
                     answererNickname,
@@ -1007,6 +1011,83 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             );
         } catch (Exception e) {
             System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAnswer(Long answerId, String reason, Long adminId) {
+        // 1. 查询回答
+        StudyAnswer answer = studyAnswerMapper.selectById(answerId);
+        if (answer == null || answer.getDeleteFlag() == 1) {
+            throw new BusinessException("回答不存在");
+        }
+        
+        // 2. 查询问题
+        StudyQuestion question = studyQuestionMapper.selectById(answer.getQuestionId());
+        if (question == null || question.getDeleteFlag() == 1) {
+            throw new BusinessException("问题不存在");
+        }
+        
+        // 3. 逻辑删除回答
+        answer.setDeleteFlag(1);
+        answer.setUpdateTime(LocalDateTime.now());
+        studyAnswerMapper.updateById(answer);
+        
+        // 4. 如果回答已被采纳，需要更新问题的采纳状态
+        if (answer.getIsAccepted() != null && answer.getIsAccepted() == 1) {
+            question.setAcceptedAnswerId(null);
+            question.setAcceptTime(null);
+            // 如果问题状态是已解决，可能需要更新状态
+            if ("SOLVED".equals(question.getStatus())) {
+                question.setStatus("ANSWERED");
+            }
+        }
+        
+        // 5. 更新问题的回答数量（减少1）
+        if (question.getAnswerCount() != null && question.getAnswerCount() > 0) {
+            question.setAnswerCount(question.getAnswerCount() - 1);
+        }
+        question.setUpdateTime(LocalDateTime.now());
+        studyQuestionMapper.updateById(question);
+        
+        // 6. 获取回答内容的前50个字符用于消息提示
+        String answerPreview = answer.getContent();
+        if (answerPreview != null && answerPreview.length() > 50) {
+            answerPreview = answerPreview.substring(0, 50) + "...";
+        }
+        
+        // 7. 发送系统消息通知回答者
+        try {
+            String messageContent = "您的回答" + (answerPreview != null && !answerPreview.isEmpty() ? answerPreview : "") + " 已被管理员删除。原因：" + reason;
+            systemMessageService.sendMessage(
+                answer.getUserId(),
+                "ANSWER_DELETED",
+                "您的回答已被删除",
+                messageContent,
+                "STUDY_ANSWER",
+                answerId
+            );
+        } catch (Exception e) {
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+        
+        // 8. 发送邮件通知回答者
+        try {
+            User answerUser = userMapper.selectById(answer.getUserId());
+            if (answerUser != null && answerUser.getEmail() != null) {
+                emailService.sendEmail(
+                    answerUser.getEmail(),
+                    "您的回答已被删除",
+                    "尊敬的用户，\n\n" +
+                    "您的回答" + (answerPreview != null ? "《" + answerPreview + "》" : "") + "已被管理员删除。\n\n" +
+                    "删除原因：" + reason + "\n\n" +
+                    "如有疑问，请联系管理员。\n\n" +
+                    "校园帮系统"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("发送邮件失败: " + e.getMessage());
         }
     }
 }

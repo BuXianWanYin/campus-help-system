@@ -177,7 +177,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         try {
             User seller = userMapper.selectById(goods.getUserId());
             if (seller != null && seller.getEmail() != null) {
-                String sellerNickname = seller.getNickname() != null ? seller.getNickname() : "用户";
+                String sellerNickname = (seller.getNickname() != null && !seller.getNickname().trim().isEmpty()) 
+                    ? seller.getNickname() 
+                    : seller.getEmail();
                 emailService.sendOrderCreatedEmailAsync(
                     seller.getEmail(),
                     sellerNickname,

@@ -129,5 +129,13 @@ public interface QuestionService extends IService<StudyQuestion> {
      */
     void auditAnswer(Long answerId, Boolean approved, String reason, Long adminId);
     
+    /**
+     * 管理员删除回答
+     * @param answerId 回答ID
+     * @param reason 删除原因
+     * @param adminId 管理员ID
+     */
+    void deleteAnswer(Long answerId, String reason, Long adminId);
+    
 }
 

@@ -1,5 +1,5 @@
 /**
- * WebSocket 工具类（STOMP协议）
+ * WebSocket工具类（STOMP协议）
  * 用于管理WebSocket连接、重连、消息接收
  */
 
@@ -11,29 +11,30 @@ class WebSocketManager {
     this.stompClient = null
     this.socket = null
     this.reconnectTimer = null
-    this.systemMessageHandlers = [] // 区分系统消息处理器
-    this.chatMessageHandlers = [] // 新增聊天消息处理器
-    this.subscriptions = [] // 存储订阅对象，用于取消订阅
-    this.chatSubscription = null // 存储聊天消息订阅，用于精确取消
+    this.systemMessageHandlers = []
+    this.chatMessageHandlers = []
+    this.subscriptions = []
+    this.chatSubscription = null
     this.isConnected = false
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
-    this.reconnectInterval = 3000 // 3秒
-    // 使用环境变量中的 WebSocket URL
-    // SockJS 需要 HTTP URL（会自动转换为 WebSocket）
+    this.reconnectInterval = 3000
+    
+    // 使用环境变量中的WebSocket URL
+    // SockJS需要HTTP URL（会自动转换为WebSocket）
     const wsUrl = import.meta.env.VITE_WS_URL
     if (wsUrl.startsWith('ws://') || wsUrl.startsWith('wss://')) {
-      // 如果是 WebSocket 协议，转换为 HTTP 协议并移除 /ws
+      // 如果是WebSocket协议，转换为HTTP协议并移除/ws
       this.baseUrl = wsUrl.replace(/^ws:\/\//, 'http://').replace(/^wss:\/\//, 'https://').replace(/\/ws$/, '')
     } else {
-      // 如果已经是 HTTP 协议，直接使用（移除 /ws 后缀，如果存在）
+      // 如果已经是HTTP协议，直接使用（移除/ws后缀，如果存在）
       this.baseUrl = wsUrl.replace(/\/ws$/, '')
     }
   }
   
   /**
    * 连接WebSocket
-   * @param {string} token - JWT token
+   * @param {string} token - JWT Token
    */
   connect(token) {
     if (this.stompClient && this.stompClient.connected) {
@@ -43,13 +44,14 @@ class WebSocketManager {
     
     try {
       // 创建SockJS连接
-      // SockJS 会自动处理协议转换（http -> ws），所以直接使用 baseUrl + /ws
+      // SockJS会自动处理协议转换（http -> ws），所以直接使用baseUrl + /ws
       const wsUrl = `${this.baseUrl}/ws`
-      console.log('正在连接 WebSocket:', wsUrl)
+      console.log('正在连接WebSocket:', wsUrl)
       this.socket = new SockJS(wsUrl)
-      // 检查 Stomp 是否正确导入
+      
+      // 检查Stomp是否正确导入
       if (!Stomp || typeof Stomp.over !== 'function') {
-        throw new Error('STOMP 客户端未正确加载，请检查导入')
+        throw new Error('STOMP客户端未正确加载，请检查导入')
       }
       this.stompClient = Stomp.over(this.socket)
       
@@ -67,11 +69,11 @@ class WebSocketManager {
       this.stompClient.connect(
         headers,
         () => {
-          console.log('WebSocket STOMP 连接成功')
+          console.log('WebSocket STOMP连接成功')
           this.isConnected = true
           this.reconnectAttempts = 0
           this.onConnect()
-          // 延迟订阅系统消息，确保 STOMP 客户端完全就绪
+          // 延迟订阅系统消息，确保STOMP客户端完全就绪
           setTimeout(() => {
             if (this.stompClient && this.stompClient.connected) {
               this.subscribeToSystemMessages()
@@ -80,12 +82,12 @@ class WebSocketManager {
                 this.subscribeChatMessages()
               }
             } else {
-              console.warn('STOMP 客户端未就绪，无法订阅系统消息')
+              console.warn('STOMP客户端未就绪，无法订阅系统消息')
             }
           }, 100)
         },
         (error) => {
-          console.error('WebSocket STOMP 连接失败:', error)
+          console.error('WebSocket STOMP连接失败:', error)
           this.isConnected = false
           this.onError(error)
           // 自动重连
@@ -97,7 +99,7 @@ class WebSocketManager {
       
       // 监听连接关闭
       this.socket.onclose = () => {
-        console.log('WebSocket 连接关闭')
+        console.log('WebSocket连接关闭')
         this.isConnected = false
         this.onDisconnect()
         // 清理订阅

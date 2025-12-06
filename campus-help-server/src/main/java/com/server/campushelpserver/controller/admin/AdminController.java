@@ -187,6 +187,43 @@ public class AdminController {
     }
     
     /**
+     * 创建用户（管理员）
+     */
+    @Operation(summary = "创建用户", description = "管理员创建新用户")
+    @PostMapping("/user/create")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<User> createUser(@Parameter(description = "用户信息") @Validated(User.RegisterGroup.class) @RequestBody User user) {
+        // 使用register方法创建用户（会检查邮箱重复、加密密码等）
+        User createdUser = userService.register(user);
+        // 清除密码信息
+        createdUser.setPassword(null);
+        return Result.success("创建成功", createdUser);
+    }
+    
+    /**
+     * 删除用户（管理员）
+     */
+    @Operation(summary = "删除用户", description = "管理员删除用户（逻辑删除）")
+    @DeleteMapping("/user/{userId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<Void> deleteUser(@Parameter(description = "用户ID") @PathVariable Long userId) {
+        User user = userService.getById(userId);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        
+        // 不能删除管理员
+        if ("ADMIN".equals(user.getRole())) {
+            return Result.error("不能删除管理员");
+        }
+        
+        // 逻辑删除
+        user.setDeleteFlag(1);
+        userService.updateById(user);
+        return Result.success();
+    }
+    
+    /**
      * 获取待审核的失物招领列表
      */
     @Operation(summary = "获取待审核的失物招领列表", description = "分页查询待审核的失物招领")

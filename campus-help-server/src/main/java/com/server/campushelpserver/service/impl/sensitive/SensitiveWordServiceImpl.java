@@ -57,19 +57,25 @@ public class SensitiveWordServiceImpl extends ServiceImpl<SensitiveWordMapper, S
     @Override
     public void reloadSensitiveWords() {
         try {
-            // 从数据库加载敏感词
-            List<SensitiveWord> words = this.list();
+            // 从数据库加载未删除的敏感词（显式过滤已删除的记录）
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SensitiveWord> wrapper = 
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+            wrapper.eq(SensitiveWord::getDeleteFlag, 0);
+            List<SensitiveWord> words = this.list(wrapper);
+            
             List<String> wordList = words.stream()
                     .map(SensitiveWord::getWord)
+                    .filter(word -> word != null && !word.trim().isEmpty()) // 过滤空词
                     .collect(Collectors.toList());
             
             // 构建AC自动机
             ahoCorasick = new AhoCorasick();
             ahoCorasick.build(wordList);
             
-            log.info("敏感词库加载完成，共 {} 个敏感词", words.size());
+            log.info("敏感词库重新加载完成，共 {} 个敏感词", wordList.size());
         } catch (Exception e) {
-            log.error("加载敏感词库失败", e);
+            log.error("重新加载敏感词库失败", e);
+            throw new RuntimeException("重新加载敏感词库失败", e);
         }
     }
 }

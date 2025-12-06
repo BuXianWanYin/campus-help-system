@@ -1,9 +1,13 @@
 /**
  * 工具函数集合
+ * 提供常用的工具函数
  */
 
 /**
  * 格式化日期
+ * @param {Date|string|number} date - 日期对象或日期字符串或时间戳
+ * @param {string} format - 格式化模板，默认 'YYYY-MM-DD HH:mm:ss'
+ * @returns {string} 格式化后的日期字符串
  */
 export function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
   if (!date) return ''
@@ -26,6 +30,10 @@ export function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
 
 /**
  * 防抖函数
+ * 在指定时间内只执行最后一次调用
+ * @param {Function} func - 要防抖的函数
+ * @param {number} wait - 等待时间（毫秒）
+ * @returns {Function} 防抖后的函数
  */
 export function debounce(func, wait) {
   let timeout
@@ -41,6 +49,10 @@ export function debounce(func, wait) {
 
 /**
  * 节流函数
+ * 在指定时间内只执行一次调用
+ * @param {Function} func - 要节流的函数
+ * @param {number} limit - 时间限制（毫秒）
+ * @returns {Function} 节流后的函数
  */
 export function throttle(func, limit) {
   let inThrottle
@@ -54,7 +66,9 @@ export function throttle(func, limit) {
 }
 
 /**
- * 深拷贝
+ * 深拷贝对象
+ * @param {*} obj - 要拷贝的对象
+ * @returns {*} 拷贝后的对象
  */
 export function deepClone(obj) {
   if (obj === null || typeof obj !== 'object') return obj
@@ -73,6 +87,8 @@ export function deepClone(obj) {
 
 /**
  * 下载文件
+ * @param {string} url - 文件URL
+ * @param {string} filename - 文件名
  */
 export function downloadFile(url, filename) {
   const link = document.createElement('a')
@@ -85,6 +101,8 @@ export function downloadFile(url, filename) {
 
 /**
  * 获取文件扩展名
+ * @param {string} filename - 文件名
+ * @returns {string} 文件扩展名
  */
 export function getFileExtension(filename) {
   return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2)
@@ -92,6 +110,8 @@ export function getFileExtension(filename) {
 
 /**
  * 格式化文件大小
+ * @param {number} bytes - 文件大小（字节）
+ * @returns {string} 格式化后的文件大小字符串
  */
 export function formatFileSize(bytes) {
   if (bytes === 0) return '0 B'

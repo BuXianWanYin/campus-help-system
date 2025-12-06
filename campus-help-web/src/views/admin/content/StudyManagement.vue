@@ -228,7 +228,7 @@
               {{ formatDate(row.createTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column label="操作" width="250" fixed="right">
             <template #default="{ row }">
               <el-button
                 v-if="row.auditStatus === 'PENDING'"
@@ -248,8 +248,15 @@
               >
                 拒绝
               </el-button>
-              <el-tag v-else-if="row.auditStatus === 'APPROVED'" type="success" size="small">已审核</el-tag>
-              <el-tag v-else-if="row.auditStatus === 'REJECTED'" type="danger" size="small">已拒绝</el-tag>
+              <el-button
+                v-if="row.auditStatus === 'APPROVED' || row.auditStatus === 'REJECTED'"
+                type="danger"
+                size="small"
+                :icon="Delete"
+                @click="handleDeleteAnswer(row)"
+              >
+                删除
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -288,13 +295,37 @@
         <el-button type="primary" @click="confirmAuditAnswer">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 删除回答对话框 -->
+    <el-dialog
+      v-model="deleteDialogVisible"
+      title="删除回答"
+      width="500px"
+    >
+      <el-form :model="deleteForm" label-width="100px">
+        <el-form-item label="删除原因" required>
+          <el-input
+            v-model="deleteForm.reason"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入删除原因"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="deleteDialogVisible = false">取消</el-button>
+        <el-button type="danger" @click="confirmDeleteAnswer">确定删除</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View, ChatDotRound, Check, Close } from '@element-plus/icons-vue'
+import { View, ChatDotRound, Check, Close, Delete } from '@element-plus/icons-vue'
 import { questionApi, adminQuestionApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 
@@ -313,6 +344,10 @@ const auditDialogVisible = ref(false)
 const currentAnswer = ref(null)
 const auditForm = reactive({
   approved: true,
+  reason: ''
+})
+const deleteDialogVisible = ref(false)
+const deleteForm = reactive({
   reason: ''
 })
 
@@ -442,6 +477,48 @@ const confirmAuditAnswer = async () => {
   } catch (error) {
     console.error('审核失败:', error)
     ElMessage.error('审核失败')
+  }
+}
+
+// 删除回答
+const handleDeleteAnswer = (row) => {
+  currentAnswer.value = row
+  deleteForm.reason = ''
+  deleteDialogVisible.value = true
+}
+
+// 确认删除回答
+const confirmDeleteAnswer = async () => {
+  if (!deleteForm.reason || deleteForm.reason.trim().length === 0) {
+    ElMessage.warning('请填写删除原因')
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除该回答吗？删除后将发送通知给回答者。`,
+      '确认删除',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const response = await adminQuestionApi.deleteAnswer(currentAnswer.value.id, deleteForm.reason.trim())
+    if (response.code === 200) {
+      ElMessage.success('删除成功')
+      deleteDialogVisible.value = false
+      // 刷新回答列表
+      handleManageAnswers(currentQuestion.value)
+    } else {
+      ElMessage.error(response.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
   }
 }
 

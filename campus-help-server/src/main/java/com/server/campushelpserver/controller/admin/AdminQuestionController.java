@@ -117,5 +117,20 @@ public class AdminQuestionController {
         String message = dto.getApproved() ? "审核通过" : "审核拒绝";
         return Result.success(message, null);
     }
+    
+    @Operation(summary = "删除回答", description = "管理员删除回答（逻辑删除）")
+    @DeleteMapping("/answer/{answerId}")
+    public Result<Void> deleteAnswer(
+            @Parameter(description = "回答ID") @PathVariable Long answerId,
+            @Parameter(description = "删除原因") @RequestParam String reason) {
+        Long adminId = getCurrentAdminId();
+        
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new BusinessException("删除原因不能为空");
+        }
+        
+        questionService.deleteAnswer(answerId, reason.trim(), adminId);
+        return Result.success("删除成功", null);
+    }
 }
 

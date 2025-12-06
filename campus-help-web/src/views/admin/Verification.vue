@@ -39,9 +39,14 @@
       :default-sort="{ prop: 'verificationSubmitTime', order: 'descending' }"
     >
       <el-table-column prop="id" label="用户ID" min-width="80" sortable />
-      <el-table-column prop="nickname" label="昵称" min-width="120" sortable>
+      <el-table-column label="用户" min-width="180" sortable>
         <template #default="{ row }">
-          {{ row.nickname || '-' }}
+          <div class="user-cell">
+            <el-avatar :size="40" :src="getAvatarUrl(row.avatar)">
+              {{ (row.nickname || row.email || 'U').charAt(0) }}
+            </el-avatar>
+            <span class="user-name">{{ row.nickname || row.email || '未知用户' }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column prop="email" label="邮箱" min-width="180" sortable show-overflow-tooltip />
@@ -414,6 +419,17 @@ onMounted(() => {
 .text-muted {
   color: var(--color-text-secondary);
   font-size: 14px;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-name {
+  font-size: 14px;
+  color: var(--color-text-primary);
 }
 </style>
 

@@ -58,16 +58,14 @@
       :default-sort="{ prop: 'createTime', order: 'descending' }"
     >
       <el-table-column prop="id" label="用户ID" min-width="80" sortable />
-      <el-table-column label="头像" min-width="80">
+      <el-table-column label="用户" min-width="180" sortable>
         <template #default="{ row }">
-          <el-avatar :size="40" :src="getAvatarUrl(row.avatar)">
-            {{ row.nickname?.charAt(0) || row.email?.charAt(0) || 'U' }}
-          </el-avatar>
-        </template>
-      </el-table-column>
-      <el-table-column prop="nickname" label="昵称" min-width="120" sortable>
-        <template #default="{ row }">
-          {{ row.nickname || '-' }}
+          <div class="user-cell">
+            <el-avatar :size="40" :src="getAvatarUrl(row.avatar)">
+              {{ (row.nickname || row.email || 'U').charAt(0) }}
+            </el-avatar>
+            <span class="user-name">{{ row.nickname || row.email || '未知用户' }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column prop="email" label="邮箱" min-width="180" sortable show-overflow-tooltip />
@@ -238,6 +236,25 @@
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="editForm.email" disabled />
         </el-form-item>
+        <el-form-item label="头像" prop="avatar">
+          <div class="avatar-upload-section">
+            <el-avatar :size="80" :src="getAvatarUrl(editForm.avatar)">
+              {{ (editForm.nickname || editForm.email || 'U').charAt(0) }}
+            </el-avatar>
+            <div class="avatar-actions">
+              <el-upload
+                :action="''"
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-change="handleEditAvatarChange"
+                accept="image/*"
+              >
+                <el-button type="primary" size="small">上传头像</el-button>
+              </el-upload>
+              <el-button v-if="editForm.avatar" type="danger" size="small" @click="handleRemoveEditAvatar">移除</el-button>
+            </div>
+          </div>
+        </el-form-item>
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="editForm.nickname" placeholder="请输入昵称" />
         </el-form-item>
@@ -289,6 +306,25 @@
             placeholder="请输入密码（至少8位，包含字母和数字）"
             show-password
           />
+        </el-form-item>
+        <el-form-item label="头像" prop="avatar">
+          <div class="avatar-upload-section">
+            <el-avatar :size="80" :src="getAvatarUrl(addForm.avatar)">
+              {{ (addForm.nickname || addForm.email || 'U').charAt(0) }}
+            </el-avatar>
+            <div class="avatar-actions">
+              <el-upload
+                :action="''"
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-change="handleAddAvatarChange"
+                accept="image/*"
+              >
+                <el-button type="primary" size="small">上传头像</el-button>
+              </el-upload>
+              <el-button v-if="addForm.avatar" type="danger" size="small" @click="handleRemoveAddAvatar">移除</el-button>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="addForm.nickname" placeholder="请输入昵称" />
@@ -416,6 +452,7 @@ const editForm = reactive({
   id: null,
   nickname: '',
   email: '',
+  avatar: '',
   gender: 0,
   grade: '',
   major: '',
@@ -427,6 +464,7 @@ const addForm = reactive({
   email: '',
   password: '',
   nickname: '',
+  avatar: '',
   gender: 0,
   grade: '',
   major: '',
@@ -592,6 +630,7 @@ const handleAddUser = () => {
   addForm.email = ''
   addForm.password = ''
   addForm.nickname = ''
+  addForm.avatar = ''
   addForm.gender = 0
   addForm.grade = ''
   addForm.major = ''
@@ -702,6 +741,60 @@ const parseProofImages = (proof) => {
   }
 }
 
+// 编辑用户头像上传
+const handleEditAvatarChange = async (file) => {
+  if (file.raw) {
+    if (file.raw.size > 10 * 1024 * 1024) {
+      ElMessage.error('头像大小不能超过10MB')
+      return
+    }
+    try {
+      const response = await fileApi.upload(file.raw, 'user')
+      if (response.code === 200) {
+        editForm.avatar = response.data.url
+        ElMessage.success('头像上传成功')
+      } else {
+        ElMessage.error(response.message || '头像上传失败')
+      }
+    } catch (error) {
+      console.error('头像上传失败:', error)
+      ElMessage.error('头像上传失败')
+    }
+  }
+}
+
+// 移除编辑用户头像
+const handleRemoveEditAvatar = () => {
+  editForm.avatar = ''
+}
+
+// 新增用户头像上传
+const handleAddAvatarChange = async (file) => {
+  if (file.raw) {
+    if (file.raw.size > 10 * 1024 * 1024) {
+      ElMessage.error('头像大小不能超过10MB')
+      return
+    }
+    try {
+      const response = await fileApi.upload(file.raw, 'user')
+      if (response.code === 200) {
+        addForm.avatar = response.data.url
+        ElMessage.success('头像上传成功')
+      } else {
+        ElMessage.error(response.message || '头像上传失败')
+      }
+    } catch (error) {
+      console.error('头像上传失败:', error)
+      ElMessage.error('头像上传失败')
+    }
+  }
+}
+
+// 移除新增用户头像
+const handleRemoveAddAvatar = () => {
+  addForm.avatar = ''
+}
+
 onMounted(() => {
   fetchUserList()
 })
@@ -784,6 +877,29 @@ onMounted(() => {
 
 .action-buttons .el-button {
   border-radius: var(--radius-sm);
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-name {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.avatar-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 </style>
 

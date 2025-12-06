@@ -1,23 +1,27 @@
+/**
+ * HTTP请求封装
+ * 基于axios封装，包含请求拦截器、响应拦截器、错误处理等
+ */
+
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getToken, removeToken } from './auth'
 
-// 创建 axios 实例
+// 创建axios实例
 const baseURL = import.meta.env.VITE_APP_BASE_API || '/api'
-const timeout = parseInt(import.meta.env.VITE_APP_TIMEOUT) || 60000 // 默认60秒
+const timeout = parseInt(import.meta.env.VITE_APP_TIMEOUT) || 60000
 
 const service = axios.create({
   baseURL: baseURL,
-  timeout: timeout, // 默认60秒，邮件发送可能需要更长时间
+  timeout: timeout,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-// 请求拦截器
+// 请求拦截器：自动添加Token
 service.interceptors.request.use(
   (config) => {
-    // 在发送请求之前做些什么
     const token = getToken()
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
@@ -25,13 +29,12 @@ service.interceptors.request.use(
     return config
   },
   (error) => {
-    // 对请求错误做些什么
     console.error('请求错误:', error)
     return Promise.reject(error)
   }
 )
 
-// 响应拦截器
+// 响应拦截器：统一处理响应和错误
 service.interceptors.response.use(
   (response) => {
     const res = response.data
@@ -44,12 +47,10 @@ service.interceptors.response.use(
         duration: 5 * 1000
       })
       
-      // 401: 未授权，清除 token 并跳转到登录页（但认证接口除外）
+      // 401未授权：清除token并跳转到登录页（认证接口除外）
       if (res.code === 401) {
-        // 检查是否是认证相关接口
         const isAuthApi = response.config?.url?.includes('/auth/')
         if (!isAuthApi) {
-          // 非认证接口的 401 错误，清除 token 并跳转登录页
           ElMessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
             confirmButtonText: '重新登录',
             cancelButtonText: '取消',
@@ -59,7 +60,6 @@ service.interceptors.response.use(
             location.reload()
           })
         }
-        // 认证接口的 401 错误，只显示错误信息，不跳转
       }
       
       return Promise.reject(new Error(res.message || '请求失败'))
@@ -72,18 +72,16 @@ service.interceptors.response.use(
     
     let message = '请求失败'
     if (error.response) {
+      // 根据HTTP状态码显示不同错误信息
       switch (error.response.status) {
         case 400:
           message = '请求参数错误'
           break
         case 401:
-          // 如果是认证相关接口（登录、注册、发送验证码），不跳转登录页
           const isAuthApi = error.config?.url?.includes('/auth/')
           if (isAuthApi) {
-            // 认证接口的 401 错误，只显示错误信息，不跳转
             message = error.response?.data?.message || '认证失败'
           } else {
-            // 其他接口的 401 错误，清除 token 并跳转登录页
             message = '未授权，请重新登录'
             removeToken()
             location.reload()
@@ -111,7 +109,7 @@ service.interceptors.response.use(
           message = `连接错误${error.response.status}`
       }
     } else if (error.request) {
-      // 检查是否是超时错误
+      // 网络错误或超时
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         message = '请求超时，请检查网络连接或稍后重试'
       } else {

@@ -1,16 +1,18 @@
 /**
- * Vue3 自定义指令
+ * Vue3自定义指令
+ * 提供可复用的指令功能
  */
 
 /**
  * 点击外部关闭指令
+ * 当点击元素外部时触发绑定的处理函数
  * 使用方式：v-click-outside="handler"
- * handler 是一个函数，当点击元素外部时会被调用
+ * @param {Function} handler - 点击外部时触发的处理函数
  */
 export const clickOutside = {
   mounted(el, binding) {
     el._clickOutside = (event) => {
-      // 获取排除的元素（如按钮）
+      // 获取排除的元素选择器（如按钮）
       const excludeSelector = binding.arg || '.notification-btn-wrapper'
       const excludeEl = document.querySelector(excludeSelector)
       
@@ -26,7 +28,7 @@ export const clickOutside = {
         }
       }
     }
-    // 使用 setTimeout 确保在下一个事件循环后添加事件监听，避免立即触发
+    // 使用setTimeout确保在下一个事件循环后添加事件监听，避免立即触发
     setTimeout(() => {
       document.addEventListener('click', el._clickOutside)
     }, 0)

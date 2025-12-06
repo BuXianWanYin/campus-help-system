@@ -154,7 +154,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (StringUtils.hasText(user.getNickname())) {
             existingUser.setNickname(user.getNickname());
         }
-        if (StringUtils.hasText(user.getAvatar())) {
+        // 头像可以设置为空字符串来清除头像
+        if (user.getAvatar() != null) {
             existingUser.setAvatar(user.getAvatar());
         }
         if (user.getGender() != null) {
@@ -269,10 +270,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         // 发送消息给所有管理员
         try {
+            String userDisplayName = (user.getNickname() != null && !user.getNickname().trim().isEmpty()) 
+                ? user.getNickname() 
+                : user.getEmail();
             systemMessageService.sendMessageToAllAdmins(
                 "ADMIN_VERIFICATION_REQUIRED",
                 "新的实名认证待审核",
-                "用户" + user.getNickname() + "（" + user.getEmail() + "）提交了实名认证申请，请及时审核",
+                "用户" + userDisplayName + "（" + user.getEmail() + "）提交了实名认证申请，请及时审核",
                 "VERIFICATION",
                 userId
             );

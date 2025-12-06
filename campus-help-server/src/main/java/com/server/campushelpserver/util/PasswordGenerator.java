@@ -7,6 +7,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
  */
 public class PasswordGenerator {
     
+    /**
+     * 主方法，用于生成BCrypt加密密码
+     * @param args 命令行参数，第一个参数为原始密码（可选，默认为"123456"）
+     */
     public static void main(String[] args) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String password = args.length > 0 ? args[0] : "123456";

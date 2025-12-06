@@ -1,5 +1,6 @@
 /**
  * 图片URL处理工具
+ * 处理图片路径，转换为完整的URL
  */
 
 /**
@@ -15,12 +16,12 @@ export function getAvatarUrl(avatar) {
     return avatar
   }
   
-  // 确保路径以 / 开头
+  // 确保路径以/开头
   if (!avatar.startsWith('/')) {
     avatar = '/' + avatar
   }
   
-  // 返回相对路径，Vite 代理会转发到后端
+  // 返回相对路径，Vite代理会转发到后端
   return avatar
 }
 

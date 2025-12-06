@@ -9,7 +9,6 @@ import com.server.campushelpserver.service.sensitive.SensitiveWordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -60,33 +59,66 @@ public class SensitiveWordController {
         return Result.success("查询成功", list);
     }
     
-    @Operation(summary = "添加敏感词", description = "添加新的敏感词")
+    @Operation(summary = "添加敏感词", description = "添加新的敏感词，支持批量添加（多个敏感词用逗号分隔）")
     @PostMapping("/add")
     public Result<Long> addSensitiveWord(
             @Parameter(description = "敏感词信息") @Validated @RequestBody SensitiveWordDTO dto) {
-        // 检查敏感词是否已存在
-        LambdaQueryWrapper<SensitiveWord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SensitiveWord::getWord, dto.getWord().trim());
-        wrapper.eq(SensitiveWord::getDeleteFlag, 0);
-        SensitiveWord existing = sensitiveWordService.getOne(wrapper);
-        if (existing != null) {
-            return Result.error("敏感词已存在");
+        String wordInput = dto.getWord().trim();
+        if (wordInput.isEmpty()) {
+            return Result.error("敏感词不能为空");
         }
         
-        SensitiveWord sensitiveWord = new SensitiveWord();
-        BeanUtils.copyProperties(dto, sensitiveWord);
-        sensitiveWord.setWord(dto.getWord().trim());
-        sensitiveWord.setLevel(dto.getLevel());
-        sensitiveWord.setCreateTime(LocalDateTime.now());
-        sensitiveWord.setUpdateTime(LocalDateTime.now());
-        sensitiveWord.setDeleteFlag(0);
+        // 支持批量添加：用逗号分隔多个敏感词
+        String[] words = wordInput.split("[,，]"); // 支持中文和英文逗号
+        int successCount = 0;
+        int skipCount = 0;
+        Long lastId = null;
         
-        sensitiveWordService.save(sensitiveWord);
+        for (String word : words) {
+            word = word.trim();
+            if (word.isEmpty()) {
+                continue; // 跳过空词
+            }
+            
+            // 检查敏感词是否已存在
+            LambdaQueryWrapper<SensitiveWord> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SensitiveWord::getWord, word);
+            wrapper.eq(SensitiveWord::getDeleteFlag, 0);
+            SensitiveWord existing = sensitiveWordService.getOne(wrapper);
+            if (existing != null) {
+                skipCount++;
+                continue; // 跳过已存在的敏感词
+            }
+            
+            // 创建新的敏感词
+            SensitiveWord sensitiveWord = new SensitiveWord();
+            sensitiveWord.setWord(word);
+            sensitiveWord.setLevel(dto.getLevel());
+            sensitiveWord.setCreateTime(LocalDateTime.now());
+            sensitiveWord.setUpdateTime(LocalDateTime.now());
+            sensitiveWord.setDeleteFlag(0);
+            
+            sensitiveWordService.save(sensitiveWord);
+            lastId = sensitiveWord.getId();
+            successCount++;
+        }
+        
+        if (successCount == 0) {
+            if (skipCount > 0) {
+                return Result.error("所有敏感词都已存在");
+            }
+            return Result.error("没有有效的敏感词");
+        }
         
         // 重新加载敏感词库
         sensitiveWordService.reloadSensitiveWords();
         
-        return Result.success("添加成功", sensitiveWord.getId());
+        String message = String.format("添加成功：成功添加 %d 个敏感词", successCount);
+        if (skipCount > 0) {
+            message += String.format("，跳过 %d 个已存在的敏感词", skipCount);
+        }
+        
+        return Result.success(message, lastId);
     }
     
     @Operation(summary = "更新敏感词", description = "更新敏感词信息")
