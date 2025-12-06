@@ -1,7 +1,7 @@
 <template>
   <div class="goods-audit-page">
     <div class="page-header">
-      <h2 class="page-title">商品审核</h2>
+      <h2 class="page-title">闲置交易审核</h2>
       <p class="page-subtitle">审核用户提交的闲置商品信息，可查看所有审核历史</p>
     </div>
 

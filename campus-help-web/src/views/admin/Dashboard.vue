@@ -62,8 +62,8 @@
             <div>
               <p class="stat-label">{{ stat.label }}</p>
               <h3 class="stat-value">{{ stat.value }}</h3>
-              <p class="stat-change" :class="stat.changeType">
-                <el-icon><component :is="stat.changeIcon" /></el-icon>
+              <p v-if="stat.change" class="stat-change" :class="stat.changeType">
+                <el-icon v-if="stat.changeIcon"><component :is="stat.changeIcon" /></el-icon>
                 {{ stat.change }} 较上周
               </p>
             </div>
@@ -116,7 +116,7 @@
 import { ref, onMounted, onUnmounted, nextTick, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { UserFilled, DocumentChecked, CircleCheck, Warning, ArrowUp, ArrowDown, Connection, User as UsersIcon, Clock } from '@element-plus/icons-vue'
+import { UserFilled, DocumentChecked, CircleCheck, Warning, ArrowUp, ArrowDown, Connection, User as UsersIcon, Clock, ShoppingBag, Reading as ReadingIcon } from '@element-plus/icons-vue'
 import { initChart, resizeChart } from '@/utils/echarts'
 import { adminApi } from '@/api'
 
@@ -132,8 +132,10 @@ const stats = ref({
 // 业务统计数据（使用 markRaw 避免组件被响应式化）
 const statsData = ref([
   { id: 1, label: '总互助次数', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(Connection), colorClass: 'icon-blue' },
-  { id: 2, label: '活跃用户', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(UsersIcon), colorClass: 'icon-green' },
-  { id: 3, label: '平均响应时间', value: '0分钟', change: '0%', changeType: 'change-down', changeIcon: markRaw(ArrowDown), icon: markRaw(Clock), colorClass: 'icon-orange' }
+  { id: 2, label: '活跃用户', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(UsersIcon), colorClass: 'icon-blue' },
+  { id: 3, label: '失物招领', value: '0', change: '', changeType: '', changeIcon: null, icon: markRaw(DocumentChecked), colorClass: 'icon-green' },
+  { id: 4, label: '闲置交易', value: '0', change: '', changeType: '', changeIcon: null, icon: markRaw(ShoppingBag), colorClass: 'icon-orange' },
+  { id: 5, label: '学习互助', value: '0', change: '', changeType: '', changeIcon: null, icon: markRaw(ReadingIcon), colorClass: 'icon-purple' }
 ])
 
 // 图表引用
@@ -156,9 +158,29 @@ const fetchStats = async () => {
       }
       
       // 更新业务统计数据
-      statsData.value[0].value = formatNumber(data.totalAssistanceCount || 0)
-      statsData.value[1].value = formatNumber(data.activeUsers || 0)
-      // 平均响应时间暂时不计算，显示固定值
+      const currentTotal = data.totalAssistanceCount || 0
+      const currentActive = data.activeUsers || 0
+      const lastWeekTotal = data.lastWeekTotalAssistanceCount || 0
+      const lastWeekActive = data.lastWeekActiveUsers || 0
+      
+      // 计算变化百分比
+      const totalChange = calculateChangePercent(currentTotal, lastWeekTotal)
+      const activeChange = calculateChangePercent(currentActive, lastWeekActive)
+      
+      statsData.value[0].value = formatNumber(currentTotal)
+      statsData.value[0].change = totalChange.percent
+      statsData.value[0].changeType = totalChange.type
+      statsData.value[0].changeIcon = totalChange.icon
+      
+      statsData.value[1].value = formatNumber(currentActive)
+      statsData.value[1].change = activeChange.percent
+      statsData.value[1].changeType = activeChange.type
+      statsData.value[1].changeIcon = activeChange.icon
+      
+      // 更新各类型数据
+      statsData.value[2].value = formatNumber(data.lostFoundCount || 0)
+      statsData.value[3].value = formatNumber(data.goodsCount || 0)
+      statsData.value[4].value = formatNumber(data.studyQuestionCount || 0)
       
       // 更新图表数据
       updateCharts(data)
@@ -177,6 +199,26 @@ const formatNumber = (num) => {
     return (num / 1000).toFixed(1) + 'k'
   }
   return num.toString()
+}
+
+// 计算变化百分比
+const calculateChangePercent = (current, lastWeek) => {
+  if (lastWeek === 0) {
+    if (current === 0) {
+      return { percent: '0%', type: 'change-up', icon: markRaw(ArrowUp) }
+    } else {
+      return { percent: '100%', type: 'change-up', icon: markRaw(ArrowUp) }
+    }
+  }
+  const change = ((current - lastWeek) / lastWeek) * 100
+  const percent = Math.abs(change).toFixed(1) + '%'
+  if (change > 0) {
+    return { percent: percent, type: 'change-up', icon: markRaw(ArrowUp) }
+  } else if (change < 0) {
+    return { percent: percent, type: 'change-down', icon: markRaw(ArrowDown) }
+  } else {
+    return { percent: '0%', type: 'change-up', icon: markRaw(ArrowUp) }
+  }
 }
 
 // 更新图表数据
@@ -446,6 +488,11 @@ onUnmounted(() => {
 .stat-icon.icon-red {
   background-color: rgba(244, 67, 54, 0.1);
   color: var(--color-danger);
+}
+
+.stat-icon.icon-purple {
+  background-color: rgba(156, 39, 176, 0.1);
+  color: #9c27b0;
 }
 
 .stat-content {

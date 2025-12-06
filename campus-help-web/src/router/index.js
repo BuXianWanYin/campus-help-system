@@ -293,7 +293,7 @@ const routes = [
         name: 'AdminGoodsAudit',
         component: () => import('../views/admin/GoodsAudit.vue'),
         meta: {
-          title: '商品审核',
+          title: '闲置交易审核',
           requiresAuth: true,
           requiresAdmin: true
         }
@@ -354,6 +354,16 @@ const routes = [
         component: () => import('../views/admin/content/StudyManagement.vue'),
         meta: {
           title: '学习互助管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'sensitive-word',
+        name: 'AdminSensitiveWord',
+        component: () => import('../views/admin/SensitiveWord.vue'),
+        meta: {
+          title: '敏感词配置',
           requiresAuth: true,
           requiresAdmin: true
         }

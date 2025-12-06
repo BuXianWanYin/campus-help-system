@@ -308,6 +308,31 @@ public class AdminController {
     }
     
     /**
+     * 管理员下架商品
+     */
+    @Operation(summary = "管理员下架商品", description = "管理员下架违规商品")
+    @PostMapping("/goods/{id}/offshelf")
+    public Result<Void> offshelfGoods(
+            @Parameter(description = "商品ID") @PathVariable Long id,
+            @Parameter(description = "下架原因") @RequestParam String reason) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null) {
+            return Result.error("未登录");
+        }
+        User admin = userService.getUserByEmail(email);
+        if (admin == null) {
+            return Result.error("管理员不存在");
+        }
+        
+        if (reason == null || reason.trim().isEmpty()) {
+            return Result.error("下架原因不能为空");
+        }
+        
+        goodsService.adminOffshelfGoods(id, reason.trim(), admin.getId());
+        return Result.success("下架成功", null);
+    }
+    
+    /**
      * 失物招领审核请求DTO
      */
     public static class LostFoundAuditRequest {
@@ -501,6 +526,72 @@ public class AdminController {
         }
         
         stats.setDailyTrends(dailyTrends);
+        
+        // 6. 计算上周数据（用于对比）
+        if ("7days".equals(period) || "30days".equals(period)) {
+            LocalDateTime lastWeekStart = LocalDateTime.now().minusDays(14);
+            LocalDateTime lastWeekEnd = LocalDateTime.now().minusDays(7);
+            
+            // 上周总互助次数
+            Long lastWeekTotal = 0L;
+            
+            lostFoundWrapper = new LambdaQueryWrapper<>();
+            lostFoundWrapper.eq(LostFound::getAuditStatus, "APPROVED")
+                           .eq(LostFound::getDeleteFlag, 0)
+                           .ge(LostFound::getCreateTime, lastWeekStart)
+                           .lt(LostFound::getCreateTime, lastWeekEnd);
+            lastWeekTotal += lostFoundMapper.selectCount(lostFoundWrapper);
+            
+            goodsWrapper = new LambdaQueryWrapper<>();
+            goodsWrapper.eq(Goods::getAuditStatus, "APPROVED")
+                       .eq(Goods::getDeleteFlag, 0)
+                       .ge(Goods::getCreateTime, lastWeekStart)
+                       .lt(Goods::getCreateTime, lastWeekEnd);
+            lastWeekTotal += goodsMapper.selectCount(goodsWrapper);
+            
+            questionWrapper = new LambdaQueryWrapper<>();
+            questionWrapper.eq(StudyQuestion::getAuditStatus, "APPROVED")
+                          .eq(StudyQuestion::getDeleteFlag, 0)
+                          .ge(StudyQuestion::getCreateTime, lastWeekStart)
+                          .lt(StudyQuestion::getCreateTime, lastWeekEnd);
+            lastWeekTotal += studyQuestionMapper.selectCount(questionWrapper);
+            
+            stats.setLastWeekTotalAssistanceCount(lastWeekTotal);
+            
+            // 上周活跃用户数（上周的前30天）
+            LocalDateTime lastWeekActiveStartTime = lastWeekEnd.minusDays(30);
+            Set<Long> lastWeekActiveUserIds = new HashSet<>();
+            
+            lostFoundWrapper = new LambdaQueryWrapper<>();
+            lostFoundWrapper.eq(LostFound::getAuditStatus, "APPROVED")
+                           .eq(LostFound::getDeleteFlag, 0)
+                           .ge(LostFound::getCreateTime, lastWeekActiveStartTime)
+                           .lt(LostFound::getCreateTime, lastWeekEnd)
+                           .select(LostFound::getUserId);
+            lostFoundMapper.selectList(lostFoundWrapper).forEach(lf -> lastWeekActiveUserIds.add(lf.getUserId()));
+            
+            goodsWrapper = new LambdaQueryWrapper<>();
+            goodsWrapper.eq(Goods::getAuditStatus, "APPROVED")
+                       .eq(Goods::getDeleteFlag, 0)
+                       .ge(Goods::getCreateTime, lastWeekActiveStartTime)
+                       .lt(Goods::getCreateTime, lastWeekEnd)
+                       .select(Goods::getUserId);
+            goodsMapper.selectList(goodsWrapper).forEach(g -> lastWeekActiveUserIds.add(g.getUserId()));
+            
+            questionWrapper = new LambdaQueryWrapper<>();
+            questionWrapper.eq(StudyQuestion::getAuditStatus, "APPROVED")
+                          .eq(StudyQuestion::getDeleteFlag, 0)
+                          .ge(StudyQuestion::getCreateTime, lastWeekActiveStartTime)
+                          .lt(StudyQuestion::getCreateTime, lastWeekEnd)
+                          .select(StudyQuestion::getUserId);
+            studyQuestionMapper.selectList(questionWrapper).forEach(q -> lastWeekActiveUserIds.add(q.getUserId()));
+            
+            stats.setLastWeekActiveUsers((long) lastWeekActiveUserIds.size());
+        } else {
+            // 对于学期和学年，不计算上周数据
+            stats.setLastWeekTotalAssistanceCount(null);
+            stats.setLastWeekActiveUsers(null);
+        }
         
         return Result.success("查询成功", stats);
     }

@@ -48,5 +48,11 @@ public class DashboardStatsDTO implements Serializable {
     
     @Schema(description = "每日互助趋势（最近7天）")
     private List<DailyTrendDTO> dailyTrends;
+    
+    @Schema(description = "上周总互助次数（用于计算变化百分比）")
+    private Long lastWeekTotalAssistanceCount;
+    
+    @Schema(description = "上周活跃用户数（用于计算变化百分比）")
+    private Long lastWeekActiveUsers;
 }
 

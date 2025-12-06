@@ -81,10 +81,6 @@
                     <span>聊天</span>
                     <el-badge v-if="chatUnreadCount > 0" :value="chatUnreadCount > 99 ? '99+' : chatUnreadCount" :max="99" class="chat-badge" />
                   </el-dropdown-item>
-                  <el-dropdown-item command="settings">
-                    <el-icon><Setting /></el-icon>
-                    设置
-                  </el-dropdown-item>
                   <el-dropdown-item divided command="logout">
                     <el-icon><SwitchButton /></el-icon>
                     退出登录
@@ -591,9 +587,6 @@ const handleCommand = (command) => {
       break
     case 'chat':
       router.push('/user/chat')
-      break
-    case 'settings':
-      router.push('/user/settings')
       break
     case 'admin':
       // 在新标签页打开管理后台

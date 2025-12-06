@@ -80,10 +80,6 @@
                   <el-icon><User /></el-icon>
                   个人中心
                 </el-dropdown-item>
-                <el-dropdown-item command="settings">
-                  <el-icon><Setting /></el-icon>
-                  设置
-                </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
                   退出登录
@@ -126,7 +122,7 @@
             </el-menu-item>
             <el-menu-item index="/admin/goods-audit">
               <el-icon><DocumentChecked /></el-icon>
-              <span>商品审核</span>
+              <span>闲置交易审核</span>
             </el-menu-item>
             <el-menu-item index="/admin/question-audit">
               <el-icon><DocumentChecked /></el-icon>
@@ -155,6 +151,10 @@
             <el-icon><Message /></el-icon>
             <span>消息通知</span>
           </el-menu-item>
+          <el-menu-item index="/admin/sensitive-word">
+            <el-icon><Lock /></el-icon>
+            <span>敏感词配置</span>
+          </el-menu-item>
           <el-menu-item index="/admin/profile">
             <el-icon><User /></el-icon>
             <span>个人中心</span>
@@ -178,7 +178,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Tools, ArrowDown, User, SwitchButton, HomeFilled,
   DataAnalysis, DocumentChecked, UserFilled, Files, TrendCharts,
-  Document, Message, Setting, Bell, Check, Close, Warning, InfoFilled,
+  Document, Message, Setting, Bell, Check, Close, Warning, InfoFilled, Lock,
   ShoppingBag, Reading
 } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils/image'
@@ -205,10 +205,6 @@ const handleCommand = (command) => {
     case 'profile':
       // 跳转到后台的个人中心页面
       router.push('/admin/profile')
-      break
-    case 'settings':
-      // 在新标签页打开设置
-      window.open('/user/settings', '_blank')
       break
     case 'logout':
       ElMessageBox.confirm('确定要退出登录吗？', '提示', {

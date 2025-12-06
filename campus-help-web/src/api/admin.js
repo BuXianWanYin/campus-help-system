@@ -132,6 +132,68 @@ export const adminApi = {
    */
   offshelfGoods(id, data) {
     return request.post(`/admin/goods/${id}/offshelf`, null, { params: { reason: data.reason } })
+  },
+  
+  /**
+   * 获取敏感词列表
+   * @param {Object} params 查询参数（current, size, keyword）
+   * @returns {Promise} 敏感词列表
+   */
+  getSensitiveWordList(params) {
+    return request.get('/admin/sensitive-word/list', { params })
+  },
+  
+  /**
+   * 获取所有敏感词
+   * @returns {Promise} 敏感词列表
+   */
+  getAllSensitiveWords() {
+    return request.get('/admin/sensitive-word/all')
+  },
+  
+  /**
+   * 添加敏感词
+   * @param {Object} data 敏感词信息
+   * @returns {Promise} 添加结果
+   */
+  addSensitiveWord(data) {
+    return request.post('/admin/sensitive-word/add', data)
+  },
+  
+  /**
+   * 更新敏感词
+   * @param {Number} id 敏感词ID
+   * @param {Object} data 敏感词信息
+   * @returns {Promise} 更新结果
+   */
+  updateSensitiveWord(id, data) {
+    return request.put(`/admin/sensitive-word/${id}`, data)
+  },
+  
+  /**
+   * 删除敏感词
+   * @param {Number} id 敏感词ID
+   * @returns {Promise} 删除结果
+   */
+  deleteSensitiveWord(id) {
+    return request.delete(`/admin/sensitive-word/${id}`)
+  },
+  
+  /**
+   * 批量删除敏感词
+   * @param {Array} ids 敏感词ID列表
+   * @returns {Promise} 删除结果
+   */
+  batchDeleteSensitiveWords(ids) {
+    return request.delete('/admin/sensitive-word/batch', { data: ids })
+  },
+  
+  /**
+   * 重新加载敏感词库
+   * @returns {Promise} 重新加载结果
+   */
+  reloadSensitiveWords() {
+    return request.post('/admin/sensitive-word/reload')
   }
 }
 
