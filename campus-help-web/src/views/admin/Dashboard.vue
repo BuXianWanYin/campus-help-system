@@ -113,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { UserFilled, DocumentChecked, CircleCheck, Warning, ArrowUp, ArrowDown, Connection, User as UsersIcon, Clock } from '@element-plus/icons-vue'
@@ -129,11 +129,11 @@ const stats = ref({
   bannedUsers: 0
 })
 
-// 业务统计数据
+// 业务统计数据（使用 markRaw 避免组件被响应式化）
 const statsData = ref([
-  { id: 1, label: '总互助次数', value: '12,580', change: '12.5%', changeType: 'change-up', changeIcon: ArrowUp, icon: Connection, colorClass: 'icon-blue' },
-  { id: 2, label: '活跃用户', value: '3,245', change: '8.3%', changeType: 'change-up', changeIcon: ArrowUp, icon: UsersIcon, colorClass: 'icon-green' },
-  { id: 3, label: '平均响应时间', value: '15分钟', change: '5.2%', changeType: 'change-down', changeIcon: ArrowDown, icon: Clock, colorClass: 'icon-orange' }
+  { id: 1, label: '总互助次数', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(Connection), colorClass: 'icon-blue' },
+  { id: 2, label: '活跃用户', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(UsersIcon), colorClass: 'icon-green' },
+  { id: 3, label: '平均响应时间', value: '0分钟', change: '0%', changeType: 'change-down', changeIcon: markRaw(ArrowDown), icon: markRaw(Clock), colorClass: 'icon-orange' }
 ])
 
 // 图表引用
@@ -145,13 +145,73 @@ let trendChartInstance = null
 // 获取统计数据
 const fetchStats = async () => {
   try {
-    // TODO: 实现统计数据接口
-    // const response = await adminApi.getStats()
-    // if (response.code === 200) {
-    //   stats.value = response.data
-    // }
+    const response = await adminApi.getDashboardStats(statsPeriod.value)
+    if (response.code === 200) {
+      const data = response.data
+      stats.value = {
+        totalUsers: data.totalUsers || 0,
+        pendingVerifications: data.pendingVerifications || 0,
+        verifiedUsers: data.verifiedUsers || 0,
+        bannedUsers: data.bannedUsers || 0
+      }
+      
+      // 更新业务统计数据
+      statsData.value[0].value = formatNumber(data.totalAssistanceCount || 0)
+      statsData.value[1].value = formatNumber(data.activeUsers || 0)
+      // 平均响应时间暂时不计算，显示固定值
+      
+      // 更新图表数据
+      updateCharts(data)
+    }
   } catch (error) {
+    console.error('获取统计数据失败:', error)
     ElMessage.error(error.message || '获取统计数据失败')
+  }
+}
+
+// 格式化数字
+const formatNumber = (num) => {
+  if (num >= 10000) {
+    return (num / 10000).toFixed(1) + '万'
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'k'
+  }
+  return num.toString()
+}
+
+// 更新图表数据
+const updateCharts = (data) => {
+  // 更新类型分布图表
+  if (typeChartInstance && data.typeDistribution) {
+    const typeData = [
+      { value: data.typeDistribution['失物招领'] || 0, name: '失物招领', itemStyle: { color: '#1E88E5' } },
+      { value: data.typeDistribution['闲置交易'] || 0, name: '闲置交易', itemStyle: { color: '#4CAF50' } },
+      { value: data.typeDistribution['学习互助'] || 0, name: '学习互助', itemStyle: { color: '#FF9800' } }
+    ]
+    typeChartInstance.setOption({
+      series: [{ data: typeData }]
+    })
+  }
+  
+  // 更新每日趋势图表
+  if (trendChartInstance && data.dailyTrends) {
+    const dates = data.dailyTrends.map(t => {
+      const date = new Date(t.date)
+      const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+      return days[date.getDay()]
+    })
+    const lostFoundData = data.dailyTrends.map(t => t.lostFoundCount || 0)
+    const goodsData = data.dailyTrends.map(t => t.goodsCount || 0)
+    const studyData = data.dailyTrends.map(t => t.studyQuestionCount || 0)
+    
+    trendChartInstance.setOption({
+      xAxis: { data: dates },
+      series: [
+        { data: lostFoundData },
+        { data: goodsData },
+        { data: studyData }
+      ]
+    })
   }
 }
 
@@ -204,11 +264,9 @@ const initCharts = () => {
               show: false
             },
             data: [
-              { value: 30, name: '失物招领', itemStyle: { color: '#1E88E5' } },
-              { value: 40, name: '闲置交易', itemStyle: { color: '#4CAF50' } },
-              { value: 20, name: '学习互助', itemStyle: { color: '#FF9800' } },
-              { value: 5, name: '校园活动', itemStyle: { color: '#9C27B0' } },
-              { value: 5, name: '志愿互助', itemStyle: { color: '#F44336' } }
+              { value: 0, name: '失物招领', itemStyle: { color: '#1E88E5' } },
+              { value: 0, name: '闲置交易', itemStyle: { color: '#4CAF50' } },
+              { value: 0, name: '学习互助', itemStyle: { color: '#FF9800' } }
             ]
           }
         ]
@@ -247,7 +305,7 @@ const initCharts = () => {
             type: 'line',
             stack: 'Total',
             smooth: true,
-            data: [45, 52, 48, 61, 55, 42, 38],
+            data: [0, 0, 0, 0, 0, 0, 0],
             itemStyle: { color: '#1E88E5' },
             areaStyle: { opacity: 0.3 }
           },
@@ -256,7 +314,7 @@ const initCharts = () => {
             type: 'line',
             stack: 'Total',
             smooth: true,
-            data: [78, 82, 75, 90, 85, 70, 65],
+            data: [0, 0, 0, 0, 0, 0, 0],
             itemStyle: { color: '#4CAF50' },
             areaStyle: { opacity: 0.3 }
           },
@@ -265,7 +323,7 @@ const initCharts = () => {
             type: 'line',
             stack: 'Total',
             smooth: true,
-            data: [35, 40, 38, 45, 42, 30, 28],
+            data: [0, 0, 0, 0, 0, 0, 0],
             itemStyle: { color: '#FF9800' },
             areaStyle: { opacity: 0.3 }
           }

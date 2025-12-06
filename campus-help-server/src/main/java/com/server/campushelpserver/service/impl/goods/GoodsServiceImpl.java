@@ -584,6 +584,42 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         return resultPage;
     }
     
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminOffshelfGoods(Long id, String reason, Long adminId) {
+        Goods goods = goodsMapper.selectById(id);
+        if (goods == null || goods.getDeleteFlag() == 1) {
+            throw new BusinessException("商品不存在");
+        }
+        
+        if ("ADMIN_OFFSHELF".equals(goods.getStatus())) {
+            throw new BusinessException("商品已下架");
+        }
+        
+        // 更新状态
+        goods.setStatus("ADMIN_OFFSHELF");
+        goods.setOffshelfType("ADMIN");
+        goods.setOffshelfReason(reason);
+        goods.setOffshelfTime(LocalDateTime.now());
+        goods.setOffshelfAdminId(adminId);
+        goods.setUpdateTime(LocalDateTime.now());
+        goodsMapper.updateById(goods);
+        
+        // 发送系统消息通知发布者
+        try {
+            systemMessageService.sendMessage(
+                goods.getUserId(),
+                "GOODS_OFFSHELF",
+                "您的商品已被下架",
+                "您发布的商品《" + goods.getTitle() + "》已被管理员下架，原因：" + reason,
+                "GOODS",
+                id
+            );
+        } catch (Exception e) {
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+    }
+    
     /**
      * 填充用户信息
      */

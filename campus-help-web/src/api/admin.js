@@ -5,7 +5,16 @@ import request from '@/utils/request'
  */
 export const adminApi = {
   /**
-   * 获取待审核的实名认证列表
+   * 获取实名认证列表（支持按状态筛选）
+   * @param {Object} params 查询参数（current, size, status）
+   * @returns {Promise} 认证列表
+   */
+  getVerificationList(params) {
+    return request.get('/admin/verification/list', { params })
+  },
+  
+  /**
+   * 获取待审核的实名认证列表（兼容旧接口）
    * @param {Object} params 查询参数
    * @returns {Promise} 认证列表
    */
@@ -94,6 +103,35 @@ export const adminApi = {
    */
   auditGoods(id, data) {
     return request.post(`/admin/goods/${id}/audit`, data)
+  },
+  
+  /**
+   * 获取数据概览统计信息
+   * @param {String} period 统计周期：7days-最近7天，30days-最近30天，semester-本学期，year-本学年
+   * @returns {Promise} 统计数据
+   */
+  getDashboardStats(period = '7days') {
+    return request.get('/admin/dashboard/stats', { params: { period } })
+  },
+  
+  /**
+   * 下架失物招领
+   * @param {Number} id 失物ID
+   * @param {Object} data 下架信息（reason）
+   * @returns {Promise} 下架结果
+   */
+  offshelfLostFound(id, data) {
+    return request.post(`/admin/lost-found/${id}/offshelf`, null, { params: { reason: data.reason } })
+  },
+  
+  /**
+   * 下架商品
+   * @param {Number} id 商品ID
+   * @param {Object} data 下架信息（reason）
+   * @returns {Promise} 下架结果
+   */
+  offshelfGoods(id, data) {
+    return request.post(`/admin/goods/${id}/offshelf`, null, { params: { reason: data.reason } })
   }
 }
 

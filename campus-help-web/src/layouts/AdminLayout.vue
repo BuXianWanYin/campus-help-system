@@ -107,26 +107,50 @@
             <el-icon><DataAnalysis /></el-icon>
             <span>数据概览</span>
           </el-menu-item>
-          <el-menu-item index="/admin/verification">
-            <el-icon><DocumentChecked /></el-icon>
-            <span>实名认证审核</span>
-          </el-menu-item>
           <el-menu-item index="/admin/users">
             <el-icon><UserFilled /></el-icon>
             <span>用户管理</span>
           </el-menu-item>
-          <el-menu-item index="/admin/lost-found-audit">
-            <el-icon><DocumentChecked /></el-icon>
-            <span>失物招领审核</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/goods-audit">
-            <el-icon><DocumentChecked /></el-icon>
-            <span>商品审核</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/question-audit">
-            <el-icon><DocumentChecked /></el-icon>
-            <span>学习问题审核</span>
-          </el-menu-item>
+          <el-sub-menu index="audit">
+            <template #title>
+              <el-icon><DocumentChecked /></el-icon>
+              <span>信息审核</span>
+            </template>
+            <el-menu-item index="/admin/verification">
+              <el-icon><DocumentChecked /></el-icon>
+              <span>实名认证审核</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/lost-found-audit">
+              <el-icon><DocumentChecked /></el-icon>
+              <span>失物招领审核</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/goods-audit">
+              <el-icon><DocumentChecked /></el-icon>
+              <span>商品审核</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/question-audit">
+              <el-icon><DocumentChecked /></el-icon>
+              <span>学习问题审核</span>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="content">
+            <template #title>
+              <el-icon><Files /></el-icon>
+              <span>内容管理</span>
+            </template>
+            <el-menu-item index="/admin/content/lost-found">
+              <el-icon><Document /></el-icon>
+              <span>失物招领管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/content/goods">
+              <el-icon><ShoppingBag /></el-icon>
+              <span>闲置交易管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/content/study">
+              <el-icon><Reading /></el-icon>
+              <span>学习互助管理</span>
+            </el-menu-item>
+          </el-sub-menu>
           <el-menu-item index="/admin/messages">
             <el-icon><Message /></el-icon>
             <span>消息通知</span>
@@ -134,16 +158,6 @@
           <el-menu-item index="/admin/profile">
             <el-icon><User /></el-icon>
             <span>个人中心</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/content" disabled>
-            <el-icon><Files /></el-icon>
-            <span>信息审核</span>
-            <el-tag size="small" type="info" style="margin-left: 8px;">开发中</el-tag>
-          </el-menu-item>
-          <el-menu-item index="/admin/statistics" disabled>
-            <el-icon><TrendCharts /></el-icon>
-            <span>数据统计</span>
-            <el-tag size="small" type="info" style="margin-left: 8px;">开发中</el-tag>
           </el-menu-item>
         </el-menu>
       </aside>
@@ -164,7 +178,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Tools, ArrowDown, User, SwitchButton, HomeFilled,
   DataAnalysis, DocumentChecked, UserFilled, Files, TrendCharts,
-  Document, Message, Setting, Bell, Check, Close, Warning, InfoFilled
+  Document, Message, Setting, Bell, Check, Close, Warning, InfoFilled,
+  ShoppingBag, Reading
 } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils/image'
 import { messageApi } from '@/api'

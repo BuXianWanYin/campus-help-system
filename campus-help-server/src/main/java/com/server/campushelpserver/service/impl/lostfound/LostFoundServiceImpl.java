@@ -980,6 +980,42 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         return resultPage;
     }
     
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminOffshelfLostFound(Long id, String reason, Long adminId) {
+        LostFound lostFound = lostFoundMapper.selectById(id);
+        if (lostFound == null || lostFound.getDeleteFlag() == 1) {
+            throw new BusinessException("失物信息不存在");
+        }
+        
+        if ("ADMIN_OFFSHELF".equals(lostFound.getStatus())) {
+            throw new BusinessException("失物已下架");
+        }
+        
+        // 更新状态
+        lostFound.setStatus("ADMIN_OFFSHELF");
+        lostFound.setOffshelfType("ADMIN");
+        lostFound.setOffshelfReason(reason);
+        lostFound.setOffshelfTime(LocalDateTime.now());
+        lostFound.setOffshelfAdminId(adminId);
+        lostFound.setUpdateTime(LocalDateTime.now());
+        lostFoundMapper.updateById(lostFound);
+        
+        // 发送系统消息通知发布者
+        try {
+            systemMessageService.sendMessage(
+                lostFound.getUserId(),
+                "LOST_FOUND_OFFSHELF",
+                "您的失物信息已被下架",
+                "您发布的失物《" + lostFound.getTitle() + "》已被管理员下架，原因：" + reason,
+                "LOST_FOUND",
+                id
+            );
+        } catch (Exception e) {
+            System.err.println("发送系统消息失败: " + e.getMessage());
+        }
+    }
+    
     /**
      * 填充用户信息
      */

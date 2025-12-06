@@ -15,6 +15,15 @@
             <el-option label="已拒绝" value="REJECTED" />
           </el-select>
         </el-form-item>
+        <el-form-item label="关键词：">
+          <el-input
+            v-model="filters.keyword"
+            placeholder="搜索昵称、邮箱、真实姓名或学号"
+            style="width: 250px"
+            clearable
+            @keyup.enter="handleFilter"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleFilter">筛选</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -178,7 +187,8 @@ const currentUser = ref(null)
 const proofImages = ref([])
 
 const filters = reactive({
-  status: 'PENDING' // 默认显示待审核
+  status: 'PENDING', // 默认显示待审核
+  keyword: '' // 关键词搜索
 })
 
 const pagination = reactive({
@@ -196,10 +206,11 @@ const auditForm = reactive({
 const fetchVerificationList = async () => {
   loading.value = true
   try {
-    const response = await adminApi.getPendingVerifications({
+    const response = await adminApi.getVerificationList({
       current: pagination.current,
       size: pagination.size,
-      status: filters.status || undefined
+      status: filters.status || undefined,
+      keyword: filters.keyword || undefined
     })
     if (response.code === 200) {
       const records = response.data.records || []

@@ -85,5 +85,13 @@ public interface GoodsService extends IService<Goods> {
      * @return 分页结果
      */
     Page<Goods> getPendingAuditList(GoodsSearchDTO searchDTO);
+    
+    /**
+     * 管理员下架商品
+     * @param id 商品ID
+     * @param reason 下架原因
+     * @param adminId 管理员ID
+     */
+    void adminOffshelfGoods(Long id, String reason, Long adminId);
 }
 

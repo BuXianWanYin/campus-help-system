@@ -132,5 +132,13 @@ public interface LostFoundService extends IService<LostFound> {
      * @return 分页结果
      */
     Page<LostFound> getPendingAuditList(LostFoundSearchDTO searchDTO);
+    
+    /**
+     * 管理员下架失物招领
+     * @param id 失物ID
+     * @param reason 下架原因
+     * @param adminId 管理员ID
+     */
+    void adminOffshelfLostFound(Long id, String reason, Long adminId);
 }
 

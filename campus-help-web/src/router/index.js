@@ -327,6 +327,36 @@ const routes = [
           requiresAuth: true,
           requiresAdmin: true
         }
+      },
+      {
+        path: 'content/lost-found',
+        name: 'AdminContentLostFound',
+        component: () => import('../views/admin/content/LostFoundManagement.vue'),
+        meta: {
+          title: '失物招领管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'content/goods',
+        name: 'AdminContentGoods',
+        component: () => import('../views/admin/content/GoodsManagement.vue'),
+        meta: {
+          title: '闲置交易管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'content/study',
+        name: 'AdminContentStudy',
+        component: () => import('../views/admin/content/StudyManagement.vue'),
+        meta: {
+          title: '学习互助管理',
+          requiresAuth: true,
+          requiresAdmin: true
+        }
       }
     ]
   }
