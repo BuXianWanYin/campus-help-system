@@ -99,6 +99,22 @@
     <!-- 空状态 -->
     <el-empty v-if="!loading && orderList.length === 0" description="暂无订单" />
 
+    <!-- 发货对话框 -->
+    <el-dialog v-model="shipDialogVisible" title="发货" width="500px">
+      <el-form :model="shipForm" label-width="100px">
+        <el-form-item label="物流公司" required>
+          <el-input v-model="shipForm.logisticsCompany" placeholder="请输入物流公司名称" />
+        </el-form-item>
+        <el-form-item label="快递单号" required>
+          <el-input v-model="shipForm.trackingNumber" placeholder="请输入快递单号" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="shipDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmShip">确定</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 分页器 -->
     <div class="pagination-wrapper" v-if="total > 0">
       <el-pagination
@@ -282,12 +298,46 @@ const handlePay = async (order) => {
   }
 }
 
+// 发货对话框相关
+const shipDialogVisible = ref(false)
+const currentShipOrder = ref(null)
+const shipForm = reactive({
+  logisticsCompany: '',
+  trackingNumber: ''
+})
+
 /**
  * 处理发货
  */
 const handleShip = (order) => {
-  // 显示发货对话框
-  ElMessage.info('发货功能开发中')
+  currentShipOrder.value = order
+  shipForm.logisticsCompany = ''
+  shipForm.trackingNumber = ''
+  shipDialogVisible.value = true
+}
+
+/**
+ * 确认发货
+ */
+const confirmShip = async () => {
+  if (!shipForm.logisticsCompany || !shipForm.trackingNumber) {
+    ElMessage.warning('请填写物流公司和快递单号')
+    return
+  }
+  
+  if (!currentShipOrder.value) return
+  
+  try {
+    await orderApi.ship(currentShipOrder.value.id, {
+      logisticsCompany: shipForm.logisticsCompany.trim(),
+      trackingNumber: shipForm.trackingNumber.trim()
+    })
+    ElMessage.success('发货成功')
+    shipDialogVisible.value = false
+    fetchOrderList()
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '发货失败')
+  }
 }
 
 /**

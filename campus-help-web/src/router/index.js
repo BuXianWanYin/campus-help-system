@@ -138,6 +138,15 @@ const routes = [
         }
       },
       {
+        path: 'order/pay/:id',
+        name: 'OrderPay',
+        component: () => import('../views/order/Pay.vue'),
+        meta: {
+          title: '订单支付',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'address/list',
         name: 'AddressList',
         component: () => import('../views/address/List.vue'),

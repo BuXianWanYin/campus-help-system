@@ -687,29 +687,9 @@ const handleSubmitBuy = async () => {
       ElMessage.success('订单创建成功')
       buyDialogVisible.value = false
       
-      // 创建订单后，自动创建会话并跳转到聊天页面
-      try {
-        const sessionResponse = await chatApi.createOrGetSession({
-          targetUserId: goods.value.userId,
-          relatedType: 'GOODS',
-          relatedId: goods.value.id
-        })
-        
-        if (sessionResponse.code === 200) {
-          const sessionId = sessionResponse.data.sessionId || sessionResponse.data
-          router.push({
-            path: '/user/chat',
-            query: { sessionId }
-          })
-        } else {
-          // 如果创建会话失败，跳转到订单详情页
-          router.push(`/order/detail/${response.data}`)
-        }
-      } catch (error) {
-        console.error('创建会话失败:', error)
-        // 如果创建会话失败，跳转到订单详情页
-        router.push(`/order/detail/${response.data}`)
-      }
+      // 创建订单后，跳转到支付页面
+      const orderId = response.data
+      router.push(`/order/pay/${orderId}`)
     } else {
       ElMessage.error(response.message || '创建订单失败')
     }
