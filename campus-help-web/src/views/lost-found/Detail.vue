@@ -94,7 +94,16 @@
                 <div class="publish-time">发布于 {{ formatDateTime(lostFound.createTime) }}</div>
               </div>
             </div>
-            <el-button v-if="!isPublisher" type="primary" @click="handleContact">联系TA</el-button>
+            <div class="publisher-actions">
+              <el-button v-if="!isPublisher" type="primary" @click="handleContact">联系TA</el-button>
+              <el-button 
+                v-if="isPublisher && lostFound.status === 'CLAIMED'" 
+                type="info" 
+                @click="handleCloseLostFound"
+              >
+                关闭（物品已取回）
+              </el-button>
+            </div>
           </div>
           
           <!-- 认领按钮（仅非发布者可见，且未提交申请） -->
@@ -275,7 +284,7 @@
                       联系TA
                     </el-button>
                     <el-button 
-                      v-if="lostFound.type === 'FOUND' && record.status === 'PENDING'" 
+                      v-if="isPublisher && record.status === 'PENDING'" 
                       type="success" 
                       size="small" 
                       @click="handleConfirmClaim(record.id)"
@@ -283,7 +292,7 @@
                       确认认领
                     </el-button>
                     <el-button 
-                      v-if="lostFound.type === 'FOUND' && record.status === 'PENDING'" 
+                      v-if="isPublisher && record.status === 'PENDING'" 
                       type="danger" 
                       size="small" 
                       @click="handleRejectClaim(record.id)"
@@ -827,6 +836,31 @@ const handleRejectClaim = async (claimRecordId) => {
     if (error !== 'cancel') {
       console.error('拒绝认领失败:', error)
       ElMessage.error(error.message || '拒绝认领失败')
+    }
+  }
+}
+
+/**
+ * 关闭失物
+ */
+const handleCloseLostFound = async () => {
+  try {
+    await ElMessageBox.confirm('确认要关闭该失物吗？关闭后其他人将无法再认领。', '关闭失物', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const response = await lostFoundApi.close(lostFound.value.id)
+    if (response.code === 200) {
+      ElMessage.success('失物已关闭')
+      // 重新获取详情
+      await fetchDetail()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('关闭失物失败:', error)
+      ElMessage.error(error.response?.data?.message || '关闭失物失败')
     }
   }
 }

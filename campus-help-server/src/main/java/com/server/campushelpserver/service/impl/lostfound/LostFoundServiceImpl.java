@@ -714,12 +714,9 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             throw new BusinessException("无权关闭此失物");
         }
         
-        // 3. 验证状态（已关闭、已认领的不允许再次关闭）
+        // 3. 验证状态（已关闭的不允许再次关闭）
         if ("CLOSED".equals(lostFound.getStatus())) {
             throw new BusinessException("该失物已关闭");
-        }
-        if ("CLAIMED".equals(lostFound.getStatus())) {
-            throw new BusinessException("该失物已认领，无法关闭");
         }
         
         // 4. 更新状态
