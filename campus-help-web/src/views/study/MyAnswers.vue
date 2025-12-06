@@ -78,6 +78,11 @@
   </div>
 </template>
 
+/**
+ * 我的回答页面
+ * 展示用户回答过的所有学习问题
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -90,10 +95,12 @@ const router = useRouter()
 const loading = ref(false)
 const questionList = ref([])
 
+// 筛选条件
 const filters = reactive({
   status: ''
 })
 
+// 分页信息
 const pagination = reactive({
   current: 1,
   size: 10,

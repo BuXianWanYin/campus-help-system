@@ -125,6 +125,11 @@
   </div>
 </template>
 
+/**
+ * 编辑学习问题页面
+ * 编辑已发布的学习问题
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -145,6 +150,7 @@ const questionDetail = ref(null)
 const previewVisible = ref(false)
 const previewImageUrl = ref('')
 
+// 编辑表单数据
 const form = reactive({
   category: '',
   title: '',

@@ -144,6 +144,11 @@
   </div>
 </template>
 
+/**
+ * 登录页面
+ * 支持密码登录和验证码登录两种方式
+ */
+
 <script setup>
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -157,19 +162,22 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const loginType = ref('password') // password 或 code
+// 登录方式：password-密码登录，code-验证码登录
+const loginType = ref('password')
 const loginLoading = ref(false)
 const codeCountdown = ref(0)
 const codeSending = ref(false)
 const loginFormRef = ref(null)
 let countdownTimer = null
 
+// 登录表单数据
 const loginForm = reactive({
   email: '',
   password: '',
   code: ''
 })
 
+// 表单验证规则
 const loginRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -183,7 +191,9 @@ const loginRules = {
   ]
 }
 
-// 切换登录方式
+/**
+ * 切换登录方式
+ */
 const toggleLoginType = () => {
   loginType.value = loginType.value === 'password' ? 'code' : 'password'
   if (loginFormRef.value) {
@@ -191,7 +201,9 @@ const toggleLoginType = () => {
   }
 }
 
-// 发送登录验证码
+/**
+ * 发送登录验证码
+ */
 const sendLoginCode = async () => {
   if (!loginForm.email) {
     ElMessage.warning('请先输入邮箱')
@@ -219,13 +231,20 @@ const sendLoginCode = async () => {
   }
 }
 
-// 从错误信息中提取剩余秒数
+/**
+ * 从错误信息中提取剩余秒数
+ * @param {string} message - 错误信息
+ * @returns {number} 剩余秒数
+ */
 const extractRemainingSeconds = (message) => {
   const match = message.match(/(\d+)秒后重试/)
   return match ? parseInt(match[1]) : 0
 }
 
-// 开始倒计时
+/**
+ * 开始倒计时
+ * @param {number} seconds - 倒计时秒数
+ */
 const startCountdown = (seconds) => {
   // 清除之前的定时器
   if (countdownTimer) {
@@ -249,7 +268,9 @@ onUnmounted(() => {
   }
 })
 
-// 处理登录
+/**
+ * 处理登录
+ */
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   
@@ -280,12 +301,16 @@ const handleLogin = async () => {
   })
 }
 
-// 跳转到注册页
+/**
+ * 跳转到注册页
+ */
 const goToRegister = () => {
   router.push({ path: '/register', query: route.query })
 }
 
-// 跳转到忘记密码页
+/**
+ * 跳转到忘记密码页
+ */
 const goToForgotPassword = () => {
   router.push({ path: '/forgot-password', query: route.query })
 }

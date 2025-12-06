@@ -295,6 +295,11 @@
   </div>
 </template>
 
+/**
+ * 个人中心页面
+ * 展示和编辑用户个人信息、修改密码、查看统计数据等
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -317,7 +322,7 @@ const passwordLoading = ref(false)
 const isEditing = ref(false)
 const isEditingPassword = ref(false)
 const originalForm = ref({})
-// 从 userStore 获取初始用户信息，避免刷新时抖动
+// 从userStore获取初始用户信息，避免刷新时抖动
 const userInfo = ref(userStore.userInfo || {})
 
 const form = reactive({

@@ -286,6 +286,11 @@
   </div>
 </template>
 
+/**
+ * 学习问题审核页面
+ * 管理员审核用户提交的学习问题
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -300,12 +305,14 @@ const submitting = ref(false)
 const currentItem = ref(null)
 const itemImages = ref([])
 
+// 筛选条件
 const filters = reactive({
   auditStatus: 'PENDING', // 默认显示待审核
   category: '',
   keyword: ''
 })
 
+// 分页信息
 const pagination = reactive({
   pageNum: 1,
   pageSize: 10,

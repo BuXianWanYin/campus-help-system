@@ -290,6 +290,11 @@
   </div>
 </template>
 
+/**
+ * 聊天页面
+ * 提供私信聊天功能，支持文本、图片消息，订单卡片等
+ */
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

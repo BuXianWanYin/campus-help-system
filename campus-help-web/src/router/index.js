@@ -1,3 +1,8 @@
+/**
+ * 路由配置
+ * 定义系统的所有路由规则
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupRouterGuard } from './guard'
 import MainLayout from '../layouts/MainLayout.vue'

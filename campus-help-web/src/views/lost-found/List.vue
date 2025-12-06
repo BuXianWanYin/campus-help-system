@@ -156,6 +156,11 @@
   </div>
 </template>
 
+/**
+ * 失物招领列表页
+ * 展示失物招领信息列表，支持搜索、筛选、分页等功能
+ */
+
 <script setup>
 import { ref, reactive, onMounted, onActivated, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -163,7 +168,7 @@ import { ElMessage } from 'element-plus'
 import { Location, Clock, Folder, View, Search } from '@element-plus/icons-vue'
 import { lostFoundApi, searchHistoryApi } from '@/api'
 
-// 定义组件名称，用于 keep-alive
+// 定义组件名称，用于keep-alive
 defineOptions({
   name: 'LostFoundList'
 })

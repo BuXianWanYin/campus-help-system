@@ -291,6 +291,11 @@
   </div>
 </template>
 
+/**
+ * 商品详情页
+ * 展示商品详细信息，支持购买、联系卖家等功能
+ */
+
 <script setup>
 import { ref, computed, onMounted, onActivated, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

@@ -22,6 +22,11 @@
   </div>
 </template>
 
+/**
+ * 商品卡片消息组件
+ * 在聊天消息中展示商品信息卡片
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'

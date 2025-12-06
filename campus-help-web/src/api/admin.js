@@ -1,12 +1,14 @@
+/**
+ * 管理员相关API
+ * 提供用户管理、内容审核、数据统计、敏感词管理等功能
+ */
+
 import request from '@/utils/request'
 
-/**
- * 管理员相关 API
- */
 export const adminApi = {
   /**
    * 获取实名认证列表（支持按状态筛选）
-   * @param {Object} params 查询参数（current, size, status）
+   * @param {Object} params - 查询参数（current, size, status）
    * @returns {Promise} 认证列表
    */
   getVerificationList(params) {
@@ -15,7 +17,7 @@ export const adminApi = {
   
   /**
    * 获取待审核的实名认证列表（兼容旧接口）
-   * @param {Object} params 查询参数
+   * @param {Object} params - 查询参数
    * @returns {Promise} 认证列表
    */
   getPendingVerifications(params) {
@@ -24,7 +26,7 @@ export const adminApi = {
   
   /**
    * 审核实名认证
-   * @param {Object} data 审核信息
+   * @param {Object} data - 审核信息
    * @returns {Promise} 审核结果
    */
   auditVerification(data) {
@@ -33,7 +35,7 @@ export const adminApi = {
   
   /**
    * 封禁用户
-   * @param {Object} data 封禁信息
+   * @param {Object} data - 封禁信息
    * @returns {Promise} 封禁结果
    */
   banUser(data) {
@@ -42,7 +44,7 @@ export const adminApi = {
   
   /**
    * 解封用户
-   * @param {Number} userId 用户ID
+   * @param {number} userId - 用户ID
    * @returns {Promise} 解封结果
    */
   unbanUser(userId) {
@@ -51,7 +53,7 @@ export const adminApi = {
   
   /**
    * 创建用户
-   * @param {Object} data 用户信息
+   * @param {Object} data - 用户信息
    * @returns {Promise} 创建结果
    */
   createUser(data) {
@@ -60,7 +62,7 @@ export const adminApi = {
   
   /**
    * 删除用户
-   * @param {Number} userId 用户ID
+   * @param {number} userId - 用户ID
    * @returns {Promise} 删除结果
    */
   deleteUser(userId) {
@@ -69,7 +71,7 @@ export const adminApi = {
   
   /**
    * 获取待审核的失物招领列表
-   * @param {Object} params 查询参数
+   * @param {Object} params - 查询参数
    * @returns {Promise} 失物招领列表
    */
   getPendingLostFoundList(params) {
@@ -78,8 +80,8 @@ export const adminApi = {
   
   /**
    * 审核失物招领
-   * @param {Number} id 失物ID
-   * @param {Object} data 审核信息
+   * @param {number} id - 失物ID
+   * @param {Object} data - 审核信息
    * @returns {Promise} 审核结果
    */
   auditLostFound(id, data) {
@@ -88,7 +90,7 @@ export const adminApi = {
   
   /**
    * 获取待审核的商品列表
-   * @param {Object} params 查询参数
+   * @param {Object} params - 查询参数
    * @returns {Promise} 商品列表
    */
   getPendingGoodsList(params) {
@@ -97,8 +99,8 @@ export const adminApi = {
   
   /**
    * 审核商品
-   * @param {Number} id 商品ID
-   * @param {Object} data 审核信息
+   * @param {number} id - 商品ID
+   * @param {Object} data - 审核信息
    * @returns {Promise} 审核结果
    */
   auditGoods(id, data) {
@@ -107,7 +109,7 @@ export const adminApi = {
   
   /**
    * 获取数据概览统计信息
-   * @param {String} period 统计周期：7days-最近7天，30days-最近30天，semester-本学期，year-本学年
+   * @param {string} period - 统计周期：7days-最近7天，30days-最近30天，semester-本学期，year-本学年
    * @returns {Promise} 统计数据
    */
   getDashboardStats(period = '7days') {
@@ -116,8 +118,8 @@ export const adminApi = {
   
   /**
    * 下架失物招领
-   * @param {Number} id 失物ID
-   * @param {Object} data 下架信息（reason）
+   * @param {number} id - 失物ID
+   * @param {Object} data - 下架信息（reason）
    * @returns {Promise} 下架结果
    */
   offshelfLostFound(id, data) {
@@ -126,8 +128,8 @@ export const adminApi = {
   
   /**
    * 下架商品
-   * @param {Number} id 商品ID
-   * @param {Object} data 下架信息（reason）
+   * @param {number} id - 商品ID
+   * @param {Object} data - 下架信息（reason）
    * @returns {Promise} 下架结果
    */
   offshelfGoods(id, data) {
@@ -136,7 +138,7 @@ export const adminApi = {
   
   /**
    * 获取敏感词列表
-   * @param {Object} params 查询参数（current, size, keyword）
+   * @param {Object} params - 查询参数（current, size, keyword）
    * @returns {Promise} 敏感词列表
    */
   getSensitiveWordList(params) {
@@ -153,7 +155,7 @@ export const adminApi = {
   
   /**
    * 添加敏感词
-   * @param {Object} data 敏感词信息
+   * @param {Object} data - 敏感词信息
    * @returns {Promise} 添加结果
    */
   addSensitiveWord(data) {
@@ -162,8 +164,8 @@ export const adminApi = {
   
   /**
    * 更新敏感词
-   * @param {Number} id 敏感词ID
-   * @param {Object} data 敏感词信息
+   * @param {number} id - 敏感词ID
+   * @param {Object} data - 敏感词信息
    * @returns {Promise} 更新结果
    */
   updateSensitiveWord(id, data) {
@@ -172,7 +174,7 @@ export const adminApi = {
   
   /**
    * 删除敏感词
-   * @param {Number} id 敏感词ID
+   * @param {number} id - 敏感词ID
    * @returns {Promise} 删除结果
    */
   deleteSensitiveWord(id) {
@@ -181,7 +183,7 @@ export const adminApi = {
   
   /**
    * 批量删除敏感词
-   * @param {Array} ids 敏感词ID列表
+   * @param {Array} ids - 敏感词ID列表
    * @returns {Promise} 删除结果
    */
   batchDeleteSensitiveWords(ids) {

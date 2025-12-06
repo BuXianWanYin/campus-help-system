@@ -1,20 +1,27 @@
+/**
+ * 路由守卫
+ * 处理路由跳转前的权限验证、登录状态检查等
+ */
+
 import { getToken } from '@/utils/auth'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import appConfig from '@/config'
 
-const whiteList = ['/login', '/register', '/forgot-password'] // 白名单，不需要登录就可以访问
+// 白名单：不需要登录就可以访问的路径
+const whiteList = ['/login', '/register', '/forgot-password']
 
 /**
- * 路由守卫
+ * 设置路由守卫
+ * @param {Object} router - Vue Router实例
  */
 export function setupRouterGuard(router) {
-  // 前置守卫
+  // 前置守卫：路由跳转前执行
   router.beforeEach(async (to, from, next) => {
     const token = getToken()
     const userStore = useUserStore()
 
-    // 如果有 token
+    // 如果有token
     if (token) {
       // 如果已登录，访问登录页、注册页或忘记密码页，重定向到首页
       if (to.path === '/login' || to.path === '/register' || to.path === '/forgot-password') {
@@ -48,7 +55,7 @@ export function setupRouterGuard(router) {
         }
       }
     } else {
-      // 没有 token
+      // 没有token
       if (whiteList.includes(to.path)) {
         // 在白名单中，直接访问
         next()
@@ -59,7 +66,7 @@ export function setupRouterGuard(router) {
     }
   })
 
-  // 后置守卫
+  // 后置守卫：路由跳转后执行
   router.afterEach((to, from) => {
     // 设置页面标题
     const title = to.meta.title ? `${to.meta.title} - ${appConfig.title}` : appConfig.title

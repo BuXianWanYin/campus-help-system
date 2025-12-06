@@ -410,6 +410,11 @@
   </div>
 </template>
 
+/**
+ * 用户管理页面
+ * 管理系统用户，支持查看、编辑、封禁、解封、创建用户等操作
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -429,6 +434,7 @@ const banFormRef = ref(null)
 const editFormRef = ref(null)
 const addFormRef = ref(null)
 
+// 筛选条件
 const filters = reactive({
   email: '',
   nickname: '',

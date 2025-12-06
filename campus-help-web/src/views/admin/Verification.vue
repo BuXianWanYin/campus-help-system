@@ -178,6 +178,11 @@
   </div>
 </template>
 
+/**
+ * 实名认证审核页面
+ * 管理员审核用户提交的实名认证申请
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -191,11 +196,13 @@ const auditDialogVisible = ref(false)
 const currentUser = ref(null)
 const proofImages = ref([])
 
+// 筛选条件
 const filters = reactive({
   status: 'PENDING', // 默认显示待审核
   keyword: '' // 关键词搜索
 })
 
+// 分页信息
 const pagination = reactive({
   current: 1,
   size: 10,

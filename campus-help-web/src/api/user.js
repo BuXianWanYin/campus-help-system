@@ -1,8 +1,10 @@
+/**
+ * 用户相关API
+ * 提供用户信息管理、实名认证、密码修改等功能
+ */
+
 import request from '@/utils/request'
 
-/**
- * 用户相关 API
- */
 export const userApi = {
   /**
    * 获取当前用户信息
@@ -14,7 +16,7 @@ export const userApi = {
   
   /**
    * 更新当前用户信息
-   * @param {Object} data 用户信息
+   * @param {Object} data - 用户信息
    * @returns {Promise} 更新结果
    */
   updateCurrentUser(data) {
@@ -23,7 +25,7 @@ export const userApi = {
   
   /**
    * 分页查询用户列表（管理员）
-   * @param {Object} params 查询参数
+   * @param {Object} params - 查询参数
    * @returns {Promise} 用户列表
    */
   getUserPage(params) {
@@ -32,7 +34,7 @@ export const userApi = {
   
   /**
    * 根据ID获取用户信息（管理员）
-   * @param {Number} id 用户ID
+   * @param {number} id - 用户ID
    * @returns {Promise} 用户信息
    */
   getUserById(id) {
@@ -41,8 +43,8 @@ export const userApi = {
   
   /**
    * 更新用户信息（管理员）
-   * @param {Number} id 用户ID
-   * @param {Object} data 用户信息
+   * @param {number} id - 用户ID
+   * @param {Object} data - 用户信息
    * @returns {Promise} 更新结果
    */
   updateUser(id, data) {
@@ -51,7 +53,7 @@ export const userApi = {
   
   /**
    * 提交实名认证
-   * @param {Object} data 认证信息
+   * @param {Object} data - 认证信息
    * @returns {Promise} 提交结果
    */
   submitVerification(data) {
@@ -60,7 +62,7 @@ export const userApi = {
   
   /**
    * 审核实名认证（管理员）
-   * @param {Object} data 审核信息
+   * @param {Object} data - 审核信息
    * @returns {Promise} 审核结果
    */
   auditVerification(data) {
@@ -69,7 +71,7 @@ export const userApi = {
   
   /**
    * 修改密码
-   * @param {Object} data 密码信息
+   * @param {Object} data - 密码信息
    * @returns {Promise} 修改结果
    */
   changePassword(data) {

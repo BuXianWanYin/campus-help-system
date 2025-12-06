@@ -130,6 +130,11 @@
   </div>
 </template>
 
+/**
+ * 订单列表内容组件
+ * 展示订单列表，支持筛选、分页、订单操作等功能
+ */
+
 <script setup>
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'

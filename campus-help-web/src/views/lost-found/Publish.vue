@@ -138,6 +138,11 @@
   </div>
 </template>
 
+/**
+ * 发布失物信息页面
+ * 用户发布失物或招领信息
+ */
+
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -153,6 +158,7 @@ const previewVisible = ref(false)
 const previewImageUrl = ref('')
 const imageList = ref([])
 
+// 发布表单数据
 const form = reactive({
   type: 'LOST',
   title: '',

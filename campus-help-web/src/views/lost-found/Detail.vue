@@ -440,6 +440,11 @@
   </div>
 </template>
 
+/**
+ * 失物详情页
+ * 展示失物招领详细信息，支持认领、联系发布者等功能
+ */
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

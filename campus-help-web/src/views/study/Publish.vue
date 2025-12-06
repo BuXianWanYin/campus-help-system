@@ -108,6 +108,11 @@
   </div>
 </template>
 
+/**
+ * 发布学习问题页面
+ * 用户发布学习互助问题
+ */
+
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -123,6 +128,7 @@ const previewVisible = ref(false)
 const previewImageUrl = ref('')
 const imageList = ref([])
 
+// 发布表单数据
 const form = reactive({
   category: '',
   title: '',

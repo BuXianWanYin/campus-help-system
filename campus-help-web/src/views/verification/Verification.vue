@@ -136,6 +136,11 @@
   </div>
 </template>
 
+/**
+ * 实名认证页面
+ * 用户提交实名认证信息，查看认证状态
+ */
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -144,7 +149,7 @@ import { userApi } from '@/api'
 import VerificationForm from './components/VerificationForm.vue'
 
 const userStore = useUserStore()
-// 初始化用户信息，使用 store 中的信息或默认值
+// 初始化用户信息，使用store中的信息或默认值
 const userInfo = ref({
   isVerified: userStore.userInfo?.isVerified || 0,
   role: userStore.userInfo?.role || 'USER',
@@ -152,7 +157,9 @@ const userInfo = ref({
 })
 const showForm = ref(false)
 
-// 获取用户信息
+/**
+ * 获取用户信息
+ */
 const fetchUserInfo = async () => {
   try {
     // 优先使用 store 中的用户信息

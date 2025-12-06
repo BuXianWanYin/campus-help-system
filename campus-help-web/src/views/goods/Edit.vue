@@ -156,6 +156,11 @@
   </div>
 </template>
 
+/**
+ * 编辑商品页面
+ * 编辑已发布的商品信息
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -175,6 +180,7 @@ const previewVisible = ref(false)
 const previewImageUrl = ref('')
 const imageList = ref([])
 
+// 编辑表单数据
 const form = reactive({
   title: '',
   category: '',

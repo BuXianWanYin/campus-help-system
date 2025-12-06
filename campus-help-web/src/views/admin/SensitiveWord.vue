@@ -131,13 +131,17 @@
   </div>
 </template>
 
+/**
+ * 敏感词配置页面
+ * 管理系统敏感词库，用于内容审核
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import { adminApi } from '@/api/admin'
 
-// 数据
 const loading = ref(false)
 const submitting = ref(false)
 const sensitiveWordList = ref([])
@@ -147,7 +151,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('添加敏感词')
 const formRef = ref(null)
 
-// 分页
+// 分页信息
 const pagination = reactive({
   current: 1,
   size: 20,

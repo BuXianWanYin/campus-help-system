@@ -34,14 +34,19 @@
   </div>
 </template>
 
+/**
+ * 首页
+ * 展示系统欢迎信息和功能入口
+ */
+
 <script setup>
-import { onMounted, onActivated } from 'vue'
+import { onMounted, onActivated, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { Search, ShoppingBag, Box } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 
-// 定义组件名称，用于 keep-alive
+// 定义组件名称，用于keep-alive
 defineOptions({
   name: 'Home'
 })
@@ -50,15 +55,16 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-// 组件激活时（从其他页面返回时），通知 MainLayout 刷新数据
+// 组件激活时（从其他页面返回时），通知MainLayout刷新数据
 onActivated(() => {
   // 延迟一下确保页面已渲染
   nextTick(() => {
-    // 通知 MainLayout 刷新首页的失物招领数据
+    // 通知MainLayout刷新首页的失物招领数据
     window.dispatchEvent(new CustomEvent('refresh-home-data'))
   })
 })
 
+// 组件挂载时，通知MainLayout刷新数据
 onMounted(() => {
   // 首次加载时也通知刷新
   nextTick(() => {
@@ -66,14 +72,23 @@ onMounted(() => {
   })
 })
 
+/**
+ * 跳转到失物招领列表页
+ */
 const goToLostFound = () => {
   router.push('/lost-found/list')
 }
 
+/**
+ * 跳转到闲置交易列表页
+ */
 const goToGoods = () => {
   router.push('/goods/list')
 }
 
+/**
+ * 跳转到学习互助列表页
+ */
 const goToStudy = () => {
   router.push('/study/list')
 }

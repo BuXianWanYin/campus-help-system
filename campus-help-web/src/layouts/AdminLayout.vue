@@ -170,6 +170,11 @@
   </div>
 </template>
 
+/**
+ * 管理后台布局组件
+ * 包含顶部导航栏、左侧菜单、消息通知等功能
+ */
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, markRaw } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -196,6 +201,10 @@ const messagePanelVisible = ref(false)
 const unreadCount = ref(0)
 const recentMessages = ref([])
 
+/**
+ * 处理下拉菜单命令
+ * @param {string} command - 命令类型
+ */
 const handleCommand = (command) => {
   switch (command) {
     case 'home':

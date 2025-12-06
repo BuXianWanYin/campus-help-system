@@ -165,6 +165,11 @@
   </div>
 </template>
 
+/**
+ * 闲置交易管理页面
+ * 管理已审核通过的商品信息，可进行下架等操作
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -178,12 +183,14 @@ const detailDialogVisible = ref(false)
 const currentItem = ref(null)
 const itemImages = ref([])
 
+// 筛选条件
 const filters = reactive({
   category: '',
   status: '',
   keyword: ''
 })
 
+// 分页信息
 const pagination = reactive({
   current: 1,
   size: 10,

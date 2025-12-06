@@ -322,6 +322,11 @@
   </div>
 </template>
 
+/**
+ * 学习互助管理页面
+ * 管理已审核通过的学习问题，可进行下架等操作，支持回答管理
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'

@@ -1,12 +1,14 @@
+/**
+ * 商品相关API
+ * 提供商品发布、查询、管理等功能
+ */
+
 import request from '@/utils/request'
 
-/**
- * 商品相关 API
- */
 export const goodsApi = {
   /**
    * 发布商品
-   * @param {Object} data 商品信息
+   * @param {Object} data - 商品信息
    * @returns {Promise} 发布结果
    */
   publish(data) {
@@ -15,7 +17,7 @@ export const goodsApi = {
   
   /**
    * 搜索商品列表
-   * @param {Object} params 查询参数（pageNum, pageSize, keyword, category, condition, status, minPrice, maxPrice, sortBy等）
+   * @param {Object} params - 查询参数（pageNum, pageSize, keyword, category, condition, status, minPrice, maxPrice, sortBy等）
    * @returns {Promise} 商品列表
    */
   getList(params) {
@@ -24,7 +26,7 @@ export const goodsApi = {
   
   /**
    * 获取商品详情
-   * @param {Number} id 商品ID
+   * @param {number} id - 商品ID
    * @returns {Promise} 商品详情
    */
   getDetail(id) {
@@ -33,8 +35,8 @@ export const goodsApi = {
   
   /**
    * 编辑商品
-   * @param {Number} id 商品ID
-   * @param {Object} data 商品信息
+   * @param {number} id - 商品ID
+   * @param {Object} data - 商品信息
    * @returns {Promise} 编辑结果
    */
   update(id, data) {
@@ -43,7 +45,7 @@ export const goodsApi = {
   
   /**
    * 删除商品
-   * @param {Number} id 商品ID
+   * @param {number} id - 商品ID
    * @returns {Promise} 删除结果
    */
   delete(id) {
@@ -52,7 +54,7 @@ export const goodsApi = {
   
   /**
    * 下架商品
-   * @param {Number} id 商品ID
+   * @param {number} id - 商品ID
    * @returns {Promise} 下架结果
    */
   offshelf(id) {
@@ -61,7 +63,7 @@ export const goodsApi = {
   
   /**
    * 重新上架商品
-   * @param {Number} id 商品ID
+   * @param {number} id - 商品ID
    * @returns {Promise} 上架结果
    */
   reshelf(id) {
@@ -70,7 +72,7 @@ export const goodsApi = {
   
   /**
    * 获取当前用户发布的商品列表
-   * @param {Object} params 查询参数（pageNum, pageSize, status, keyword等）
+   * @param {Object} params - 查询参数（pageNum, pageSize, status, keyword等）
    * @returns {Promise} 商品列表
    */
   getMyPosts(params) {

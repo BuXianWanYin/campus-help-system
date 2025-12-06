@@ -96,6 +96,11 @@
   </div>
 </template>
 
+/**
+ * 收货地址列表页
+ * 管理用户的收货地址，支持添加、编辑、删除、设置默认地址
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -112,6 +117,7 @@ const showAddDialog = ref(false)
 const editingAddress = ref(null)
 const formRef = ref(null)
 
+// 地址表单数据
 const form = reactive({
   receiverName: '',
   receiverPhone: '',

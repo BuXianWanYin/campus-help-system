@@ -1,12 +1,14 @@
+/**
+ * 系统消息相关API
+ * 提供系统消息查询、标记已读、删除等功能
+ */
+
 import request from '@/utils/request'
 
-/**
- * 系统消息相关 API
- */
 export const messageApi = {
   /**
    * 分页查询系统消息
-   * @param {Object} params 查询参数（pageNum, pageSize等）
+   * @param {Object} params - 查询参数（pageNum, pageSize等）
    * @returns {Promise} 消息列表
    */
   getMessagePage(params) {
@@ -23,7 +25,7 @@ export const messageApi = {
   
   /**
    * 标记消息为已读
-   * @param {Number} messageId 消息ID
+   * @param {number} messageId - 消息ID
    * @returns {Promise} 标记结果
    */
   markAsRead(messageId) {
@@ -40,7 +42,7 @@ export const messageApi = {
   
   /**
    * 标记聊天相关消息为已读
-   * @param {Number} sessionId 会话ID
+   * @param {number} sessionId - 会话ID
    * @returns {Promise} 标记结果
    */
   markChatMessagesAsRead(sessionId) {
@@ -49,7 +51,7 @@ export const messageApi = {
   
   /**
    * 删除消息
-   * @param {Number} messageId 消息ID
+   * @param {number} messageId - 消息ID
    * @returns {Promise} 删除结果
    */
   deleteMessage(messageId) {
@@ -58,12 +60,13 @@ export const messageApi = {
 }
 
 /**
- * 私信相关 API
+ * 私信相关API
+ * 提供会话创建、消息发送、消息查询等功能
  */
 export const chatApi = {
   /**
    * 创建或获取会话
-   * @param {Object} data 创建会话信息（targetUserId, relatedType, relatedId）
+   * @param {Object} data - 创建会话信息（targetUserId, relatedType, relatedId）
    * @returns {Promise} 会话ID
    */
   createOrGetSession(data) {
@@ -80,7 +83,7 @@ export const chatApi = {
   
   /**
    * 获取会话详情
-   * @param {Number} sessionId 会话ID
+   * @param {number} sessionId - 会话ID
    * @returns {Promise} 会话详情
    */
   getSessionDetail(sessionId) {
@@ -89,7 +92,7 @@ export const chatApi = {
   
   /**
    * 发送消息
-   * @param {Object} data 发送消息信息（sessionId, messageType, content, images）
+   * @param {Object} data - 发送消息信息（sessionId, messageType, content, images）
    * @returns {Promise} 消息ID
    */
   sendMessage(data) {
@@ -98,7 +101,7 @@ export const chatApi = {
   
   /**
    * 获取消息列表
-   * @param {Number} sessionId 会话ID
+   * @param {number} sessionId - 会话ID
    * @returns {Promise} 消息列表
    */
   getMessageList(sessionId) {

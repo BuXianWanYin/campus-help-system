@@ -142,6 +142,11 @@
   </div>
 </template>
 
+/**
+ * 注册页面
+ * 用户注册功能，支持邮箱验证码注册
+ */
+
 <script setup>
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -162,6 +167,7 @@ const registerFormRef = ref(null)
 const agreePrivacy = ref(false)
 let countdownTimer = null
 
+// 注册表单数据
 const registerForm = reactive({
   email: '',
   password: '',
@@ -169,7 +175,12 @@ const registerForm = reactive({
   code: ''
 })
 
-// 验证确认密码
+/**
+ * 验证确认密码
+ * @param {Object} rule - 验证规则
+ * @param {string} value - 输入值
+ * @param {Function} callback - 回调函数
+ */
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== registerForm.password) {
     callback(new Error('两次输入的密码不一致'))
@@ -178,7 +189,12 @@ const validateConfirmPassword = (rule, value, callback) => {
   }
 }
 
-// 验证邮箱是否已注册
+/**
+ * 验证邮箱是否已注册
+ * @param {Object} rule - 验证规则
+ * @param {string} value - 输入值
+ * @param {Function} callback - 回调函数
+ */
 const validateEmail = async (rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入邮箱'))
@@ -226,7 +242,9 @@ const registerRules = {
   ]
 }
 
-// 发送注册验证码
+/**
+ * 发送注册验证码
+ */
 const sendRegisterCode = async () => {
   if (!registerForm.email) {
     ElMessage.warning('请先输入邮箱')

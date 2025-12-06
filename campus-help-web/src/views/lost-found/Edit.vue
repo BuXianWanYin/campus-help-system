@@ -138,6 +138,11 @@
   </div>
 </template>
 
+/**
+ * 编辑失物信息页面
+ * 编辑已发布的失物招领信息
+ */
+
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -156,7 +161,8 @@ const previewVisible = ref(false)
 const previewImageUrl = ref('')
 const imageList = ref([])
 const lostFoundId = ref(null)
-const originalStatus = ref(null) // 保存原始状态，用于判断是否为被拒绝状态
+// 保存原始状态，用于判断是否为被拒绝状态
+const originalStatus = ref(null)
 
 // 计算按钮文本
 const submitButtonText = computed(() => {

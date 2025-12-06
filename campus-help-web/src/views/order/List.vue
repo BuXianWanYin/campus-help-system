@@ -16,6 +16,11 @@
   </div>
 </template>
 
+/**
+ * 订单列表页
+ * 展示用户的订单列表，分为我买到的和我卖出的两个标签页
+ */
+
 <script setup>
 import { ref, reactive } from 'vue'
 import OrderListContent from './components/OrderListContent.vue'
@@ -24,14 +29,19 @@ defineOptions({
   name: 'OrderList'
 })
 
+// 当前激活的标签页：BUYER-我买到的，SELLER-我卖出的
 const activeTab = ref('BUYER')
 
+// 筛选条件
 const filters = reactive({
   status: '',
   tradeMethod: '',
   keyword: ''
 })
 
+/**
+ * 处理标签页切换
+ */
 const handleTabChange = () => {
   filters.status = ''
   filters.tradeMethod = ''

@@ -1,3 +1,8 @@
+/**
+ * 根组件
+ * 应用的入口组件，包含路由视图和全局样式
+ */
+
 <template>
   <router-view />
 </template>

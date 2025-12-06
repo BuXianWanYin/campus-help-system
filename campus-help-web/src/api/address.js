@@ -1,8 +1,10 @@
+/**
+ * 收货地址相关API
+ * 提供收货地址的增删改查、设置默认地址等功能
+ */
+
 import request from '@/utils/request'
 
-/**
- * 收货地址相关 API
- */
 export const addressApi = {
   /**
    * 获取收货地址列表
@@ -14,7 +16,7 @@ export const addressApi = {
   
   /**
    * 添加收货地址
-   * @param {Object} data 地址信息
+   * @param {Object} data - 地址信息
    * @returns {Promise} 添加结果
    */
   add(data) {
@@ -23,8 +25,8 @@ export const addressApi = {
   
   /**
    * 更新收货地址
-   * @param {Number} id 地址ID
-   * @param {Object} data 地址信息
+   * @param {number} id - 地址ID
+   * @param {Object} data - 地址信息
    * @returns {Promise} 更新结果
    */
   update(id, data) {
@@ -33,7 +35,7 @@ export const addressApi = {
   
   /**
    * 删除收货地址
-   * @param {Number} id 地址ID
+   * @param {number} id - 地址ID
    * @returns {Promise} 删除结果
    */
   delete(id) {
@@ -42,7 +44,7 @@ export const addressApi = {
   
   /**
    * 设置默认地址
-   * @param {Number} id 地址ID
+   * @param {number} id - 地址ID
    * @returns {Promise} 设置结果
    */
   setDefault(id) {

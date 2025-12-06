@@ -386,6 +386,11 @@
   </div>
 </template>
 
+/**
+ * 我的发布页面
+ * 展示用户发布的所有内容，包括失物招领、闲置商品、学习问题
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -396,6 +401,7 @@ import { getAvatarUrl } from '@/utils/image'
 
 const router = useRouter()
 
+// 当前激活的标签页
 const activeTab = ref('lost-found')
 const loading = ref(false)
 const lostFoundList = ref([])
@@ -403,6 +409,7 @@ const goodsList = ref([])
 const studyList = ref([])
 const total = ref(0)
 
+// 失物招领筛选条件
 const lostFoundFilters = reactive({
   type: '',
   category: '',

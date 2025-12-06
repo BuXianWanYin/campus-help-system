@@ -1,21 +1,22 @@
 /**
  * 全局配置
+ * 统一管理应用的配置信息
  */
 
 export default {
   // 应用标题
   title: import.meta.env.VITE_APP_TITLE || '校园帮助系统',
   
-  // API 基础路径
+  // API基础路径
   baseURL: import.meta.env.VITE_APP_BASE_API,
   
-  // 请求超时时间
+  // 请求超时时间（毫秒）
   timeout: parseInt(import.meta.env.VITE_APP_TIMEOUT) || 30000,
   
   // 是否显示页面加载动画
   showLoading: true,
   
-  // Element Plus 组件大小
+  // Element Plus组件大小
   elementSize: 'default',
   
   // 分页配置

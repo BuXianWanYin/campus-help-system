@@ -150,6 +150,11 @@
   </div>
 </template>
 
+/**
+ * 订单支付页面
+ * 展示订单信息，支持支付和取消订单
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

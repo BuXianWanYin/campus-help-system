@@ -189,6 +189,11 @@
   </div>
 </template>
 
+/**
+ * 失物招领管理页面
+ * 管理已审核通过的失物招领信息，可进行下架等操作
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -205,6 +210,7 @@ const detailDialogVisible = ref(false)
 const currentItem = ref(null)
 const itemImages = ref([])
 
+// 筛选条件
 const filters = reactive({
   type: '',
   category: '',

@@ -133,6 +133,11 @@
   </div>
 </template>
 
+/**
+ * 忘记密码页面
+ * 通过邮箱验证码重置密码
+ */
+
 <script setup>
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -150,6 +155,7 @@ const codeSending = ref(false)
 const forgotPasswordFormRef = ref(null)
 let countdownTimer = null
 
+// 忘记密码表单数据
 const forgotPasswordForm = reactive({
   email: '',
   code: '',
@@ -157,7 +163,12 @@ const forgotPasswordForm = reactive({
   confirmPassword: ''
 })
 
-// 验证确认密码
+/**
+ * 验证确认密码
+ * @param {Object} rule - 验证规则
+ * @param {string} value - 输入值
+ * @param {Function} callback - 回调函数
+ */
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== forgotPasswordForm.newPassword) {
     callback(new Error('两次输入的密码不一致'))
@@ -185,7 +196,9 @@ const forgotPasswordRules = {
   ]
 }
 
-// 发送重置密码验证码
+/**
+ * 发送重置密码验证码
+ */
 const sendResetCode = async () => {
   if (!forgotPasswordForm.email) {
     ElMessage.warning('请先输入邮箱')

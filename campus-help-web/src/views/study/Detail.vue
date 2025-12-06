@@ -208,6 +208,11 @@
   </div>
 </template>
 
+/**
+ * 学习问题详情页
+ * 展示学习问题详细信息，支持回答问题、采纳答案等功能
+ */
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

@@ -303,6 +303,11 @@
   </div>
 </template>
 
+/**
+ * 失物招领审核页面
+ * 管理员审核用户提交的失物招领信息
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -321,6 +326,7 @@ const detailDialogVisible = ref(false)
 const currentItem = ref(null)
 const itemImages = ref([])
 
+// 筛选条件
 const filters = reactive({
   auditStatus: 'PENDING', // 默认显示待审核
   type: '',

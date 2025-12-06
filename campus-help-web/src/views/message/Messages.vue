@@ -99,6 +99,11 @@
   </div>
 </template>
 
+/**
+ * 消息通知页面
+ * 展示系统消息列表，支持查看、标记已读、删除等功能
+ */
+
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -124,7 +129,9 @@ const selectedMessages = ref([])
 const selectAll = ref(false)
 const batchDeleting = ref(false)
 
-// 获取消息列表
+/**
+ * 获取消息列表
+ */
 const fetchMessages = async () => {
   loading.value = true
   try {

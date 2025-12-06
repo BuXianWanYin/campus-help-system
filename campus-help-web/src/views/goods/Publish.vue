@@ -160,6 +160,11 @@
   </div>
 </template>
 
+/**
+ * 发布商品页面
+ * 用户发布闲置商品信息
+ */
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -177,6 +182,7 @@ const previewVisible = ref(false)
 const previewImageUrl = ref('')
 const imageList = ref([])
 
+// 发布表单数据
 const form = reactive({
   title: '',
   category: '',

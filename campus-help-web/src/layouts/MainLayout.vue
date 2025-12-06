@@ -435,6 +435,11 @@
   </div>
 </template>
 
+/**
+ * 主布局组件
+ * 包含顶部导航栏、消息通知、首页内容展示等功能
+ */
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, markRaw } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

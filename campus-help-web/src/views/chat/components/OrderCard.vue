@@ -146,6 +146,11 @@
   </div>
 </template>
 
+/**
+ * 订单卡片组件
+ * 在聊天页面中展示订单信息，支持订单相关操作
+ */
+
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'

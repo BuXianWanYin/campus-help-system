@@ -154,6 +154,11 @@
   </div>
 </template>
 
+/**
+ * 闲置交易列表页
+ * 展示商品信息列表，支持搜索、筛选、分页等功能
+ */
+
 <script setup>
 import { ref, reactive, onMounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'

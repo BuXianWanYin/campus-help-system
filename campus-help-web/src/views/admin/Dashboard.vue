@@ -112,6 +112,11 @@
   </div>
 </template>
 
+/**
+ * 管理后台数据概览页面
+ * 展示系统整体数据统计，包括用户数据、业务数据、图表等
+ */
+
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
@@ -129,7 +134,7 @@ const stats = ref({
   bannedUsers: 0
 })
 
-// 业务统计数据（使用 markRaw 避免组件被响应式化）
+// 业务统计数据（使用markRaw避免组件被响应式化）
 const statsData = ref([
   { id: 1, label: '总互助次数', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(Connection), colorClass: 'icon-blue' },
   { id: 2, label: '活跃用户', value: '0', change: '0%', changeType: 'change-up', changeIcon: markRaw(ArrowUp), icon: markRaw(UsersIcon), colorClass: 'icon-blue' },

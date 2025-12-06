@@ -250,6 +250,11 @@
   </div>
 </template>
 
+/**
+ * 订单详情页
+ * 展示订单详细信息，支持支付、发货、确认收货、取消订单等操作
+ */
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

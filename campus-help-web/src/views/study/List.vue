@@ -168,6 +168,11 @@
   </div>
 </template>
 
+/**
+ * 学习互助列表页
+ * 展示学习问题列表，支持搜索、筛选、分页等功能
+ */
+
 <script setup>
 import { ref, reactive, onMounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -177,7 +182,7 @@ import { questionApi, searchHistoryApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 import { useUserStore } from '@/stores/user'
 
-// 定义组件名称，用于 keep-alive
+// 定义组件名称，用于keep-alive
 defineOptions({
   name: 'QuestionList'
 })

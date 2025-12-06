@@ -89,6 +89,11 @@
   </el-form>
 </template>
 
+/**
+ * 实名认证表单组件
+ * 用户提交实名认证信息的表单
+ */
+
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
