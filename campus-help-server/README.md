@@ -39,12 +39,10 @@ campus-help-server/
 │   │   ├── JacksonConfig.java             # Jackson配置
 │   │   └── AsyncConfig.java               # 异步任务配置
 │   ├── controller/                         # 控制器层
-│   │   ├── user/                           # 用户管理
-│   │   │   └── UserController.java        # 用户控制器
-│   │   ├── admin/                         # 管理员后台
-│   │   │   ├── AdminController.java       # 管理员控制器
-│   │   │   ├── AdminQuestionController.java # 问题审核控制器
-│   │   │   └── SensitiveWordController.java # 敏感词管理控制器
+│   │   ├── UserController.java            # 用户控制器
+│   │   ├── AdminController.java           # 管理员控制器
+│   │   ├── AdminQuestionController.java   # 问题审核控制器
+│   │   ├── SensitiveWordController.java  # 敏感词管理控制器
 │   │   ├── AuthController.java            # 认证控制器
 │   │   ├── LostFoundController.java       # 失物招领控制器
 │   │   ├── GoodsController.java           # 商品控制器
@@ -57,8 +55,6 @@ campus-help-server/
 │   │   └── FileController.java            # 文件上传控制器
 │   ├── service/                            # 服务层
 │   │   ├── impl/                          # 服务实现
-│   │   │   ├── user/                      # 用户服务实现
-│   │   │   ├── admin/                     # 管理员服务实现（如有）
 │   │   │   ├── AddressServiceImpl.java    # 地址服务实现
 │   │   │   ├── LostFoundServiceImpl.java  # 失物招领服务实现
 │   │   │   ├── GoodsServiceImpl.java      # 商品服务实现
@@ -69,8 +65,9 @@ campus-help-server/
 │   │   │   ├── SystemMessageServiceImpl.java # 系统消息服务实现
 │   │   │   ├── SearchHistoryServiceImpl.java # 搜索服务实现
 │   │   │   ├── SensitiveWordServiceImpl.java # 敏感词服务实现
-│   │   │   └── PublishFrequencyServiceImpl.java # 发布频率检测服务实现
-│   │   ├── user/                          # 用户服务接口
+│   │   │   ├── PublishFrequencyServiceImpl.java # 发布频率检测服务实现
+│   │   │   ├── UserServiceImpl.java      # 用户服务实现
+│   │   │   └── VerificationCodeServiceImpl.java # 验证码服务实现
 │   │   ├── AddressService.java            # 地址服务接口
 │   │   ├── LostFoundService.java          # 失物招领服务接口
 │   │   ├── GoodsService.java              # 商品服务接口
@@ -81,10 +78,10 @@ campus-help-server/
 │   │   ├── SystemMessageService.java      # 系统消息服务接口
 │   │   ├── SearchHistoryService.java      # 搜索服务接口
 │   │   ├── SensitiveWordService.java      # 敏感词服务接口
-│   │   └── PublishFrequencyService.java   # 发布频率检测服务接口
+│   │   ├── PublishFrequencyService.java   # 发布频率检测服务接口
+│   │   ├── UserService.java               # 用户服务接口
+│   │   └── VerificationCodeService.java   # 验证码服务接口
 │   ├── mapper/                             # 数据访问层
-│   │   ├── user/                          # 用户Mapper
-│   │   │   └── UserMapper.java            # 用户Mapper接口
 │   │   ├── AddressMapper.java            # 地址Mapper接口
 │   │   ├── LostFoundMapper.java          # 失物招领Mapper接口
 │   │   ├── ClaimRecordMapper.java        # 认领记录Mapper接口
@@ -96,33 +93,59 @@ campus-help-server/
 │   │   ├── ChatMessageMapper.java        # 聊天消息Mapper接口
 │   │   ├── SystemMessageMapper.java      # 系统消息Mapper接口
 │   │   ├── SearchHistoryMapper.java       # 搜索历史Mapper接口
-│   │   └── SensitiveWordMapper.java      # 敏感词Mapper接口
-│   │   └── sensitive/                     # 敏感词Mapper
+│   │   ├── SensitiveWordMapper.java      # 敏感词Mapper接口
+│   │   └── UserMapper.java                # 用户Mapper接口
 │   ├── entity/                             # 实体类
-│   │   ├── user/                          # 用户实体
-│   │   ├── lostfound/                     # 失物招领实体
-│   │   ├── goods/                         # 商品实体
-│   │   ├── order/                         # 订单实体
-│   │   ├── study/                         # 学习互助实体
-│   │   ├── address/                       # 地址实体
-│   │   ├── chat/                          # 聊天实体
-│   │   ├── message/                       # 消息实体
-│   │   ├── search/                        # 搜索实体
-│   │   ├── sensitive/                     # 敏感词实体
-│   │   └── admin/                         # 管理员实体
-│   ├── dto/                                # 数据传输对象（部分旧DTO）
-│   │   └── user/                          # 用户DTO
+│   │   ├── dto/                           # 数据传输对象
+│   │   │   ├── AddressDTO.java            # 地址DTO
+│   │   │   ├── LostFoundDTO.java          # 失物招领DTO
+│   │   │   ├── LostFoundSearchDTO.java     # 失物招领搜索DTO
+│   │   │   ├── ClaimDTO.java              # 认领DTO
+│   │   │   ├── GoodsDTO.java              # 商品DTO
+│   │   │   ├── GoodsSearchDTO.java        # 商品搜索DTO
+│   │   │   ├── OrderDTO.java              # 订单DTO
+│   │   │   ├── OrderSearchDTO.java        # 订单搜索DTO
+│   │   │   ├── QuestionDTO.java           # 问题DTO
+│   │   │   ├── QuestionSearchDTO.java     # 问题搜索DTO
+│   │   │   ├── QuestionDetailVO.java      # 问题详情VO
+│   │   │   ├── AnswerDTO.java             # 回答DTO
+│   │   │   ├── AcceptAnswerDTO.java       # 采纳答案DTO
+│   │   │   ├── QuestionAuditDTO.java      # 问题审核DTO
+│   │   │   ├── ChatSessionDTO.java        # 聊天会话DTO
+│   │   │   ├── SendMessageDTO.java        # 发送消息DTO
+│   │   │   ├── SensitiveWordDTO.java       # 敏感词DTO
+│   │   │   ├── DashboardStatsDTO.java     # 数据统计DTO
+│   │   │   ├── DailyTrendDTO.java         # 每日趋势DTO
+│   │   │   ├── VerificationRequestDTO.java # 实名认证请求DTO
+│   │   │   ├── VerificationAuditRequestDTO.java # 实名认证审核DTO
+│   │   │   ├── ChangePasswordRequestDTO.java # 修改密码DTO
+│   │   │   ├── ShipOrderDTO.java          # 发货DTO
+│   │   │   └── UpdateOrderPriceDTO.java   # 更新订单价格DTO
+│   │   ├── User.java                      # 用户实体
+│   │   ├── LostFound.java                 # 失物招领实体
+│   │   ├── ClaimRecord.java                # 认领记录实体
+│   │   ├── Goods.java                     # 商品实体
+│   │   ├── Order.java                     # 订单实体
+│   │   ├── StudyQuestion.java             # 学习问题实体
+│   │   ├── StudyAnswer.java               # 学习回答实体
+│   │   ├── Address.java                   # 地址实体
+│   │   ├── ChatSession.java               # 聊天会话实体
+│   │   ├── ChatMessage.java               # 聊天消息实体
+│   │   ├── SystemMessage.java             # 系统消息实体
+│   │   ├── SearchHistory.java             # 搜索历史实体
+│   │   └── SensitiveWord.java             # 敏感词实体
 │   ├── exception/                          # 异常处理
 │   │   ├── BusinessException.java         # 业务异常
 │   │   └── GlobalExceptionHandler.java    # 全局异常处理器
 │   └── util/                               # 工具类
 │       ├── SecurityUtils.java             # 安全工具类
 │       ├── AhoCorasick.java               # AC自动机算法
-│       ├── SensitiveWordCheckResult.java   # 敏感词检测结果
-│       └── PasswordGenerator.java         # 密码生成工具
+│       └── SensitiveWordCheckResult.java   # 敏感词检测结果
 ├── src/main/resources/
 │   ├── application.yml                     # 主配置文件
 │   └── application-dev.yml                 # 开发环境配置
+├── sql/                                    # SQL脚本目录
+│   └── (SQL文件)
 └── pom.xml                                 # Maven依赖配置
 ```
 
@@ -394,6 +417,8 @@ campus-help-server/
 - **数据库名称**: `campus_help`
 - **字符集**: `utf8mb4`
 - **存储引擎**: `InnoDB`
+
+**SQL脚本位置**: `sql/` 目录下包含数据库初始化脚本和SQL文件
 
 详细数据库说明请参考: `doc/数据库操作文档.md`
 
