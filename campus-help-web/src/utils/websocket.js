@@ -158,7 +158,7 @@ class WebSocketManager {
   }
   
   /**
-   * 订阅聊天消息
+   * 订阅聊天消息（支持多个处理器）
    */
   subscribeChatMessages(handler) {
     if (!this.stompClient || !this.stompClient.connected) {
@@ -166,17 +166,17 @@ class WebSocketManager {
       return null
     }
     
-    // 如果已经存在聊天订阅，先取消
-    if (this.chatSubscription) {
-      try {
-        this.chatSubscription.unsubscribe()
-        const index = this.subscriptions.indexOf(this.chatSubscription)
-        if (index > -1) {
-          this.subscriptions.splice(index, 1)
-        }
-      } catch (e) {
-        console.error('取消旧聊天订阅失败:', e)
+    // 添加处理器到列表
+    if (handler && typeof handler === 'function') {
+      // 避免重复添加同一个处理器
+      if (!this.chatMessageHandlers.includes(handler)) {
+        this.chatMessageHandlers.push(handler)
       }
+    }
+    
+    // 如果已经有订阅，不需要重复订阅
+    if (this.chatSubscription) {
+      return this.chatSubscription
     }
     
     // 订阅聊天消息队列（用户专属队列）
@@ -184,9 +184,16 @@ class WebSocketManager {
     const subscription = this.stompClient.subscribe('/user/queue/chat', (message) => {
       try {
         const data = JSON.parse(message.body)
-        if (handler && typeof handler === 'function') {
-          handler(data)
-        }
+        // 调用所有注册的处理器
+        this.chatMessageHandlers.forEach(handler => {
+          if (typeof handler === 'function') {
+            try {
+              handler(data)
+            } catch (e) {
+              console.error('聊天消息处理器执行失败:', e)
+            }
+          }
+        })
       } catch (e) {
         console.error('WebSocket聊天消息解析失败:', e)
       }
@@ -198,9 +205,26 @@ class WebSocketManager {
   }
   
   /**
-   * 取消订阅聊天消息
+   * 移除聊天消息处理器
+   * @param {Function} handler - 要移除的处理器
+   */
+  removeChatMessageHandler(handler) {
+    const index = this.chatMessageHandlers.indexOf(handler)
+    if (index > -1) {
+      this.chatMessageHandlers.splice(index, 1)
+    }
+    
+    // 如果没有处理器了，可以取消订阅（但暂时保留，因为可能有其他地方需要）
+    // 如果需要取消订阅，可以在外部调用 clearSubscriptions
+  }
+  
+  /**
+   * 取消订阅聊天消息（移除所有处理器并取消订阅）
    */
   unsubscribeChatMessages() {
+    // 清空所有处理器
+    this.chatMessageHandlers = []
+    
     // 使用保存的聊天订阅引用来取消订阅
     if (this.chatSubscription) {
       try {

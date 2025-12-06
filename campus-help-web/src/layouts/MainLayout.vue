@@ -770,6 +770,34 @@ const handleWebSocketMessage = (message) => {
   }
 }
 
+// 处理聊天消息（在非聊天页面时显示提示）
+const handleChatMessage = (message) => {
+  if (!message || !message.id) {
+    return
+  }
+  
+  // 如果当前在聊天页面，不显示提示（Chat.vue会处理）
+  const path = route.path
+  if (path === '/user/chat') {
+    return
+  }
+  
+  // 如果不是自己发送的消息，显示提示并刷新未读数量
+  if (message.senderId !== userStore.userInfo?.id) {
+    // 获取发送者名称（从sender对象或直接字段获取）
+    const senderName = message.sender?.nickname || message.senderName || `用户${message.senderId}` || '用户'
+    
+    ElMessage.success({
+      message: `收到来自 ${senderName} 的新消息`,
+      duration: 3000,
+      showClose: true
+    })
+    
+    // 刷新未读数量
+    fetchUnreadCount()
+  }
+}
+
 // 更新当前激活菜单
 const updateActiveMenu = () => {
   const path = route.path
@@ -1306,6 +1334,8 @@ onMounted(async () => {
     if (token) {
       wsManager.connect(token)
       wsManager.addMessageHandler(handleWebSocketMessage)
+      // 订阅聊天消息（支持多处理器）
+      wsManager.subscribeChatMessages(handleChatMessage)
     }
   }
   
@@ -1322,6 +1352,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
   // 移除WebSocket消息处理器（但不关闭连接，因为可能其他页面也在使用）
   wsManager.removeMessageHandler(handleWebSocketMessage)
+  // 移除聊天消息处理器
+  wsManager.removeChatMessageHandler(handleChatMessage)
   // 移除事件监听
   window.removeEventListener('refresh-home-data', handleRefreshHomeData)
 })

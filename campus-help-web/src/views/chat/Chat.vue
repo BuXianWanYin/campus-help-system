@@ -1457,9 +1457,9 @@ watchEffect(() => {
     // WebSocket 已连接且用户已登录，但未订阅，则订阅
     chatSubscription.value = wsManager.subscribeChatMessages(handleChatMessage)
   } else if ((!isConnected || !isLoggedIn) && hasSubscription) {
-    // WebSocket 断开或未登录，清理订阅
+    // WebSocket 断开或未登录，清理订阅（只移除Chat.vue自己的处理器）
     if (chatSubscription.value) {
-      wsManager.unsubscribeChatMessages()
+      wsManager.removeChatMessageHandler(handleChatMessage)
       chatSubscription.value = null
     }
   }
@@ -1528,9 +1528,9 @@ onUnmounted(() => {
     readStatusCheckTimer = null
   }
   
-  // 取消订阅聊天消息
+  // 移除聊天消息处理器（只移除Chat.vue自己的处理器，不影响MainLayout的处理器）
   if (chatSubscription.value) {
-    wsManager.unsubscribeChatMessages()
+    wsManager.removeChatMessageHandler(handleChatMessage)
     chatSubscription.value = null
   }
 })
