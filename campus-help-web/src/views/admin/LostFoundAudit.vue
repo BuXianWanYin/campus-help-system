@@ -79,9 +79,14 @@
           {{ row.lostLocation || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="user" label="发布者" min-width="120">
+      <el-table-column label="发布者" min-width="150">
         <template #default="{ row }">
-          {{ row.user?.nickname || '未知用户' }}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <el-avatar :size="32" :src="getAvatarUrl(row.user?.avatar)">
+              {{ row.user?.nickname?.charAt(0) || 'U' }}
+            </el-avatar>
+            <span>{{ row.user?.nickname || '未知用户' }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column prop="auditStatus" label="审核状态" min-width="100">
@@ -119,12 +124,12 @@
             审核
           </el-button>
           <el-button
-            type="info"
+            type="success"
             size="small"
             :icon="View"
             @click="handleViewDetail(row)"
           >
-            查看详情
+            详情
           </el-button>
         </template>
       </el-table-column>

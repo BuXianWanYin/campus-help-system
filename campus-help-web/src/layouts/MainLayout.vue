@@ -313,7 +313,8 @@
         </div>
 
         <!-- 问题列表 -->
-        <div class="study-list">
+        <div class="study-list" v-loading="studyLoading">
+          <el-empty v-if="!studyLoading && studyList.length === 0" description="暂无学习问题" />
           <div v-for="question in studyList" :key="question.id" class="study-card">
             <div class="study-icon" :class="question.colorClass">
               <el-icon><component :is="question.icon" /></el-icon>
@@ -323,7 +324,7 @@
                 <h3 class="study-title">{{ question.title }}</h3>
                 <span class="study-reward" v-if="question.reward">¥{{ question.reward }}</span>
               </div>
-              <p class="study-desc">{{ question.description }}</p>
+                  <p class="study-desc">{{ truncateText(question.description, 100) }}</p>
               <div class="study-meta">
                 <span class="meta-item">
                   <el-icon><Collection /></el-icon>
@@ -453,7 +454,7 @@ import {
 } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
-import { messageApi, lostFoundApi, goodsApi } from '@/api'
+import { messageApi, lostFoundApi, goodsApi, questionApi } from '@/api'
 import wsManager from '@/utils/websocket'
 import { getToken } from '@/utils/auth'
 
@@ -518,11 +519,8 @@ const studyCategories = ref([
   { id: 'ENGLISH', name: '英语' },
   { id: 'OTHER', name: '其他' }
 ])
-const studyList = ref([
-  { id: 1, title: '高等数学 - 求极限问题', description: '如何计算这个极限：lim(x→0) (sin x)/x', category: '数学', createTime: '2025-07-20', reward: 20, icon: markRaw(EditPenIcon), colorClass: 'icon-orange', userAvatar: '', userName: '张同学' },
-  { id: 2, title: '数据结构 - 二叉树遍历', description: '请问二叉树的前序、中序、后序遍历有什么区别？', category: '计算机', createTime: '2025-07-20', reward: 15, icon: markRaw(ComputerIcon), colorClass: 'icon-orange', userAvatar: '', userName: '李同学' },
-  { id: 3, title: '英语翻译 - 学术论文', description: '需要翻译一段学术论文摘要，关于人工智能的', category: '英语', createTime: '2025-07-20', reward: 30, icon: markRaw(NotebookIcon), colorClass: 'icon-orange', userAvatar: '', userName: '王同学' }
-])
+const studyList = ref([])
+const studyLoading = ref(false)
 const studyForm = ref({
   category: '',
   title: '',
@@ -817,11 +815,12 @@ const keepAliveComponents = computed(() => {
 const handleRefreshHomeData = () => {
   const path = route.path
   if (path === '/home' || path === '/') {
-    // 延迟一下确保页面已渲染
-    nextTick(() => {
-      fetchLostFoundList()
-      fetchGoodsList()
-    })
+      // 延迟一下确保页面已渲染
+      nextTick(() => {
+        fetchLostFoundList()
+        fetchGoodsList()
+        fetchStudyList()
+      })
   }
 }
 
@@ -831,14 +830,16 @@ watch(() => route.path, (newPath, oldPath) => {
   
   // 路由切换时，如果是回到首页，立即刷新数据
   if (newPath === '/home' || newPath === '/') {
-    // 清空旧数据，避免显示缓存数据
-    lostFoundList.value = []
-    goodsList.value = []
-    // 立即刷新数据
-    nextTick(() => {
-      fetchLostFoundList()
-      fetchGoodsList()
-    })
+      // 清空旧数据，避免显示缓存数据
+      lostFoundList.value = []
+      goodsList.value = []
+      studyList.value = []
+      // 立即刷新数据
+      nextTick(() => {
+        fetchLostFoundList()
+        fetchGoodsList()
+        fetchStudyList()
+      })
   }
 }, { immediate: true })
 
@@ -950,6 +951,15 @@ const getFirstGoodsImage = (images) => {
 }
 
 /**
+ * 截断文本
+ */
+const truncateText = (text, maxLength) => {
+  if (!text) return ''
+  if (text.length <= maxLength) return text
+  return text.substring(0, maxLength) + '...'
+}
+
+/**
  * 格式化时间
  */
 const formatTime = (time) => {
@@ -1045,6 +1055,131 @@ watch(() => goodsActiveCategory.value, () => {
 })
 
 /**
+ * 获取学习问题列表（首页显示）
+ */
+const fetchStudyList = async () => {
+  // 只在首页时获取数据
+  const path = route.path
+  if (path !== '/home' && path !== '/') {
+    return
+  }
+  
+  // 如果已经在加载中，不重复请求
+  if (studyLoading.value) {
+    return
+  }
+  
+  studyLoading.value = true
+  try {
+    const params = {
+      pageNum: 1,
+      pageSize: 6,
+      category: studyActiveCategory.value && studyActiveCategory.value !== 'all' ? studyActiveCategory.value : undefined,
+      status: 'PENDING_ANSWER', // 只显示待解答的问题
+      sortBy: 'latest'
+    }
+    
+    const response = await questionApi.getList(params)
+    if (response.code === 200) {
+      const pageData = response.data
+      
+      // MyBatis-Plus的Page对象可能直接是数组，或者有records字段
+      let records = []
+      if (Array.isArray(pageData)) {
+        records = pageData
+      } else if (pageData.records) {
+        records = pageData.records
+      } else if (pageData.list) {
+        records = pageData.list
+      }
+      
+      studyList.value = records.map(item => {
+        // 根据分类获取图标和颜色
+        const categoryIcon = getStudyCategoryIcon(item.category)
+        const categoryColor = 'icon-orange' // 统一使用橙色
+        
+        return {
+          ...item,
+          category: getStudyCategoryName(item.category),
+          createTime: formatTime(item.createTime),
+          reward: item.reward || 0,
+          icon: categoryIcon,
+          colorClass: categoryColor,
+          userAvatar: item.user?.avatar || null,
+          userName: item.user?.nickname || `用户${item.userId}` || '未知用户',
+          userId: item.userId
+        }
+      })
+    } else {
+      console.error('获取学习问题列表失败，响应码:', response.code, response.message)
+    }
+  } catch (error) {
+    console.error('获取学习问题列表失败:', error)
+  } finally {
+    studyLoading.value = false
+  }
+}
+
+/**
+ * 获取学习问题分类名称
+ */
+const getStudyCategoryName = (category) => {
+  const categoryMap = {
+    'MATH': '数学',
+    'PHYSICS': '物理',
+    'CHEMISTRY': '化学',
+    'BIOLOGY': '生物',
+    'COMPUTER': '计算机',
+    'ENGLISH': '英语',
+    'LITERATURE': '文学',
+    'HISTORY': '历史',
+    'PHILOSOPHY': '哲学',
+    'ECONOMICS': '经济',
+    'MANAGEMENT': '管理',
+    'LAW': '法律',
+    'EDUCATION': '教育',
+    'ART': '艺术',
+    'ENGINEERING': '工程',
+    'MEDICINE': '医学',
+    'AGRICULTURE': '农学',
+    'OTHER': '其他'
+  }
+  return categoryMap[category] || category || '其他'
+}
+
+/**
+ * 根据分类获取图标
+ */
+const getStudyCategoryIcon = (category) => {
+  const iconMap = {
+    'MATH': markRaw(EditPenIcon),
+    'PHYSICS': markRaw(TrendChartsIcon),
+    'CHEMISTRY': markRaw(LightbulbIcon),
+    'BIOLOGY': markRaw(LightbulbIcon),
+    'COMPUTER': markRaw(ComputerIcon),
+    'ENGLISH': markRaw(NotebookIcon),
+    'LITERATURE': markRaw(NotebookIcon),
+    'HISTORY': markRaw(NotebookIcon),
+    'PHILOSOPHY': markRaw(EditPenIcon),
+    'ECONOMICS': markRaw(TrendChartsIcon),
+    'MANAGEMENT': markRaw(TrendChartsIcon),
+    'LAW': markRaw(NotebookIcon),
+    'EDUCATION': markRaw(NotebookIcon),
+    'ART': markRaw(EditPenIcon),
+    'ENGINEERING': markRaw(ComputerIcon),
+    'MEDICINE': markRaw(LightbulbIcon),
+    'AGRICULTURE': markRaw(LightbulbIcon),
+    'OTHER': markRaw(More)
+  }
+  return iconMap[category] || markRaw(EditPenIcon)
+}
+
+// 监听学习互助分类变化
+watch(() => studyActiveCategory.value, () => {
+  fetchStudyList()
+})
+
+/**
  * 处理类型切换
  */
 const handleTypeChange = () => {
@@ -1093,7 +1228,7 @@ const handleSendOffer = () => {
 
 // 回答问题
 const handleAnswerQuestion = (question) => {
-  ElMessage.success(`已开始回答：${question.title}`)
+  router.push(`/study/detail/${question.id}`)
 }
 
 // 问题发布
@@ -1155,7 +1290,9 @@ onMounted(async () => {
   const path = route.path
   if (path === '/home' || path === '/') {
     setTimeout(() => {
-    fetchLostFoundList()
+      fetchLostFoundList()
+      fetchGoodsList()
+      fetchStudyList()
     }, 100)
   }
   

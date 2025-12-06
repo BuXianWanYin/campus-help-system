@@ -3,11 +3,14 @@
     <el-empty v-if="!loading && !questionDetail" description="问题不存在" />
     
     <div v-if="questionDetail && questionDetail.question" class="detail-content">
-      <!-- 返回按钮 -->
-      <el-button type="text" @click="goBack" class="back-btn">
-        <el-icon><ArrowLeft /></el-icon>
-        返回
-      </el-button>
+      <!-- 页面头部 -->
+      <div class="detail-header">
+        <h1 class="page-title">问题详情</h1>
+        <el-button type="text" @click="goBack">
+          <el-icon><ArrowLeft /></el-icon>
+          返回
+        </el-button>
+      </div>
       
       <!-- 问题详情卡片 -->
       <div class="question-card">
@@ -400,6 +403,13 @@ const handleSubmitAnswer = async () => {
   await answerFormRef.value.validate(async (valid) => {
     if (!valid) return
     
+    // 验证内容不为空（再次检查，确保数据正确）
+    const content = answerForm.value.content?.trim() || ''
+    if (!content) {
+      ElMessage.error('回答内容不能为空')
+      return
+    }
+    
     // 上传图片
     const imageUrls = []
     if (answerImageList.value.length > 0) {
@@ -423,7 +433,7 @@ const handleSubmitAnswer = async () => {
     answering.value = true
     try {
       const response = await questionApi.answer(questionId.value, {
-        content: answerForm.content,
+        content: content,
         images: imageUrls
       })
       
@@ -558,9 +568,18 @@ onMounted(() => {
   min-height: calc(100vh - 200px);
 }
 
-.back-btn {
-  margin-bottom: 20px;
-  font-size: 14px;
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+  margin: 0;
 }
 
 .detail-content {

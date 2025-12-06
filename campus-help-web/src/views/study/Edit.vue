@@ -1,11 +1,28 @@
 <template>
-  <div class="publish-container">
-    <div class="publish-header">
-      <h1 class="page-title">发布学习问题</h1>
+  <div class="edit-container">
+    <div class="edit-header">
+      <h1 class="page-title">编辑问题</h1>
       <el-button type="text" @click="goBack">返回</el-button>
     </div>
 
-    <div class="publish-content">
+    <div class="edit-content" v-loading="loading">
+      <!-- 如果是被拒绝状态，显示提示信息 -->
+      <el-alert
+        v-if="originalStatus === 'REJECTED'"
+        title="您的问题已被拒绝，修改后将重新提交审核"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 24px;"
+      >
+        <template #default>
+          <div>
+            <p>拒绝原因：{{ questionDetail?.question?.auditReason || '无' }}</p>
+            <p style="margin-top: 8px; margin-bottom: 0;">修改问题内容后，将重新提交审核，请确保内容符合规范。</p>
+          </div>
+        </template>
+      </el-alert>
+
       <el-form
         ref="formRef"
         :model="form"
@@ -94,34 +111,39 @@
         <!-- 提交按钮 -->
         <el-form-item class="form-item-block">
           <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting">
-            发布问题
+            {{ originalStatus === 'REJECTED' ? '重新提交审核' : '保存修改' }}
           </el-button>
-          <el-button size="large" @click="handleReset">重置</el-button>
+          <el-button size="large" @click="goBack">取消</el-button>
         </el-form-item>
       </el-form>
     </div>
 
     <!-- 图片预览对话框 -->
-    <el-dialog v-model="previewVisible" title="图片预览" width="800px">
-      <img :src="previewImageUrl" alt="预览图片" style="width: 100%" />
+    <el-dialog v-model="previewVisible" title="预览图片" width="800px">
+      <img :src="previewImageUrl" style="width: 100%" alt="预览图片" />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { questionApi, fileApi } from '@/api'
+import { getAvatarUrl } from '@/utils/image'
 
 const router = useRouter()
+const route = useRoute()
 
 const formRef = ref(null)
+const loading = ref(false)
 const submitting = ref(false)
+const questionId = ref(null)
+const originalStatus = ref(null)
+const questionDetail = ref(null)
 const previewVisible = ref(false)
 const previewImageUrl = ref('')
-const imageList = ref([])
 
 const form = reactive({
   category: '',
@@ -130,18 +152,72 @@ const form = reactive({
   reward: null
 })
 
+const imageList = ref([])
+
 const rules = {
   category: [
     { required: true, message: '请选择问题分类', trigger: 'change' }
   ],
   title: [
     { required: true, message: '请输入问题标题', trigger: 'blur' },
-    { min: 1, max: 200, message: '长度在1到200个字符', trigger: 'blur' }
+    { min: 5, max: 200, message: '标题长度在5到200个字符之间', trigger: 'blur' }
   ],
   description: [
     { required: true, message: '请输入问题描述', trigger: 'blur' },
-    { min: 10, max: 2000, message: '描述至少10个字，最多2000个字', trigger: 'blur' }
+    { min: 10, max: 2000, message: '描述长度在10到2000个字符之间', trigger: 'blur' }
+  ],
+  reward: [
+    { type: 'number', min: 0, max: 10000, message: '悬赏金额范围为0-10000元', trigger: 'blur' }
   ]
+}
+
+/**
+ * 加载问题详情
+ */
+const loadQuestionDetail = async () => {
+  loading.value = true
+  try {
+    const id = parseInt(route.params.id)
+    questionId.value = id
+    
+    const response = await questionApi.getDetail(id)
+    if (response.code === 200) {
+      const data = response.data
+      questionDetail.value = data
+      
+      // 保存原始状态，用于判断是否为被拒绝状态
+      originalStatus.value = data.question?.status || null
+      
+      // 填充表单
+      form.category = data.question?.category || ''
+      form.title = data.question?.title || ''
+      form.description = data.question?.description || ''
+      form.reward = data.question?.reward || null
+      
+      // 加载图片
+      if (data.question?.images) {
+        try {
+          const images = typeof data.question.images === 'string' ? JSON.parse(data.question.images) : data.question.images
+          if (Array.isArray(images) && images.length > 0) {
+            imageList.value = images.map((url, index) => ({
+              uid: `existing-${index}`,
+              name: `image-${index}.jpg`,
+              url: getAvatarUrl(url),
+              status: 'success'
+            }))
+          }
+        } catch (e) {
+          console.error('解析图片失败:', e)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载问题详情失败:', error)
+    ElMessage.error('加载问题详情失败')
+    router.back()
+  } finally {
+    loading.value = false
+  }
 }
 
 /**
@@ -195,6 +271,7 @@ const uploadImages = async () => {
   
   for (const file of imageList.value) {
     if (file.raw) {
+      // 新上传的图片
       try {
         const response = await fileApi.upload(file.raw, 'study')
         if (response.code === 200) {
@@ -204,10 +281,22 @@ const uploadImages = async () => {
         console.error('图片上传失败:', error)
         throw new Error(`图片上传失败：${file.name}`)
       }
-    } else if (file.url) {
-      // 如果已经有URL，直接使用
-      uploadedUrls.push(file.url)
-    }
+      } else if (file.url) {
+        // 已有的图片，提取URL
+        // 如果是完整URL，提取相对路径；如果是相对路径，直接使用
+        let url = file.url
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          // 从完整URL中提取相对路径
+          const match = url.match(/\/uploads\/.+$/)
+          if (match) {
+            url = match[0]
+          }
+        } else if (!url.startsWith('/uploads/')) {
+          // 确保是相对路径
+          url = url.startsWith('/') ? url : `/uploads/${url}`
+        }
+        uploadedUrls.push(url)
+      }
   }
   
   return uploadedUrls
@@ -243,44 +332,26 @@ const handleSubmit = async () => {
       title: form.title,
       description: form.description,
       images: imageUrls.length > 0 ? imageUrls : null,
-      reward: form.reward && form.reward > 0 ? form.reward : 0
+      reward: form.reward && form.reward > 0 ? form.reward : null
     }
     
     // 提交到后端
-    const response = await questionApi.publish(submitData)
+    const response = await questionApi.update(questionId.value, submitData)
     
     if (response.code === 200) {
-      ElMessage.success('发布成功！审核通过后将显示在学习互助列表中')
+      const message = originalStatus.value === 'REJECTED' ? '重新提交成功，等待审核！' : '编辑成功！'
+      ElMessage.success(message)
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
-        router.push(`/study/detail/${response.data}`)
-      }, 1000)
+        router.push('/user/posts')
+      }, 1500)
     }
   } catch (error) {
-    console.error('发布失败:', error)
-    if (error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('发布失败，请检查表单信息')
-    }
+    console.error('编辑失败:', error)
+    ElMessage.error(error.response?.data?.message || '编辑失败，请检查表单信息')
   } finally {
     submitting.value = false
   }
-}
-
-/**
- * 重置表单
- */
-const handleReset = () => {
-  ElMessageBox.confirm('确定要重置表单吗？所有填写的内容将被清空。', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    formRef.value?.resetFields()
-    imageList.value = []
-    form.reward = null
-  }).catch(() => {})
 }
 
 /**
@@ -289,16 +360,20 @@ const handleReset = () => {
 const goBack = () => {
   router.back()
 }
+
+onMounted(() => {
+  loadQuestionDetail()
+})
 </script>
 
 <style scoped>
-.publish-container {
+.edit-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.publish-header {
+.edit-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -312,12 +387,11 @@ const goBack = () => {
   margin: 0;
 }
 
-.publish-content {
+.edit-content {
   background-color: #FFFFFF;
   border-radius: 8px;
-  padding: 24px;
+  padding: 32px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #E0E0E0;
 }
 
 .form-item-block {
@@ -327,7 +401,7 @@ const goBack = () => {
 .form-tip {
   font-size: 12px;
   color: #909399;
-  margin-top: 8px;
+  margin-top: 4px;
   line-height: 1.5;
 }
 
@@ -339,6 +413,16 @@ const goBack = () => {
 :deep(.el-upload-list--picture-card .el-upload-list__item) {
   width: 100px;
   height: 100px;
+}
+
+@media (max-width: 768px) {
+  .edit-container {
+    padding: 16px;
+  }
+  
+  .edit-content {
+    padding: 20px;
+  }
 }
 </style>
 

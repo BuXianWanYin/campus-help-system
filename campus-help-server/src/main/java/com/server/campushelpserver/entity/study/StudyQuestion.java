@@ -73,10 +73,6 @@ public class StudyQuestion implements Serializable {
     @Schema(description = "审核管理员ID")
     private Long auditAdminId;
     
-    @TableField("auditor_id")
-    @Schema(description = "审核管理员ID（同audit_admin_id）")
-    private Long auditorId;
-    
     @TableField("audit_trigger_reason")
     @Schema(description = "触发人工审核原因（敏感词、发布频繁等）")
     private String auditTriggerReason;

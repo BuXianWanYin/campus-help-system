@@ -57,9 +57,14 @@
           {{ getCategoryName(row.category) }}
         </template>
       </el-table-column>
-      <el-table-column prop="user" label="发布者" min-width="120">
+      <el-table-column label="发布者" min-width="150">
         <template #default="{ row }">
-          {{ row.user?.nickname || '未知用户' }}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <el-avatar :size="32" :src="getAvatarUrl(row.user?.avatar)">
+              {{ row.user?.nickname?.charAt(0) || 'U' }}
+            </el-avatar>
+            <span>{{ row.user?.nickname || '未知用户' }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column prop="reward" label="悬赏" min-width="100">
@@ -102,14 +107,6 @@
             @click="handleAudit(row)"
           >
             审核
-          </el-button>
-          <el-button
-            v-else
-            type="info"
-            size="small"
-            disabled
-          >
-            已审核
           </el-button>
           <el-button
             type="success"
@@ -201,15 +198,15 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item
+          v-if="!auditForm.approved"
           label="拒绝原因"
-          :rules="[{ required: !auditForm.approved, message: '拒绝时必须填写原因' }]"
+          :rules="[{ required: true, message: '拒绝时必须填写原因' }]"
         >
           <el-input
             v-model="auditForm.reason"
             type="textarea"
             :rows="3"
-            placeholder="拒绝时必须填写拒绝原因"
-            :disabled="auditForm.approved"
+            placeholder="请输入拒绝原因"
           />
         </el-form-item>
       </el-form>

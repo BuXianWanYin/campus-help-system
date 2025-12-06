@@ -3,7 +3,7 @@
     <div class="page-header">
       <h1 class="page-title">我的发布</h1>
       <el-button type="primary" @click="handlePublish">
-        {{ activeTab === 'lost-found' ? '发布失物' : '发布商品' }}
+        {{ activeTab === 'lost-found' ? '发布失物' : activeTab === 'goods' ? '发布商品' : '发布问题' }}
       </el-button>
     </div>
 
@@ -89,6 +89,44 @@
           </el-form>
         </div>
       </el-tab-pane>
+      <el-tab-pane label="学习互助" name="study">
+        <!-- 学习互助筛选栏 -->
+        <div class="filter-bar">
+          <el-form :inline="true" class="filter-form">
+            <el-form-item label="分类：">
+              <el-select v-model="studyFilters.category" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
+                <el-option label="全部" value="" />
+                <el-option label="数学" value="MATH" />
+                <el-option label="物理" value="PHYSICS" />
+                <el-option label="化学" value="CHEMISTRY" />
+                <el-option label="生物" value="BIOLOGY" />
+                <el-option label="计算机" value="COMPUTER" />
+                <el-option label="英语" value="ENGLISH" />
+                <el-option label="其他" value="OTHER" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态：">
+              <el-select v-model="studyFilters.status" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
+                <el-option label="全部" value="" />
+                <el-option label="待审核" value="PENDING_REVIEW" />
+                <el-option label="待解答" value="PENDING_ANSWER" />
+                <el-option label="已回答" value="ANSWERED" />
+                <el-option label="已解决" value="SOLVED" />
+                <el-option label="已取消" value="CANCELLED" />
+                <el-option label="已拒绝" value="REJECTED" />
+                <el-option label="已下架" value="ADMIN_OFFSHELF" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="排序：">
+              <el-select v-model="studyFilters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
+                <el-option label="最新" value="latest" />
+                <el-option label="悬赏最高" value="reward" />
+                <el-option label="回答最多" value="popular" />
+              </el-select>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-tab-pane>
     </el-tabs>
 
     <!-- 失物列表 -->
@@ -164,6 +202,81 @@
                 text 
                 @click.stop="handleDeleteLostFound(item)">
                 删除
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 学习互助列表 -->
+    <div v-if="activeTab === 'study'" class="card-grid" v-loading="loading">
+      <div v-for="item in studyList" :key="item.id" class="study-card">
+        <div class="card-image-wrapper" @click="goToStudyDetail(item.id)">
+          <img v-if="getFirstImage(item.images)" :src="getFirstImage(item.images)" :alt="item.title" class="card-image" />
+          <div v-else class="card-image-placeholder">
+            <el-icon><Document /></el-icon>
+          </div>
+          <span class="status-badge status-badge-left" :class="getStudyStatusClass(item.status)">
+            {{ getStudyStatusText(item.status) }}
+          </span>
+        </div>
+        <div class="card-content">
+          <h3 class="card-title" @click="goToStudyDetail(item.id)">{{ item.title }}</h3>
+          <p class="card-desc">{{ item.description }}</p>
+          <div class="card-meta">
+            <span class="meta-item">
+              <el-icon><Folder /></el-icon>
+              {{ getStudyCategoryName(item.category) }}
+            </span>
+            <template v-if="item.status !== 'PENDING_REVIEW' && item.status !== 'REJECTED'">
+              <span class="meta-item">
+                <el-icon><Clock /></el-icon>
+                {{ formatTime(item.createTime) }}
+              </span>
+              <span class="meta-item">
+                <el-icon><View /></el-icon>
+                {{ item.viewCount || 0 }}次浏览
+              </span>
+              <span class="meta-item">
+                <el-icon><ChatDotRound /></el-icon>
+                {{ item.answerCount || 0 }}个回答
+              </span>
+            </template>
+            <template v-else-if="item.status === 'PENDING_REVIEW'">
+              <span class="meta-item">
+                <el-icon><Clock /></el-icon>
+                待审核
+              </span>
+            </template>
+            <template v-else-if="item.status === 'REJECTED'">
+              <span class="meta-item">
+                <el-icon><Clock /></el-icon>
+                已拒绝
+              </span>
+            </template>
+          </div>
+          <div class="card-footer">
+            <div class="card-info">
+              <span v-if="item.reward && item.reward > 0" class="reward-text">悬赏 ¥{{ item.reward }}</span>
+            </div>
+            <div class="card-actions">
+              <el-button size="small" @click.stop="goToStudyDetail(item.id)">查看详情</el-button>
+              <el-button 
+                v-if="canEditStudy(item.status)" 
+                size="small" 
+                type="primary" 
+                text 
+                @click.stop="handleEditStudy(item)">
+                编辑
+              </el-button>
+              <el-button 
+                v-if="canCancelStudy(item.status)" 
+                size="small" 
+                type="warning" 
+                text 
+                @click.stop="handleCancelStudy(item)">
+                取消
               </el-button>
             </div>
           </div>
@@ -254,8 +367,8 @@
 
     <!-- 空状态 -->
     <el-empty 
-      v-if="!loading && ((activeTab === 'lost-found' && lostFoundList.length === 0) || (activeTab === 'goods' && goodsList.length === 0))" 
-      :description="activeTab === 'lost-found' ? '您还没有发布任何失物信息' : '您还没有发布任何商品'" 
+      v-if="!loading && ((activeTab === 'lost-found' && lostFoundList.length === 0) || (activeTab === 'goods' && goodsList.length === 0) || (activeTab === 'study' && studyList.length === 0))" 
+      :description="activeTab === 'lost-found' ? '您还没有发布任何失物信息' : activeTab === 'goods' ? '您还没有发布任何商品' : '您还没有发布任何问题'" 
     />
 
     <!-- 分页器 -->
@@ -277,8 +390,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Location, Clock, View, Folder, Box } from '@element-plus/icons-vue'
-import { lostFoundApi, goodsApi } from '@/api'
+import { Location, Clock, View, Folder, Box, Document, ChatDotRound } from '@element-plus/icons-vue'
+import { lostFoundApi, goodsApi, questionApi } from '@/api'
 import { getAvatarUrl } from '@/utils/image'
 
 const router = useRouter()
@@ -287,6 +400,7 @@ const activeTab = ref('lost-found')
 const loading = ref(false)
 const lostFoundList = ref([])
 const goodsList = ref([])
+const studyList = ref([])
 const total = ref(0)
 
 const lostFoundFilters = reactive({
@@ -297,6 +411,12 @@ const lostFoundFilters = reactive({
 })
 
 const goodsFilters = reactive({
+  category: '',
+  status: '',
+  sortBy: 'latest'
+})
+
+const studyFilters = reactive({
   category: '',
   status: '',
   sortBy: 'latest'
@@ -371,6 +491,53 @@ const fetchMyGoodsPosts = async () => {
 }
 
 /**
+ * 获取我的学习问题列表
+ */
+const fetchMyStudyPosts = async () => {
+  loading.value = true
+  try {
+    const params = {
+      pageNum: pagination.pageNum,
+      pageSize: pagination.pageSize,
+      status: studyFilters.status || undefined
+    }
+    
+    const response = await questionApi.getMyPublished(params)
+    if (response.code === 200) {
+      const pageData = response.data
+      // 前端筛选分类和排序
+      let records = pageData.records || []
+      
+      // 分类筛选
+      if (studyFilters.category) {
+        records = records.filter(item => item.category === studyFilters.category)
+      }
+      
+      // 排序
+      if (studyFilters.sortBy === 'reward') {
+        records.sort((a, b) => (b.reward || 0) - (a.reward || 0))
+      } else if (studyFilters.sortBy === 'popular') {
+        records.sort((a, b) => (b.answerCount || 0) - (a.answerCount || 0))
+      } else {
+        // latest - 默认按创建时间倒序
+        records.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+      }
+      
+      studyList.value = records.map(item => ({
+        ...item,
+        images: parseImages(item.images)
+      }))
+      total.value = records.length
+    }
+  } catch (error) {
+    console.error('获取我的问题列表失败:', error)
+    ElMessage.error('获取我的问题列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
  * 解析图片JSON
  */
 const parseImages = (imagesJson) => {
@@ -422,8 +589,10 @@ const handleTabChange = () => {
   pagination.pageNum = 1
   if (activeTab.value === 'lost-found') {
     fetchMyLostFoundPosts()
-  } else {
+  } else if (activeTab.value === 'goods') {
     fetchMyGoodsPosts()
+  } else if (activeTab.value === 'study') {
+    fetchMyStudyPosts()
   }
 }
 
@@ -507,8 +676,10 @@ const handleSearch = () => {
   pagination.pageNum = 1
   if (activeTab.value === 'lost-found') {
     fetchMyLostFoundPosts()
-  } else {
+  } else if (activeTab.value === 'goods') {
     fetchMyGoodsPosts()
+  } else if (activeTab.value === 'study') {
+    fetchMyStudyPosts()
   }
 }
 
@@ -552,8 +723,10 @@ const canDeleteGoods = (status) => {
 const handlePublish = () => {
   if (activeTab.value === 'lost-found') {
     router.push('/lost-found/publish')
-  } else {
+  } else if (activeTab.value === 'goods') {
     router.push('/goods/publish')
+  } else if (activeTab.value === 'study') {
+    router.push('/study/publish')
   }
 }
 
@@ -702,6 +875,109 @@ const handleDeleteGoods = async (item) => {
 }
 
 /**
+ * 学习互助相关操作
+ */
+const goToStudyDetail = (id) => {
+  router.push(`/study/detail/${id}`)
+}
+
+const canEditStudy = (status) => {
+  // 已解决、已取消的不允许编辑，其他状态都可以编辑
+  return status !== 'SOLVED' && status !== 'CANCELLED'
+}
+
+const canCancelStudy = (status) => {
+  // 只有待解答、已回答状态的问题可以取消
+  return status === 'PENDING_ANSWER' || status === 'ANSWERED'
+}
+
+const handleEditStudy = (item) => {
+  router.push(`/study/edit/${item.id}`)
+}
+
+const handleCancelStudy = async (item) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要取消问题《${item.title}》吗？取消后将无法恢复。`,
+      '取消问题',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await questionApi.cancel(item.id)
+    ElMessage.success('取消成功')
+    fetchMyStudyPosts()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('取消失败:', error)
+      ElMessage.error(error.response?.data?.message || '取消失败')
+    }
+  }
+}
+
+/**
+ * 获取学习问题状态文本
+ */
+const getStudyStatusText = (status) => {
+  const statusMap = {
+    'PENDING_REVIEW': '待审核',
+    'PENDING_ANSWER': '待解答',
+    'ANSWERED': '已回答',
+    'SOLVED': '已解决',
+    'CANCELLED': '已取消',
+    'REJECTED': '已拒绝',
+    'ADMIN_OFFSHELF': '已下架'
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * 获取学习问题状态样式类
+ */
+const getStudyStatusClass = (status) => {
+  const classMap = {
+    'PENDING_REVIEW': 'status-warning',
+    'PENDING_ANSWER': 'status-info',
+    'ANSWERED': 'status-primary',
+    'SOLVED': 'status-success',
+    'CANCELLED': 'status-default',
+    'REJECTED': 'status-danger',
+    'ADMIN_OFFSHELF': 'status-default'
+  }
+  return classMap[status] || 'status-default'
+}
+
+/**
+ * 获取学习问题分类名称
+ */
+const getStudyCategoryName = (category) => {
+  const categoryMap = {
+    'MATH': '数学',
+    'PHYSICS': '物理',
+    'CHEMISTRY': '化学',
+    'BIOLOGY': '生物',
+    'COMPUTER': '计算机',
+    'ENGLISH': '英语',
+    'LITERATURE': '文学',
+    'HISTORY': '历史',
+    'PHILOSOPHY': '哲学',
+    'ECONOMICS': '经济',
+    'MANAGEMENT': '管理',
+    'LAW': '法律',
+    'EDUCATION': '教育',
+    'ART': '艺术',
+    'ENGINEERING': '工程',
+    'MEDICINE': '医学',
+    'AGRICULTURE': '农学',
+    'OTHER': '其他'
+  }
+  return categoryMap[category] || category || '其他'
+}
+
+/**
  * 处理分页大小变化
  */
 const handleSizeChange = (size) => {
@@ -709,8 +985,10 @@ const handleSizeChange = (size) => {
   pagination.pageNum = 1
   if (activeTab.value === 'lost-found') {
     fetchMyLostFoundPosts()
-  } else {
+  } else if (activeTab.value === 'goods') {
     fetchMyGoodsPosts()
+  } else if (activeTab.value === 'study') {
+    fetchMyStudyPosts()
   }
 }
 
@@ -721,16 +999,20 @@ const handlePageChange = (page) => {
   pagination.pageNum = page
   if (activeTab.value === 'lost-found') {
     fetchMyLostFoundPosts()
-  } else {
+  } else if (activeTab.value === 'goods') {
     fetchMyGoodsPosts()
+  } else if (activeTab.value === 'study') {
+    fetchMyStudyPosts()
   }
 }
 
 onMounted(() => {
   if (activeTab.value === 'lost-found') {
     fetchMyLostFoundPosts()
-  } else {
+  } else if (activeTab.value === 'goods') {
     fetchMyGoodsPosts()
+  } else if (activeTab.value === 'study') {
+    fetchMyStudyPosts()
   }
 })
 </script>
@@ -1010,6 +1292,35 @@ onMounted(() => {
 .stock-text {
   font-size: 12px;
   color: #909399;
+}
+
+.study-card {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #E0E0E0;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.study-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
+  border-color: #409EFF;
+}
+
+.card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F5F7FA;
+  color: #909399;
+  font-size: 48px;
 }
 </style>
 

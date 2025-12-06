@@ -61,6 +61,16 @@ export const questionApi = {
   },
   
   /**
+   * 更新问题
+   * @param {Number} questionId 问题ID
+   * @param {Object} data 问题信息
+   * @returns {Promise} 更新结果
+   */
+  update(questionId, data) {
+    return request.put(`/question/${questionId}`, data)
+  },
+  
+  /**
    * 获取我发布的问题列表
    * @param {Object} params 查询参数（status, pageNum, pageSize）
    * @returns {Promise} 问题列表

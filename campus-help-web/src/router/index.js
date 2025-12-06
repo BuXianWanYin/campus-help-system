@@ -174,6 +174,15 @@ const routes = [
         }
       },
       {
+        path: 'study/edit/:id',
+        name: 'StudyEdit',
+        component: () => import('../views/study/Edit.vue'),
+        meta: {
+          title: '编辑问题',
+          requiresAuth: true
+        }
+      },
+      {
         path: 'user/profile',
         name: 'UserProfile',
         component: () => import('../views/profile/Profile.vue'),

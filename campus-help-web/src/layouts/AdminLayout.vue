@@ -386,9 +386,14 @@ onMounted(async () => {
     if (wsManager.isConnected) {
       wsManager.addMessageHandler(handleWebSocketMessage)
     } else {
-      wsManager.connect(userStore.token).then(() => {
-        wsManager.addMessageHandler(handleWebSocketMessage)
-      })
+      // connect 方法不返回 Promise，需要在连接成功回调中处理
+      wsManager.connect(userStore.token)
+      // 延迟添加消息处理器，等待连接建立
+      setTimeout(() => {
+        if (wsManager.isConnected) {
+          wsManager.addMessageHandler(handleWebSocketMessage)
+        }
+      }, 500)
     }
     
     // 监听通知面板显示，自动刷新消息

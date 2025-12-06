@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -99,7 +100,7 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         
         // 设置默认值
         if (question.getReward() == null) {
-            question.setReward(java.math.BigDecimal.ZERO);
+            question.setReward(BigDecimal.ZERO);
         }
         if (question.getViewCount() == null) {
             question.setViewCount(0);
@@ -230,7 +231,16 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         }
         
         // 2. 执行查询
-        return studyQuestionMapper.selectPage(page, wrapper);
+        Page<StudyQuestion> resultPage = studyQuestionMapper.selectPage(page, wrapper);
+        
+        // 3. 为每个问题填充用户信息
+        if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+            for (StudyQuestion question : resultPage.getRecords()) {
+                fillUserInfo(question);
+            }
+        }
+        
+        return resultPage;
     }
     
     @Override
@@ -274,7 +284,17 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         
         List<StudyAnswer> answers = studyAnswerMapper.selectList(answerWrapper);
         
-        // 5. 构建返回对象
+        // 5. 填充问题用户信息
+        fillUserInfo(question);
+        
+        // 6. 填充回答用户信息
+        if (answers != null && !answers.isEmpty()) {
+            for (StudyAnswer answer : answers) {
+                fillAnswerUserInfo(answer);
+            }
+        }
+        
+        // 7. 构建返回对象
         QuestionDetailVO vo = new QuestionDetailVO();
         vo.setQuestion(question);
         vo.setAnswers(answers);
@@ -473,6 +493,125 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateQuestion(Long questionId, QuestionDTO dto, Long userId) {
+        // 1. 查询问题
+        StudyQuestion question = studyQuestionMapper.selectById(questionId);
+        if (question == null || question.getDeleteFlag() == 1) {
+            throw new BusinessException("问题不存在");
+        }
+        
+        // 2. 验证权限（只有发布者可以编辑）
+        if (!question.getUserId().equals(userId)) {
+            throw new BusinessException("无权编辑此问题");
+        }
+        
+        // 3. 验证状态（已解决、已取消的不允许编辑）
+        if ("SOLVED".equals(question.getStatus()) || "CANCELLED".equals(question.getStatus())) {
+            throw new BusinessException("该问题已解决或已取消，无法编辑");
+        }
+        
+        // 4. 敏感词检测
+        String checkText = dto.getTitle() + " " + dto.getDescription();
+        SensitiveWordCheckResult checkResult = sensitiveWordService.check(checkText);
+        
+        // 5. 发布频率检测
+        boolean frequencyOk = publishFrequencyService.checkFrequency(userId, "STUDY_QUESTION");
+        
+        // 6. 用户信用检测（新注册用户7天内）
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        boolean newUser = false;
+        if (user.getCreateTime() != null) {
+            Duration duration = Duration.between(user.getCreateTime(), LocalDateTime.now());
+            newUser = duration.toDays() < 7;
+        }
+        
+        // 7. 更新问题信息
+        question.setTitle(dto.getTitle());
+        question.setCategory(dto.getCategory());
+        question.setDescription(dto.getDescription());
+        question.setReward(dto.getReward() != null ? dto.getReward() : BigDecimal.ZERO);
+        
+        // 转换图片列表为JSON字符串
+        if (dto.getImages() != null && !dto.getImages().isEmpty()) {
+            if (dto.getImages().size() > 3) {
+                throw new BusinessException("问题图片最多3张");
+            }
+            try {
+                question.setImages(objectMapper.writeValueAsString(dto.getImages()));
+            } catch (JsonProcessingException e) {
+                throw new BusinessException("图片处理失败：" + e.getMessage());
+            }
+        } else {
+            question.setImages(null);
+        }
+        
+        // 8. 如果之前是被拒绝状态，编辑后需要重新审核
+        boolean wasRejected = "REJECTED".equals(question.getStatus());
+        boolean needReaudit = false;
+        
+        // 9. 如果包含敏感词、发布频繁、新用户，需要重新审核
+        if (!checkResult.isPass() || !frequencyOk || newUser) {
+            question.setStatus("PENDING_REVIEW");
+            question.setAuditStatus("PENDING");
+            question.setAuditTriggerReason(null);
+            question.setAuditReason(null); // 清除之前的拒绝原因
+            question.setAuditTime(null);
+            question.setAuditAdminId(null);
+            
+            // 构建触发原因
+            StringBuilder reason = new StringBuilder();
+            if (!checkResult.isPass()) {
+                reason.append("包含敏感词；");
+            }
+            if (!frequencyOk) {
+                reason.append("发布频繁；");
+            }
+            if (newUser) {
+                reason.append("新注册用户；");
+            }
+            if (reason.length() > 0) {
+                question.setAuditTriggerReason(reason.toString());
+            }
+            needReaudit = true;
+        } else if (wasRejected) {
+            // 如果之前是被拒绝状态，编辑后需要重新审核
+            question.setStatus("PENDING_REVIEW");
+            question.setAuditStatus("PENDING");
+            question.setAuditTriggerReason("编辑被拒绝的问题，需要重新审核");
+            question.setAuditReason(null); // 清除之前的拒绝原因
+            question.setAuditTime(null);
+            question.setAuditAdminId(null);
+            needReaudit = true;
+        } else if ("PENDING_REVIEW".equals(question.getStatus())) {
+            // 如果之前是待审核，编辑后仍然保持待审核
+            needReaudit = true;
+        }
+        
+        question.setUpdateTime(LocalDateTime.now());
+        studyQuestionMapper.updateById(question);
+        
+        // 10. 如果需要重新审核，发送消息给所有管理员
+        if (needReaudit && "PENDING_REVIEW".equals(question.getStatus())) {
+            try {
+                systemMessageService.sendMessageToAllAdmins(
+                    "ADMIN_AUDIT_REQUIRED",
+                    "新的学习问题待审核",
+                    "有一条新的学习问题《" + question.getTitle() + "》需要审核，触发原因：" + question.getAuditTriggerReason(),
+                    "STUDY_QUESTION",
+                    questionId
+                );
+            } catch (Exception e) {
+                System.err.println("发送管理员通知失败: " + e.getMessage());
+            }
+        }
+    }
+    
+    @Override
     public Page<StudyQuestion> getMyPublishedQuestions(Long userId, String status, Integer pageNum, Integer pageSize) {
         Page<StudyQuestion> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<StudyQuestion> wrapper = new LambdaQueryWrapper<>();
@@ -543,8 +682,7 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         question.setAuditStatus(approved ? "APPROVED" : "REJECTED");
         question.setAuditReason(reason);
         question.setAuditTime(LocalDateTime.now());
-        question.setAuditorId(adminId);
-        question.setAuditAdminId(adminId); // 同时设置auditAdminId字段
+        question.setAuditAdminId(adminId);
         
         if (approved) {
             question.setStatus("PENDING_ANSWER");
@@ -613,7 +751,50 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         wrapper.orderByAsc(StudyQuestion::getCreateTime)
                .orderByDesc(StudyQuestion::getAuditTime);
         
-        return studyQuestionMapper.selectPage(page, wrapper);
+        Page<StudyQuestion> resultPage = studyQuestionMapper.selectPage(page, wrapper);
+        
+        // 为每个问题填充用户信息
+        if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+            for (StudyQuestion question : resultPage.getRecords()) {
+                fillUserInfo(question);
+            }
+        }
+        
+        return resultPage;
+    }
+    
+    /**
+     * 填充问题用户信息
+     */
+    private void fillUserInfo(StudyQuestion question) {
+        if (question.getUserId() != null) {
+            User user = userMapper.selectById(question.getUserId());
+            if (user != null) {
+                // 创建简化的用户对象（只包含必要字段，避免返回敏感信息）
+                User simpleUser = new User();
+                simpleUser.setId(user.getId());
+                simpleUser.setNickname(user.getNickname());
+                simpleUser.setAvatar(user.getAvatar());
+                question.setUser(simpleUser);
+            }
+        }
+    }
+    
+    /**
+     * 填充回答用户信息
+     */
+    private void fillAnswerUserInfo(StudyAnswer answer) {
+        if (answer.getUserId() != null) {
+            User user = userMapper.selectById(answer.getUserId());
+            if (user != null) {
+                // 创建简化的用户对象（只包含必要字段，避免返回敏感信息）
+                User simpleUser = new User();
+                simpleUser.setId(user.getId());
+                simpleUser.setNickname(user.getNickname());
+                simpleUser.setAvatar(user.getAvatar());
+                answer.setUser(simpleUser);
+            }
+        }
     }
     
     @Override

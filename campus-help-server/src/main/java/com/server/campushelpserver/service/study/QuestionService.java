@@ -62,6 +62,14 @@ public interface QuestionService extends IService<StudyQuestion> {
     void cancelQuestion(Long questionId, Long userId);
     
     /**
+     * 更新问题
+     * @param questionId 问题ID
+     * @param dto 问题信息
+     * @param userId 用户ID（发布者）
+     */
+    void updateQuestion(Long questionId, QuestionDTO dto, Long userId);
+    
+    /**
      * 获取我发布的问题列表
      * @param userId 用户ID
      * @param status 问题状态（可选）

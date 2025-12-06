@@ -80,12 +80,12 @@
           </el-button>
           <el-button
             v-else
-            type="info"
+            type="success"
             size="small"
             :icon="View"
             @click="handleViewDetail(row)"
           >
-            查看详情
+            详情
           </el-button>
         </template>
       </el-table-column>

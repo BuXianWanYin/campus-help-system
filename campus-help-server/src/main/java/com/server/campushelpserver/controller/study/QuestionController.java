@@ -129,6 +129,20 @@ public class QuestionController {
         return Result.success("取消成功", null);
     }
     
+    @Operation(summary = "更新问题", description = "编辑已发布的问题")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @PutMapping("/{questionId}")
+    public Result<Void> updateQuestion(
+            @Parameter(description = "问题ID") @PathVariable Long questionId,
+            @Parameter(description = "问题信息") @Validated @RequestBody QuestionDTO dto) {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException("未登录");
+        }
+        questionService.updateQuestion(questionId, dto, userId);
+        return Result.success("更新成功", null);
+    }
+    
     @Operation(summary = "获取我发布的问题列表", description = "获取当前登录用户发布的所有问题")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping("/my-published")
