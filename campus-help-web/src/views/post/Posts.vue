@@ -658,7 +658,9 @@ const getGoodsStatusText = (status) => {
     'PENDING_REVIEW': '待审核',
     'ON_SALE': '在售',
     'OFFSHELF': '已下架',
+    'ADMIN_OFFSHELF': '已下架',
     'SOLD_OUT': '已售完',
+    'CLOSED': '已关闭',
     'REJECTED': '已拒绝'
   }
   return statusMap[status] || status
@@ -672,7 +674,9 @@ const getGoodsStatusClass = (status) => {
     'PENDING_REVIEW': 'status-warning',
     'ON_SALE': 'status-success',
     'OFFSHELF': 'status-default',
+    'ADMIN_OFFSHELF': 'status-default',
     'SOLD_OUT': 'status-info',
+    'CLOSED': 'status-info',
     'REJECTED': 'status-danger'
   }
   return classMap[status] || 'status-default'

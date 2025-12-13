@@ -72,10 +72,9 @@
       </el-table-column>
       <el-table-column prop="status" label="状态" min-width="100">
         <template #default="{ row }">
-          <el-tag v-if="row.status === 'ON_SALE'" type="success" size="small">在售</el-tag>
-          <el-tag v-else-if="row.status === 'CLOSED'" size="small">已关闭</el-tag>
-          <el-tag v-else-if="row.status === 'ADMIN_OFFSHELF'" type="warning" size="small">已下架</el-tag>
-          <span v-else>-</span>
+          <el-tag :type="getStatusTagType(row.status)" size="small">
+            {{ getStatusText(row.status) }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="viewCount" label="浏览量" min-width="100" sortable />
@@ -134,9 +133,9 @@
           <el-descriptions-item label="成色">{{ currentItem.condition }}</el-descriptions-item>
           <el-descriptions-item label="交易方式">{{ currentItem.tradeMethod === 'MAIL' ? '邮寄' : '自提' }}</el-descriptions-item>
           <el-descriptions-item label="状态">
-            <el-tag v-if="currentItem.status === 'ON_SALE'" type="success">在售</el-tag>
-            <el-tag v-else-if="currentItem.status === 'CLOSED'" size="small">已关闭</el-tag>
-            <el-tag v-else-if="currentItem.status === 'ADMIN_OFFSHELF'" type="warning">已下架</el-tag>
+            <el-tag :type="getStatusTagType(currentItem.status)" size="small">
+              {{ getStatusText(currentItem.status) }}
+            </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
@@ -315,6 +314,38 @@ const formatDate = (dateStr) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+/**
+ * 获取商品状态文本
+ */
+const getStatusText = (status) => {
+  const statusMap = {
+    'PENDING_REVIEW': '待审核',
+    'ON_SALE': '在售',
+    'SOLD_OUT': '已售完',
+    'CLOSED': '已关闭',
+    'REJECTED': '已拒绝',
+    'ADMIN_OFFSHELF': '已下架',
+    'OFFSHELF': '已下架'
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * 获取商品状态标签类型
+ */
+const getStatusTagType = (status) => {
+  const typeMap = {
+    'PENDING_REVIEW': 'warning',
+    'ON_SALE': 'success',
+    'SOLD_OUT': 'info',
+    'CLOSED': 'info',
+    'REJECTED': 'danger',
+    'ADMIN_OFFSHELF': 'warning',
+    'OFFSHELF': 'warning'
+  }
+  return typeMap[status] || ''
 }
 
 onMounted(() => {

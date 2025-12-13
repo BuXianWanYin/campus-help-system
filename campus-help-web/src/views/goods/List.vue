@@ -105,8 +105,9 @@
       <div v-for="item in goodsList" :key="item.id" class="goods-card" @click="goToDetail(item.id)">
         <div class="card-image-wrapper">
           <img :src="getFirstImage(item.images)" :alt="item.title" class="card-image" />
-          <span v-if="item.status === 'ON_SALE'" class="card-badge badge-on-sale">在售</span>
-          <span v-else-if="item.status === 'SOLD_OUT'" class="card-badge badge-sold-out">已售完</span>
+          <span v-if="item.status" class="card-badge" :class="getStatusBadgeClass(item.status)">
+            {{ getStatusText(item.status) }}
+          </span>
         </div>
         <div class="card-content">
           <h3 class="card-title">{{ item.title }}</h3>
@@ -292,6 +293,38 @@ const formatTime = (time) => {
   } else {
     return '刚刚'
   }
+}
+
+/**
+ * 获取商品状态文本
+ */
+const getStatusText = (status) => {
+  const statusMap = {
+    'PENDING_REVIEW': '待审核',
+    'ON_SALE': '在售',
+    'SOLD_OUT': '已售完',
+    'CLOSED': '已关闭',
+    'REJECTED': '已拒绝',
+    'ADMIN_OFFSHELF': '已下架',
+    'OFFSHELF': '已下架'
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * 获取商品状态徽章样式类
+ */
+const getStatusBadgeClass = (status) => {
+  const classMap = {
+    'PENDING_REVIEW': 'badge-pending',
+    'ON_SALE': 'badge-on-sale',
+    'SOLD_OUT': 'badge-sold-out',
+    'CLOSED': 'badge-closed',
+    'REJECTED': 'badge-rejected',
+    'ADMIN_OFFSHELF': 'badge-offshelf',
+    'OFFSHELF': 'badge-offshelf'
+  }
+  return classMap[status] || 'badge-default'
 }
 
 /**
@@ -589,6 +622,26 @@ onMounted(() => {
 }
 
 .badge-sold-out {
+  background-color: #909399;
+}
+
+.badge-pending {
+  background-color: #E6A23C;
+}
+
+.badge-closed {
+  background-color: #909399;
+}
+
+.badge-rejected {
+  background-color: #F56C6C;
+}
+
+.badge-offshelf {
+  background-color: #909399;
+}
+
+.badge-default {
   background-color: #909399;
 }
 
