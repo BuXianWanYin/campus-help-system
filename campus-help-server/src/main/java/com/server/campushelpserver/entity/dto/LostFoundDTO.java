@@ -7,7 +7,6 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,8 +50,5 @@ public class LostFoundDTO {
     
     @Schema(description = "物品图片URL列表（最多9张）")
     private List<String> images;
-    
-    @Schema(description = "悬赏金额（0-10000元）")
-    private BigDecimal reward;
 }
 

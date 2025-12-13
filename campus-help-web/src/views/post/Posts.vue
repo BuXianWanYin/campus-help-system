@@ -45,7 +45,6 @@
               <el-select v-model="lostFoundFilters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
                 <el-option label="最新" value="latest" />
                 <el-option label="浏览最多" value="view" />
-                <el-option label="悬赏最高" value="reward" />
               </el-select>
             </el-form-item>
           </el-form>
@@ -120,7 +119,6 @@
             <el-form-item label="排序：">
               <el-select v-model="studyFilters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
                 <el-option label="最新" value="latest" />
-                <el-option label="悬赏最高" value="reward" />
                 <el-option label="回答最多" value="popular" />
               </el-select>
             </el-form-item>
@@ -175,7 +173,6 @@
           </div>
           <div class="card-footer">
             <div class="card-info">
-              <span v-if="item.reward > 0" class="reward-text">悬赏 ¥{{ item.reward }}</span>
             </div>
             <div class="card-actions">
               <el-button size="small" @click.stop="goToLostFoundDetail(item.id)">查看详情</el-button>
@@ -258,7 +255,6 @@
           </div>
           <div class="card-footer">
             <div class="card-info">
-              <span v-if="item.reward && item.reward > 0" class="reward-text">悬赏 ¥{{ item.reward }}</span>
             </div>
             <div class="card-actions">
               <el-button size="small" @click.stop="goToStudyDetail(item.id)">查看详情</el-button>
@@ -521,9 +517,7 @@ const fetchMyStudyPosts = async () => {
       }
       
       // 排序
-      if (studyFilters.sortBy === 'reward') {
-        records.sort((a, b) => (b.reward || 0) - (a.reward || 0))
-      } else if (studyFilters.sortBy === 'popular') {
+      if (studyFilters.sortBy === 'popular') {
         records.sort((a, b) => (b.answerCount || 0) - (a.answerCount || 0))
       } else {
         // latest - 默认按创建时间倒序
@@ -1247,12 +1241,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.reward-text {
-  font-size: 14px;
-  color: #F56C6C;
-  font-weight: 500;
 }
 
 .card-actions {

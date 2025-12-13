@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -95,9 +94,6 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         }
         
         // 设置默认值
-        if (question.getReward() == null) {
-            question.setReward(BigDecimal.ZERO);
-        }
         if (question.getViewCount() == null) {
             question.setViewCount(0);
         }
@@ -210,23 +206,11 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             wrapper.eq(StudyQuestion::getStatus, searchDTO.getStatus());
         }
         
-        // 是否有酬劳筛选
-        if (searchDTO.getHasReward() != null) {
-            if (searchDTO.getHasReward()) {
-                wrapper.gt(StudyQuestion::getReward, 0);
-            } else {
-                wrapper.eq(StudyQuestion::getReward, 0);
-            }
-        }
-        
         // 排序
         if (StringUtils.hasText(searchDTO.getSortBy())) {
             switch (searchDTO.getSortBy()) {
                 case "latest":
                     wrapper.orderByDesc(StudyQuestion::getCreateTime);
-                    break;
-                case "reward":
-                    wrapper.orderByDesc(StudyQuestion::getReward);
                     break;
                 case "popular":
                     wrapper.orderByDesc(StudyQuestion::getAnswerCount);
@@ -350,25 +334,15 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             throw new BusinessException("该问题已解决或已取消，无法回答");
         }
         
-        // 3. 检查是否已回答过
-        LambdaQueryWrapper<StudyAnswer> existWrapper = new LambdaQueryWrapper<>();
-        existWrapper.eq(StudyAnswer::getQuestionId, questionId)
-                    .eq(StudyAnswer::getUserId, userId)
-                    .eq(StudyAnswer::getDeleteFlag, 0);
-        StudyAnswer existAnswer = studyAnswerMapper.selectOne(existWrapper);
-        if (existAnswer != null) {
-            throw new BusinessException("您已经回答过这个问题了");
-        }
-        
-        // 4. 不能回答自己的问题
+        // 3. 不能回答自己的问题
         if (question.getUserId().equals(userId)) {
             throw new BusinessException("不能回答自己的问题");
         }
         
-        // 5. 敏感词检测
+        // 4. 敏感词检测
         SensitiveWordCheckResult checkResult = sensitiveWordService.check(dto.getContent());
         
-        // 6. 创建回答
+        // 5. 创建回答
         StudyAnswer answer = new StudyAnswer();
         answer.setQuestionId(questionId);
         answer.setUserId(userId);
@@ -451,7 +425,7 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             }
         }
         
-        // 10. 异步发送邮件通知给问题发布者
+        // 12. 异步发送邮件通知给问题发布者
         try {
             User questionPublisher = userMapper.selectById(question.getUserId());
             if (questionPublisher != null && questionPublisher.getEmail() != null) {
@@ -624,7 +598,6 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
         question.setTitle(dto.getTitle());
         question.setCategory(dto.getCategory());
         question.setDescription(dto.getDescription());
-        question.setReward(dto.getReward() != null ? dto.getReward() : BigDecimal.ZERO);
         
         // 转换图片列表为JSON字符串
         if (dto.getImages() != null && !dto.getImages().isEmpty()) {

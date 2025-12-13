@@ -19,13 +19,10 @@ public class QuestionSearchDTO {
     @Schema(description = "审核状态：ALL-全部，PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝")
     private String auditStatus;
     
-    @Schema(description = "是否有酬劳：true-有酬劳，false-无酬劳")
-    private Boolean hasReward;
-    
     @Schema(description = "关键词（搜索标题和描述）")
     private String keyword;
     
-    @Schema(description = "排序方式：latest-最新发布，reward-酬劳最高，popular-回答最多，recent_answer-最新回答")
+    @Schema(description = "排序方式：latest-最新发布，popular-回答最多，recent_answer-最新回答")
     private String sortBy;
     
     @Schema(description = "页码", example = "1")

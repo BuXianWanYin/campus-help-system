@@ -18,7 +18,7 @@
         <el-form-item label="关键词：">
           <el-input
             v-model="filters.keyword"
-            placeholder="搜索昵称、邮箱、真实姓名或学号"
+            placeholder="搜索昵称、邮箱、真实姓名或学号/工号"
             style="width: 250px"
             clearable
             @keyup.enter="handleFilter"
@@ -55,7 +55,7 @@
           {{ row.realName || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="studentId" label="学号" min-width="150" sortable>
+      <el-table-column prop="studentId" label="学号/工号" min-width="150" sortable>
         <template #default="{ row }">
           {{ row.studentId || '-' }}
         </template>
@@ -129,7 +129,7 @@
             <p><strong>昵称：</strong>{{ currentUser?.nickname }}</p>
             <p><strong>邮箱：</strong>{{ currentUser?.email }}</p>
             <p><strong>真实姓名：</strong>{{ currentUser?.realName }}</p>
-            <p><strong>学号：</strong>{{ currentUser?.studentId }}</p>
+            <p><strong>学号/工号：</strong>{{ currentUser?.studentId }}</p>
             <p><strong>身份证号：</strong>{{ maskIdCard(currentUser?.idCard) }}</p>
             <p><strong>用户类型：</strong>{{ currentUser?.userType || '学生' }}</p>
           </div>
@@ -188,6 +188,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { DocumentChecked, View } from '@element-plus/icons-vue'
 import { adminApi, userApi } from '@/api'
+import { getAvatarUrl } from '@/utils/image'
 
 const loading = ref(false)
 const submitting = ref(false)

@@ -173,7 +173,7 @@
                       <div class="info-item" v-if="userInfo.studentId">
                         <div class="info-label">
                           <el-icon><Document /></el-icon>
-                          <span>学号</span>
+                          <span>{{ userInfo.userType === '教师' ? '工号' : '学号' }}</span>
                         </div>
                         <div class="info-value">{{ userInfo.studentId }}</div>
                       </div>

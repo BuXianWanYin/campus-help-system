@@ -1,0 +1,3215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园帮系统 - 系统说明文档</title>
+    <style>
+        /* ============================================
+           校园帮系统文档 - 配色方案（与项目一致）
+           ============================================ */
+        :root {
+            /* 主色调 - 校园蓝 */
+            --color-primary: #1E88E5;
+            --color-primary-hover: #1976D2;
+            --color-primary-light: #64B5F6;
+            --color-primary-lighter: #BBDEFB;
+            
+            /* 次要色 - 活力橙 */
+            --color-secondary: #FF9800;
+            --color-secondary-hover: #F57C00;
+            
+            /* 状态色 */
+            --color-success: #4CAF50;
+            --color-warning: #FFC107;
+            --color-danger: #F44336;
+            --color-info: #909399;
+            
+            /* 中性色 */
+            --color-dark: #424242;
+            --color-light: #F5F5F5;
+            --color-border: #E0E0E0;
+            
+            /* 文字色 */
+            --color-text-primary: #424242;
+            --color-text-regular: #606266;
+            --color-text-secondary: #909399;
+            --color-text-placeholder: #C0C4CC;
+            
+            /* 背景色 */
+            --color-bg-primary: #F5F5F5;
+            --color-bg-white: #FFFFFF;
+            --color-bg-card: #FFFFFF;
+            
+            /* 阴影 */
+            --shadow-sm: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            
+            /* 圆角 */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            color: var(--color-text-regular);
+            background: var(--color-bg-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--color-bg-white);
+            box-shadow: var(--shadow-md);
+            min-height: 100vh;
+        }
+
+        /* 侧边栏导航 */
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+            color: var(--color-bg-white);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--color-bg-white);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 10px 0;
+        }
+
+        .nav-menu li {
+            margin: 0;
+        }
+
+        .nav-menu a {
+            display: block;
+            padding: 16px 24px;
+            color: rgba(255, 255, 255, 0.95);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            font-size: 15px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .nav-menu a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: var(--color-bg-white);
+            padding-left: 28px;
+        }
+
+        .nav-menu a.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: var(--color-bg-white);
+            color: var(--color-bg-white);
+            font-weight: 600;
+        }
+
+        .nav-menu a.active::before {
+            content: '';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--color-bg-white);
+            border-radius: 50%;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 50px 60px;
+            overflow-y: auto;
+            background: var(--color-bg-white);
+        }
+
+        .section {
+            margin-bottom: 80px;
+            scroll-margin-top: 30px;
+        }
+
+        .section h2 {
+            font-size: 36px;
+            color: var(--color-primary);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 4px solid var(--color-primary);
+            font-weight: 700;
+            position: relative;
+        }
+
+        .section h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 80px;
+            height: 4px;
+            background: var(--color-secondary);
+        }
+
+        .section h3 {
+            font-size: 26px;
+            color: var(--color-dark);
+            margin: 40px 0 20px;
+            font-weight: 600;
+            padding-left: 15px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .section h4 {
+            font-size: 20px;
+            color: var(--color-text-primary);
+            margin: 30px 0 15px;
+            font-weight: 600;
+        }
+
+        .section h5 {
+            font-size: 18px;
+            color: var(--color-text-regular);
+            margin: 25px 0 12px;
+            font-weight: 500;
+        }
+
+        .section p {
+            margin-bottom: 18px;
+            text-align: justify;
+            line-height: 1.9;
+            color: var(--color-text-regular);
+            font-size: 15px;
+        }
+
+        .section ul, .section ol {
+            margin: 20px 0;
+            padding-left: 35px;
+        }
+
+        .section li {
+            margin: 12px 0;
+            line-height: 1.8;
+            color: var(--color-text-regular);
+            font-size: 15px;
+        }
+
+        .section li strong {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        /* 代码块 */
+        .code-block {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid var(--color-border);
+            border-left: 4px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .code-block code {
+            color: var(--color-dark);
+        }
+
+        /* 信息卡片 */
+        .info-card {
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            border-left: 5px solid var(--color-primary);
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .info-card h4 {
+            color: var(--color-primary);
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .warning-card {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+            border-left: 5px solid var(--color-warning);
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .warning-card strong {
+            color: var(--color-warning);
+        }
+
+        .success-card {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            border-left: 5px solid var(--color-success);
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .danger-card {
+            background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+            border-left: 5px solid var(--color-danger);
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 表格 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: var(--shadow-sm);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        table th, table td {
+            padding: 16px;
+            text-align: left;
+            border: 1px solid var(--color-border);
+        }
+
+        table th {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+            color: var(--color-bg-white);
+            font-weight: 600;
+            font-size: 15px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        table tr:nth-child(even) {
+            background: var(--color-light);
+        }
+
+        table tr:hover {
+            background: var(--color-primary-lighter);
+            transition: background 0.3s ease;
+        }
+
+        table td {
+            font-size: 14px;
+            color: var(--color-text-regular);
+        }
+
+        /* 徽章 */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 5px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .badge-primary {
+            background: var(--color-primary);
+            color: var(--color-bg-white);
+        }
+
+        .badge-success {
+            background: var(--color-success);
+            color: var(--color-bg-white);
+        }
+
+        .badge-warning {
+            background: var(--color-warning);
+            color: var(--color-dark);
+        }
+
+        .badge-danger {
+            background: var(--color-danger);
+            color: var(--color-bg-white);
+        }
+
+        .badge-secondary {
+            background: var(--color-secondary);
+            color: var(--color-bg-white);
+        }
+
+        /* 返回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+            color: var(--color-bg-white);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 16px rgba(30, 136, 229, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-to-top:hover {
+            background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(30, 136, 229, 0.5);
+        }
+
+        .back-to-top.show {
+            display: flex;
+        }
+
+        /* 链接样式 */
+        a {
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--color-primary-hover);
+            text-decoration: underline;
+        }
+
+        /* 强调文本 */
+        .highlight {
+            background: linear-gradient(120deg, var(--color-primary-lighter) 0%, var(--color-primary-lighter) 100%);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        /* 分隔线 */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+            margin: 30px 0;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .main-content {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                max-height: 400px;
+            }
+
+            .main-content {
+                padding: 30px 20px;
+            }
+
+            .section h2 {
+                font-size: 28px;
+            }
+
+            .section h3 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>校园帮系统</h1>
+                <p>系统说明文档</p>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <!-- 导航菜单将通过JavaScript动态生成 -->
+            </ul>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 内容将通过JavaScript动态生成 -->
+        </main>
+    </div>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop">↑</button>
+
+    <script>
+        // 文档数据结构
+        const documentation = {
+            sections: [
+                {
+                    id: 'overview',
+                    title: '项目概述',
+                    subsections: []
+                },
+                {
+                    id: 'tech-stack',
+                    title: '技术栈',
+                    subsections: []
+                },
+                {
+                    id: 'quick-start',
+                    title: '快速启动',
+                    subsections: []
+                },
+                {
+                    id: 'architecture',
+                    title: '系统架构',
+                    subsections: []
+                },
+                {
+                    id: 'features',
+                    title: '功能模块',
+                    subsections: []
+                },
+                {
+                    id: 'business-flow',
+                    title: '核心业务流程',
+                    subsections: []
+                },
+                {
+                    id: 'defense',
+                    title: '答辩准备',
+                    subsections: []
+                },
+                {
+                    id: 'api-database',
+                    title: 'API & 数据库',
+                    subsections: []
+                },
+                {
+                    id: 'thesis',
+                    title: '论文相关',
+                    subsections: []
+                }
+            ]
+        };
+
+        // 生成导航菜单
+        function generateNavMenu() {
+            const navMenu = document.getElementById('navMenu');
+            documentation.sections.forEach((section, index) => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `#${section.id}`;
+                a.textContent = section.title;
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById(section.id).scrollIntoView({ behavior: 'smooth' });
+                    setActiveNav(index);
+                });
+                li.appendChild(a);
+                navMenu.appendChild(li);
+            });
+        }
+
+        // 设置活动导航
+        function setActiveNav(index) {
+            const navLinks = document.querySelectorAll('.nav-menu a');
+            navLinks.forEach((link, i) => {
+                if (i === index) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+
+        // 生成内容
+        function generateContent() {
+            const mainContent = document.querySelector('.main-content');
+            
+            // 第一章：项目概述
+            const overviewSection = createSection('overview', '项目概述', `
+                <div class="info-card">
+                    <h4>📋 项目基本信息</h4>
+                    <table>
+                        <tr>
+                            <th>项目名称</th>
+                            <td>校园帮系统 (Campus Help System)</td>
+                        </tr>
+                        <tr>
+                            <th>项目英文名</th>
+                            <td>Campus Help System</td>
+                        </tr>
+                        <tr>
+                            <th>开发模式</th>
+                            <td>前后端分离架构 (Frontend-Backend Separation)</td>
+                        </tr>
+                        <tr>
+                            <th>项目类型</th>
+                            <td>Web应用系统 / 校园服务平台</td>
+                        </tr>
+                        <tr>
+                            <th>开发语言</th>
+                            <td>Java 1.8 (后端) + JavaScript/TypeScript (前端)</td>
+                        </tr>
+                        <tr>
+                            <th>维护者</th>
+                            <td>黄雪勤</td>
+                        </tr>
+                        <tr>
+                            <th>开发周期</th>
+                            <td>2025年9月 - 2025年12月</td>
+                        </tr>
+                        <tr>
+                            <th>完成时间</th>
+                            <td>2025年12月</td>
+                        </tr>
+                        <tr>
+                            <th>开发进度</th>
+                            <td><span class="badge badge-success">已完成</span> 核心功能已全部实现，系统可投入使用</td>
+                        </tr>
+                        <tr>
+                            <th>项目状态</th>
+                            <td><span class="badge badge-primary">生产就绪</span> 已完成开发、测试和部署</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h3>项目简介</h3>
+                <p>
+                    校园帮系统是一个面向高校学生的综合性互助服务平台，旨在为学生提供失物招领、闲置交易、学习互助等多种服务功能。
+                    系统采用前后端分离架构，前端基于Vue 3开发，后端基于Spring Boot开发，支持WebSocket实时通信。
+                </p>
+                <p>
+                    随着高校规模的不断扩大和校园生活的日益丰富，学生在日常生活中面临着诸多需求：丢失物品需要找回、闲置物品需要处理、
+                    学习问题需要解答等。传统的解决方案往往分散在各个平台或线下渠道，效率低下且缺乏统一管理。
+                </p>
+                <p>
+                    校园帮系统通过整合这些功能，构建了一个统一的校园互助平台，不仅提升了服务效率，还促进了校园资源的循环利用和
+                    学生之间的互助交流。系统采用现代化的技术栈，注重用户体验和系统性能，为校园生活提供便捷、安全、高效的服务。
+                </p>
+
+                <h3>项目背景与意义</h3>
+                <h4>1. 社会背景</h4>
+                <p>
+                    随着互联网技术的快速发展和移动设备的普及，校园信息化建设已成为高校发展的重要方向。学生对于便捷、高效的
+                    校园服务需求日益增长，传统的线下服务模式已无法满足现代大学生的需求。
+                </p>
+                <h4>2. 实际需求</h4>
+                <ul>
+                    <li><strong>失物招领需求</strong>：学生在校园内丢失物品后，往往难以找到有效的招领渠道，导致物品无法及时找回</li>
+                    <li><strong>闲置物品处理</strong>：学生购买后不再需要的物品（如教材、电子产品等）需要处理，但缺乏便捷的交易平台</li>
+                    <li><strong>学习互助需求</strong>：学生在学习过程中遇到问题，需要寻求帮助，但缺乏有效的互助机制</li>
+                    <li><strong>信息整合需求</strong>：各类校园服务信息分散，学生需要访问多个平台才能获取完整信息</li>
+                </ul>
+                <h4>3. 项目意义</h4>
+                <ul>
+                    <li><strong>提升校园服务效率</strong>：通过数字化平台，提高失物招领、物品交易等服务的效率</li>
+                    <li><strong>促进资源循环利用</strong>：为闲置物品提供交易平台，减少浪费，促进资源循环利用</li>
+                    <li><strong>构建学习互助社区</strong>：促进学生之间的知识分享和问题解答，营造良好的学习氛围</li>
+                    <li><strong>提升学生生活品质</strong>：为学生提供便捷、安全、高效的校园服务，提升生活品质</li>
+                </ul>
+
+                <h3>项目目标</h3>
+                <div class="success-card">
+                    <h4>核心目标</h4>
+                    <ul>
+                        <li><strong>提升校园生活便利性</strong>：通过失物招领功能，帮助学生快速找回丢失物品或发布招领信息，提高物品找回率</li>
+                        <li><strong>促进资源循环利用</strong>：通过闲置交易平台，让学生可以方便地买卖二手物品，减少资源浪费，促进循环经济</li>
+                        <li><strong>构建学习互助社区</strong>：通过学习互助模块，促进学生之间的知识分享和问题解答，营造良好的学习氛围</li>
+                        <li><strong>保障交易安全</strong>：通过实名认证、内容审核、订单管理等机制，确保平台内容质量和交易安全</li>
+                        <li><strong>提升用户体验</strong>：采用现代化的UI设计和交互方式，提供流畅、便捷的用户体验</li>
+                        <li><strong>实现系统可扩展</strong>：采用模块化设计，便于后续功能扩展和维护</li>
+                    </ul>
+                </div>
+
+                <h3>核心特性</h3>
+                <h4>1. 用户认证与管理</h4>
+                <ul>
+                    <li>✅ <strong>多种注册方式</strong>：支持邮箱注册，验证码验证，确保用户身份真实性</li>
+                    <li>✅ <strong>灵活登录方式</strong>：支持密码登录和验证码登录，提升用户体验</li>
+                    <li>✅ <strong>JWT Token认证</strong>：无状态认证机制，提升系统性能和可扩展性</li>
+                    <li>✅ <strong>密码安全</strong>：使用BCrypt加密存储密码，保障用户账户安全</li>
+                    <li>✅ <strong>实名认证</strong>：用户可提交实名认证，管理员审核后获得认证标识，提升平台信任度</li>
+                    <li>✅ <strong>个人信息管理</strong>：支持头像上传、个人信息修改等功能</li>
+                </ul>
+
+                <h4>2. 失物招领功能</h4>
+                <ul>
+                    <li>✅ <strong>发布失物信息</strong>：支持发布丢失物品和招领物品信息，支持多图片上传</li>
+                    <li>✅ <strong>智能搜索</strong>：支持关键词搜索、分类筛选、地点筛选等多种搜索方式</li>
+                    <li>✅ <strong>认领机制</strong>：支持多用户同时申请认领，发布者可确认或拒绝认领申请</li>
+                    <li>✅ <strong>状态管理</strong>：失物信息状态包括待认领、已认领、已关闭等</li>
+                    <li>✅ <strong>内容审核</strong>：发布前进行敏感词检测和内容审核，确保信息质量</li>
+                </ul>
+
+                <h4>3. 闲置交易平台</h4>
+                <ul>
+                    <li>✅ <strong>商品发布</strong>：支持商品信息发布，包括标题、描述、价格、库存、图片等</li>
+                    <li>✅ <strong>商品搜索</strong>：支持关键词搜索、分类筛选、价格区间筛选等</li>
+                    <li>✅ <strong>订单管理</strong>：完整的订单流程，包括创建、支付、发货、收货、取消等</li>
+                    <li>✅ <strong>交易方式</strong>：支持自提和邮寄两种交易方式</li>
+                    <li>✅ <strong>库存管理</strong>：使用乐观锁机制防止库存超卖，保证数据一致性</li>
+                    <li>✅ <strong>地址管理</strong>：支持多个收货地址，可设置默认地址</li>
+                </ul>
+
+                <h4>4. 学习互助社区</h4>
+                <ul>
+                    <li>✅ <strong>问题发布</strong>：支持发布学习问题，包括分类、标题、描述、图片等</li>
+                    <li>✅ <strong>问题分类</strong>：支持数学、物理、化学、计算机等多个学科分类</li>
+                    <li>✅ <strong>回答机制</strong>：支持多用户回答问题，支持文字和图片回答</li>
+                    <li>✅ <strong>悬赏机制</strong>：支持设置悬赏金额，激励用户回答问题</li>
+                    <li>✅ <strong>答案采纳</strong>：问题发布者可采纳最佳答案，问题状态变为已解决</li>
+                    <li>✅ <strong>问题状态</strong>：包括待解答、已回答、已解决等状态</li>
+                </ul>
+
+                <h4>5. 实时聊天系统</h4>
+                <ul>
+                    <li>✅ <strong>WebSocket通信</strong>：基于WebSocket实现实时消息推送，无需轮询</li>
+                    <li>✅ <strong>多种消息类型</strong>：支持文字消息、图片消息、商品卡片、订单卡片等</li>
+                    <li>✅ <strong>会话管理</strong>：自动创建和管理聊天会话，支持会话列表查看</li>
+                    <li>✅ <strong>消息状态</strong>：支持消息已读/未读状态管理</li>
+                    <li>✅ <strong>消息历史</strong>：保存聊天历史记录，支持历史消息查看</li>
+                </ul>
+
+                <h4>6. 内容审核机制</h4>
+                <ul>
+                    <li>✅ <strong>敏感词检测</strong>：自动检测和过滤敏感词，保障内容质量</li>
+                    <li>✅ <strong>自动审核</strong>：不包含敏感词的内容自动通过审核</li>
+                    <li>✅ <strong>人工审核</strong>：包含敏感词的内容需要管理员人工审核</li>
+                    <li>✅ <strong>敏感词配置</strong>：管理员可配置敏感词库，灵活管理</li>
+                    <li>✅ <strong>审核通知</strong>：审核结果实时通知用户</li>
+                </ul>
+
+                <h4>7. 管理员后台</h4>
+                <ul>
+                    <li>✅ <strong>数据统计</strong>：提供用户数、订单数、商品数等数据统计和图表展示</li>
+                    <li>✅ <strong>用户管理</strong>：支持用户列表查看、封禁/解封、新增/编辑/删除用户</li>
+                    <li>✅ <strong>内容审核</strong>：支持失物招领、商品、学习问题的审核</li>
+                    <li>✅ <strong>实名认证审核</strong>：审核用户的实名认证申请</li>
+                    <li>✅ <strong>敏感词管理</strong>：支持敏感词的添加、删除、编辑</li>
+                    <li>✅ <strong>系统消息</strong>：查看所有系统消息和通知</li>
+                </ul>
+
+                <h3>技术亮点</h3>
+                <div class="info-card">
+                    <h4>架构设计亮点</h4>
+                    <ul>
+                        <li><strong>前后端分离架构</strong>：前端和后端独立开发、部署，提高开发效率和系统可维护性</li>
+                        <li><strong>RESTful API设计</strong>：遵循RESTful规范，接口清晰易用，便于对接和扩展</li>
+                        <li><strong>分层架构设计</strong>：Controller → Service → Mapper → Database，职责清晰，便于维护</li>
+                        <li><strong>模块化设计</strong>：功能模块独立，降低耦合度，便于扩展和维护</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h4>技术实现亮点</h4>
+                    <ul>
+                        <li><strong>JWT无状态认证</strong>：使用JWT Token实现无状态认证，不需要服务器存储会话，提升系统性能和可扩展性</li>
+                        <li><strong>WebSocket实时通信</strong>：基于WebSocket实现实时消息推送，无需轮询，提升用户体验</li>
+                        <li><strong>Redis缓存优化</strong>：使用Redis缓存验证码和会话信息，减少数据库查询，提升响应速度</li>
+                        <li><strong>乐观锁机制</strong>：使用乐观锁防止库存超卖，保证数据一致性，提升系统性能</li>
+                        <li><strong>敏感词过滤</strong>：实现高效的敏感词检测算法，保障内容质量</li>
+                        <li><strong>文件上传管理</strong>：支持多图片上传，使用UUID生成唯一文件名，按日期组织目录</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h4>安全机制亮点</h4>
+                    <ul>
+                        <li><strong>密码加密</strong>：使用BCrypt加密存储密码，不可逆，保障用户账户安全</li>
+                        <li><strong>验证码机制</strong>：防止暴力破解，限制请求频率，提升系统安全性</li>
+                        <li><strong>内容审核</strong>：敏感词检测和人工审核相结合，保障平台内容质量</li>
+                        <li><strong>权限控制</strong>：基于角色的访问控制（USER/ADMIN），确保功能访问安全</li>
+                        <li><strong>数据验证</strong>：前后端双重验证，确保数据完整性和安全性</li>
+                    </ul>
+                </div>
+
+                <h3>系统优势</h3>
+                <h4>1. 功能完整性</h4>
+                <p>
+                    系统涵盖了失物招领、闲置交易、学习互助等核心功能，满足学生日常生活的多种需求。
+                    功能设计完善，业务流程清晰，用户体验良好。
+                </p>
+
+                <h4>2. 技术先进性</h4>
+                <p>
+                    采用Vue 3、Spring Boot等现代化技术栈，使用前后端分离架构，系统性能优异，可扩展性强。
+                    采用JWT认证、WebSocket通信等先进技术，提升用户体验。
+                </p>
+
+                <h4>3. 安全可靠性</h4>
+                <p>
+                    实现了完善的认证授权机制、内容审核机制、数据验证机制等，保障系统安全和数据安全。
+                    使用密码加密、验证码验证等安全措施，保护用户隐私。
+                </p>
+
+                <h4>4. 用户体验</h4>
+                <p>
+                    采用现代化的UI设计，界面美观、操作流畅。支持响应式设计，适配PC端和移动端。
+                    实时消息推送、搜索历史记录等功能，提升用户体验。
+                </p>
+
+                <h4>5. 可维护性</h4>
+                <p>
+                    采用模块化设计，代码结构清晰，便于维护和扩展。使用统一的代码规范和开发规范，
+                    提高代码质量和可读性。
+                </p>
+
+                <h3>应用场景</h3>
+                <ul>
+                    <li><strong>失物招领场景</strong>：学生在校园内丢失物品后，可通过系统发布失物信息，其他学生看到后可申请认领</li>
+                    <li><strong>闲置交易场景</strong>：学生有闲置物品需要处理时，可通过系统发布商品信息，其他学生可浏览、下单购买</li>
+                    <li><strong>学习互助场景</strong>：学生在学习过程中遇到问题时，可通过系统发布问题，其他学生可回答问题，形成互助</li>
+                    <li><strong>信息交流场景</strong>：学生可通过实时聊天功能，与卖家/买家进行沟通，讨论交易细节</li>
+                    <li><strong>内容管理场景</strong>：管理员可通过后台管理系统，审核内容、管理用户、配置系统参数等</li>
+                </ul>
+
+                <h3>项目价值</h3>
+                <div class="success-card">
+                    <h4>社会价值</h4>
+                    <p>
+                        校园帮系统为高校学生提供了一个便捷、安全、高效的互助服务平台，提升了校园服务效率，
+                        促进了资源循环利用，构建了学习互助社区，具有重要的社会价值。
+                    </p>
+                    <h4>技术价值</h4>
+                    <p>
+                        项目采用现代化的技术栈和架构设计，实现了前后端分离、实时通信、缓存优化等先进技术，
+                        为类似项目的开发提供了参考和借鉴。
+                    </p>
+                    <h4>教育价值</h4>
+                    <p>
+                        项目涵盖了Web开发的各个方面，包括前端开发、后端开发、数据库设计、系统架构等，
+                        对于学习和掌握Web开发技术具有重要的教育价值。
+                    </p>
+                </div>
+            `);
+            mainContent.appendChild(overviewSection);
+
+            // 第二章：技术栈
+            const techStackSection = createSection('tech-stack', '技术栈', `
+                <div class="info-card">
+                    <h4>技术选型说明</h4>
+                    <p>
+                        校园帮系统采用现代化的技术栈，注重技术的前瞻性、稳定性和可维护性。
+                        后端采用Spring Boot框架，提供快速开发和强大的生态支持；前端采用Vue 3框架，
+                        提供现代化的开发体验和优秀的性能表现。数据库采用MySQL存储业务数据，
+                        Redis用于缓存和会话管理，提升系统性能。
+                    </p>
+                </div>
+
+                <h3>后端技术栈</h3>
+                <p>
+                    后端采用Java技术栈，基于Spring Boot框架构建，使用MyBatis-Plus进行数据访问，
+                    Spring Security提供安全框架支持，JWT实现无状态认证，WebSocket实现实时通信。
+                </p>
+                <table>
+                    <tr>
+                        <th>技术/框架</th>
+                        <th>版本</th>
+                        <th>用途说明</th>
+                    </tr>
+                    <tr>
+                        <td>Java</td>
+                        <td>1.8</td>
+                        <td>核心开发语言</td>
+                    </tr>
+                    <tr>
+                        <td>Spring Boot</td>
+                        <td>2.7.18</td>
+                        <td>后端框架，提供自动配置和快速开发能力</td>
+                    </tr>
+                    <tr>
+                        <td>Spring Security</td>
+                        <td>2.7.18</td>
+                        <td>安全框架，提供认证和授权支持</td>
+                    </tr>
+                    <tr>
+                        <td>MyBatis-Plus</td>
+                        <td>3.5.3.1</td>
+                        <td>ORM框架，简化数据库操作</td>
+                    </tr>
+                    <tr>
+                        <td>MySQL</td>
+                        <td>8.0.33</td>
+                        <td>关系型数据库，存储业务数据</td>
+                    </tr>
+                    <tr>
+                        <td>Redis</td>
+                        <td>-</td>
+                        <td>缓存数据库，存储验证码、会话信息</td>
+                    </tr>
+                    <tr>
+                        <td>Druid</td>
+                        <td>1.2.18</td>
+                        <td>数据库连接池，提供监控和统计功能</td>
+                    </tr>
+                    <tr>
+                        <td>JWT (jjwt)</td>
+                        <td>0.11.5</td>
+                        <td>JSON Web Token，实现无状态认证</td>
+                    </tr>
+                    <tr>
+                        <td>WebSocket</td>
+                        <td>-</td>
+                        <td>实时通信协议，支持即时消息推送</td>
+                    </tr>
+                    <tr>
+                        <td>SpringDoc OpenAPI</td>
+                        <td>1.7.0</td>
+                        <td>API文档生成工具（Swagger3）</td>
+                    </tr>
+                    <tr>
+                        <td>MapStruct</td>
+                        <td>1.5.5.Final</td>
+                        <td>对象映射工具，简化DTO转换</td>
+                    </tr>
+                    <tr>
+                        <td>Lombok</td>
+                        <td>1.18.28</td>
+                        <td>代码生成工具，减少样板代码</td>
+                    </tr>
+                    <tr>
+                        <td>Jackson</td>
+                        <td>-</td>
+                        <td>JSON序列化/反序列化</td>
+                    </tr>
+                    <tr>
+                        <td>Spring Mail</td>
+                        <td>-</td>
+                        <td>邮件发送服务，用于验证码发送</td>
+                    </tr>
+                    <tr>
+                        <td>Maven</td>
+                        <td>-</td>
+                        <td>项目构建和依赖管理工具</td>
+                    </tr>
+                </table>
+
+                <h3>前端技术栈</h3>
+                <table>
+                    <tr>
+                        <th>技术/框架</th>
+                        <th>版本</th>
+                        <th>用途说明</th>
+                    </tr>
+                    <tr>
+                        <td>Vue</td>
+                        <td>3.4.21</td>
+                        <td>前端框架，采用组合式API</td>
+                    </tr>
+                    <tr>
+                        <td>Vue Router</td>
+                        <td>4.3.0</td>
+                        <td>路由管理，实现单页应用导航</td>
+                    </tr>
+                    <tr>
+                        <td>Pinia</td>
+                        <td>2.1.7</td>
+                        <td>状态管理，替代Vuex</td>
+                    </tr>
+                    <tr>
+                        <td>Element Plus</td>
+                        <td>2.6.3</td>
+                        <td>UI组件库，提供丰富的组件</td>
+                    </tr>
+                    <tr>
+                        <td>Axios</td>
+                        <td>1.6.7</td>
+                        <td>HTTP客户端，处理API请求</td>
+                    </tr>
+                    <tr>
+                        <td>ECharts</td>
+                        <td>5.5.0</td>
+                        <td>数据可视化图表库</td>
+                    </tr>
+                    <tr>
+                        <td>SockJS</td>
+                        <td>1.6.1</td>
+                        <td>WebSocket客户端库</td>
+                    </tr>
+                    <tr>
+                        <td>STOMP.js</td>
+                        <td>2.3.3</td>
+                        <td>WebSocket消息协议</td>
+                    </tr>
+                    <tr>
+                        <td>Vite</td>
+                        <td>5.2.0</td>
+                        <td>前端构建工具，提供快速开发体验</td>
+                    </tr>
+                    <tr>
+                        <td>@vitejs/plugin-vue</td>
+                        <td>5.0.4</td>
+                        <td>Vite的Vue插件</td>
+                    </tr>
+                </table>
+
+                <h3>技术栈详细说明</h3>
+                
+                <h4>1. Spring Boot 2.7.18</h4>
+                <p>
+                    Spring Boot是Spring框架的扩展，提供了自动配置和快速开发能力。选择2.7.18版本是因为：
+                </p>
+                <ul>
+                    <li><strong>成熟稳定</strong>：2.7.x是Spring Boot 2.x系列的最后一个版本，经过长期验证，稳定性高</li>
+                    <li><strong>生态丰富</strong>：拥有丰富的starter和插件，快速集成各种功能</li>
+                    <li><strong>自动配置</strong>：通过自动配置减少配置工作量，提高开发效率</li>
+                    <li><strong>内嵌服务器</strong>：内置Tomcat服务器，简化部署流程</li>
+                    <li><strong>生产就绪</strong>：提供监控、健康检查等生产环境所需的功能</li>
+                </ul>
+
+                <h4>2. MyBatis-Plus 3.5.3.1</h4>
+                <p>
+                    MyBatis-Plus是MyBatis的增强工具，在MyBatis的基础上只做增强不做改变。选择原因：
+                </p>
+                <ul>
+                    <li><strong>简化CRUD</strong>：提供通用的CRUD方法，减少重复代码</li>
+                    <li><strong>条件构造器</strong>：提供强大的条件构造器，简化复杂查询</li>
+                    <li><strong>分页插件</strong>：内置分页插件，支持多种数据库</li>
+                    <li><strong>代码生成器</strong>：支持代码生成，提高开发效率</li>
+                    <li><strong>逻辑删除</strong>：支持逻辑删除，保留历史数据</li>
+                </ul>
+
+                <h4>3. JWT (jjwt) 0.11.5</h4>
+                <p>
+                    JWT (JSON Web Token) 是一种开放标准，用于在各方之间安全地传输信息。选择原因：
+                </p>
+                <ul>
+                    <li><strong>无状态认证</strong>：不需要服务器存储会话，提升系统性能和可扩展性</li>
+                    <li><strong>跨域支持</strong>：支持跨域认证，适合前后端分离架构</li>
+                    <li><strong>信息自包含</strong>：Token中包含用户信息，减少数据库查询</li>
+                    <li><strong>安全性</strong>：使用签名验证Token完整性，防止篡改</li>
+                </ul>
+
+                <h4>4. WebSocket</h4>
+                <p>
+                    WebSocket是一种在单个TCP连接上进行全双工通信的协议。选择原因：
+                </p>
+                <ul>
+                    <li><strong>实时通信</strong>：支持服务器主动推送消息，实现实时通信</li>
+                    <li><strong>低延迟</strong>：相比HTTP轮询，延迟更低，性能更好</li>
+                    <li><strong>减少带宽</strong>：不需要频繁建立连接，减少带宽消耗</li>
+                    <li><strong>双向通信</strong>：支持客户端和服务器双向通信</li>
+                </ul>
+
+                <h4>5. Redis</h4>
+                <p>
+                    Redis是一个开源的内存数据结构存储系统。在项目中的应用：
+                </p>
+                <ul>
+                    <li><strong>验证码存储</strong>：存储邮箱验证码，设置过期时间，自动清理</li>
+                    <li><strong>会话管理</strong>：存储用户会话信息，提升系统性能</li>
+                    <li><strong>缓存优化</strong>：缓存热点数据，减少数据库查询</li>
+                    <li><strong>分布式支持</strong>：支持分布式部署，共享缓存数据</li>
+                </ul>
+
+                <h4>6. Vue 3.4.21</h4>
+                <p>
+                    Vue 3是Vue.js的最新版本，采用组合式API。选择原因：
+                </p>
+                <ul>
+                    <li><strong>组合式API</strong>：更灵活的逻辑复用和组织方式</li>
+                    <li><strong>性能提升</strong>：使用Proxy替代Object.defineProperty，性能更好</li>
+                    <li><strong>TypeScript支持</strong>：更好的TypeScript支持，类型安全</li>
+                    <li><strong>生态成熟</strong>：拥有丰富的插件和组件库</li>
+                    <li><strong>开发体验</strong>：提供更好的开发工具和调试体验</li>
+                </ul>
+
+                <h4>7. Element Plus 2.6.3</h4>
+                <p>
+                    Element Plus是Vue 3的UI组件库。选择原因：
+                </p>
+                <ul>
+                    <li><strong>组件丰富</strong>：提供60+个常用组件，满足各种需求</li>
+                    <li><strong>设计精美</strong>：采用Material Design设计规范，界面美观</li>
+                    <li><strong>文档完善</strong>：提供详细的中文文档和示例</li>
+                    <li><strong>定制灵活</strong>：支持主题定制，可自定义样式</li>
+                    <li><strong>Vue 3支持</strong>：专为Vue 3设计，性能优异</li>
+                </ul>
+
+                <h3>开发工具</h3>
+                <table>
+                    <tr>
+                        <th>工具类型</th>
+                        <th>工具名称</th>
+                        <th>用途说明</th>
+                    </tr>
+                    <tr>
+                        <td>IDE</td>
+                        <td>IntelliJ IDEA</td>
+                        <td>Java后端开发，提供强大的代码提示和调试功能</td>
+                    </tr>
+                    <tr>
+                        <td>IDE</td>
+                        <td>VS Code</td>
+                        <td>前端开发，轻量级编辑器，插件丰富</td>
+                    </tr>
+                    <tr>
+                        <td>版本控制</td>
+                        <td>Git</td>
+                        <td>代码版本管理，支持分支管理和协作开发</td>
+                    </tr>
+                    <tr>
+                        <td>API测试</td>
+                        <td>Postman</td>
+                        <td>API接口测试，支持请求发送和响应查看</td>
+                    </tr>
+                    <tr>
+                        <td>API文档</td>
+                        <td>Swagger UI</td>
+                        <td>自动生成API文档，支持在线测试接口</td>
+                    </tr>
+                    <tr>
+                        <td>数据库管理</td>
+                        <td>Navicat</td>
+                        <td>MySQL数据库管理工具，支持可视化操作</td>
+                    </tr>
+                    <tr>
+                        <td>数据库管理</td>
+                        <td>DBeaver</td>
+                        <td>开源数据库管理工具，支持多种数据库</td>
+                    </tr>
+                    <tr>
+                        <td>Redis管理</td>
+                        <td>Redis Desktop Manager</td>
+                        <td>Redis可视化管理工具，支持数据查看和操作</td>
+                    </tr>
+                    <tr>
+                        <td>构建工具</td>
+                        <td>Maven</td>
+                        <td>Java项目构建和依赖管理</td>
+                    </tr>
+                    <tr>
+                        <td>构建工具</td>
+                        <td>npm / yarn</td>
+                        <td>前端项目依赖管理和构建</td>
+                    </tr>
+                </table>
+
+                <h3>部署环境</h3>
+                <div class="warning-card">
+                    <h4>环境要求</h4>
+                    <p>在部署系统前，请确保服务器满足以下环境要求：</p>
+                </div>
+                <table>
+                    <tr>
+                        <th>环境组件</th>
+                        <th>版本要求</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>JDK</td>
+                        <td>1.8+</td>
+                        <td>Java开发环境，用于运行Spring Boot应用</td>
+                    </tr>
+                    <tr>
+                        <td>Node.js</td>
+                        <td>16.0+</td>
+                        <td>JavaScript运行环境，用于运行前端项目</td>
+                    </tr>
+                    <tr>
+                        <td>MySQL</td>
+                        <td>8.0+</td>
+                        <td>关系型数据库，存储业务数据</td>
+                    </tr>
+                    <tr>
+                        <td>Redis</td>
+                        <td>5.0+</td>
+                        <td>缓存数据库，存储验证码和会话信息</td>
+                    </tr>
+                    <tr>
+                        <td>Maven</td>
+                        <td>3.6+</td>
+                        <td>Java项目构建工具（可选，IDE内置）</td>
+                    </tr>
+                    <tr>
+                        <td>Nginx</td>
+                        <td>1.18+</td>
+                        <td>Web服务器（可选，用于反向代理和静态资源服务）</td>
+                    </tr>
+                </table>
+
+                <h3>技术选型对比</h3>
+                <h4>前后端分离 vs 传统MVC</h4>
+                <div class="info-card">
+                    <p><strong>选择前后端分离的原因：</strong></p>
+                    <ul>
+                        <li>前后端可以独立开发和部署，提高开发效率</li>
+                        <li>前端可以使用现代化的框架和工具，提升用户体验</li>
+                        <li>后端专注于API开发，代码更清晰，便于维护</li>
+                        <li>支持多端接入（Web、移动端），扩展性强</li>
+                    </ul>
+                </div>
+
+                <h4>Vue 3 vs Vue 2</h4>
+                <div class="info-card">
+                    <p><strong>选择Vue 3的原因：</strong></p>
+                    <ul>
+                        <li>性能提升：使用Proxy替代Object.defineProperty，响应式系统更高效</li>
+                        <li>组合式API：更灵活的逻辑复用和组织方式</li>
+                        <li>更好的TypeScript支持：提供更好的类型推断和类型安全</li>
+                        <li>更小的包体积：Tree-shaking支持更好，打包体积更小</li>
+                    </ul>
+                </div>
+
+                <h4>MyBatis-Plus vs JPA</h4>
+                <div class="info-card">
+                    <p><strong>选择MyBatis-Plus的原因：</strong></p>
+                    <ul>
+                        <li>SQL可控：可以编写原生SQL，灵活度高</li>
+                        <li>学习成本低：对于熟悉SQL的开发者更友好</li>
+                        <li>性能优化：可以针对具体场景优化SQL</li>
+                        <li>简化开发：提供通用CRUD，减少重复代码</li>
+                    </ul>
+                </div>
+
+                <h3>技术栈优势总结</h3>
+                <div class="success-card">
+                    <h4>开发效率</h4>
+                    <p>
+                        采用Spring Boot自动配置、MyBatis-Plus简化CRUD、Vue 3组合式API等技术，
+                        大幅提升开发效率，减少重复代码，加快项目进度。
+                    </p>
+                    <h4>系统性能</h4>
+                    <p>
+                        使用JWT无状态认证、Redis缓存、WebSocket实时通信等技术，提升系统性能，
+                        减少数据库查询，降低服务器负载。
+                    </p>
+                    <h4>可维护性</h4>
+                    <p>
+                        采用前后端分离、模块化设计、统一代码规范等技术，提高代码可读性和可维护性，
+                        便于后续功能扩展和维护。
+                    </p>
+                </div>
+            `);
+            mainContent.appendChild(techStackSection);
+
+            // 第三章：快速启动
+            const quickStartSection = createSection('quick-start', '快速启动', `
+                <h3>环境要求</h3>
+                <div class="warning-card">
+                    <strong>⚠️ 重要提示</strong>：在启动项目前，请确保已安装并配置好以下环境。
+                </div>
+                <ul>
+                    <li><strong>JDK 1.8+</strong>：用于运行Spring Boot应用</li>
+                    <li><strong>Node.js 16.0+</strong>：用于运行前端项目</li>
+                    <li><strong>MySQL 8.0+</strong>：数据库服务</li>
+                    <li><strong>Redis 5.0+</strong>：缓存服务</li>
+                    <li><strong>Maven 3.6+</strong>：Java项目构建工具</li>
+                </ul>
+
+                <h3>数据库初始化</h3>
+                <ol>
+                    <li>创建数据库：
+                        <div class="code-block">CREATE DATABASE campus_help CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;</div>
+                    </li>
+                    <li>导入SQL脚本：
+                        <div class="code-block">mysql -u root -p campus_help < campus-help-server/sql/campus_help.sql</div>
+                    </li>
+                    <li>验证数据表：确认已创建 <span class="badge badge-primary">13</span> 张数据表</li>
+                </ol>
+
+                <h3>后端启动</h3>
+                <ol>
+                    <li>进入后端目录：
+                        <div class="code-block">cd campus-help-server</div>
+                    </li>
+                    <li>配置数据库连接（编辑 <code>src/main/resources/application-dev.yml</code>）：
+                        <div class="code-block">spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/campus_help?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456  # 修改为你的数据库密码</div>
+                    </li>
+                    <li>配置Redis连接（编辑 <code>src/main/resources/application-dev.yml</code>）：
+                        <div class="code-block">spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:  # 如果有密码，填写密码</div>
+                    </li>
+                    <li>配置邮件服务（编辑 <code>src/main/resources/application-dev.yml</code>）：
+                        <div class="code-block">spring:
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: your-email@qq.com  # 修改为你的QQ邮箱
+    password: your-auth-code     # 修改为你的邮箱授权码</div>
+                    </li>
+                    <li>启动后端服务：
+                        <div class="code-block"># 方式一：使用Maven
+mvn spring-boot:run
+
+# 方式二：使用IDE运行
+运行 CampusHelpServerApplication 主类</div>
+                    </li>
+                    <li>验证启动：访问 <a href="http://localhost:8081/swagger-ui.html" target="_blank">http://localhost:8081/swagger-ui.html</a> 查看API文档</li>
+                </ol>
+
+                <div class="info-card">
+                    <strong>💡 提示</strong>：
+                    <ul>
+                        <li>后端服务默认运行在 <strong>8081</strong> 端口</li>
+                        <li>API文档地址：<code>http://localhost:8081/swagger-ui.html</code></li>
+                        <li>Druid监控地址：<code>http://localhost:8081/druid</code>（用户名/密码：admin/admin）</li>
+                    </ul>
+                </div>
+
+                <h3>前端启动</h3>
+                <ol>
+                    <li>进入前端目录：
+                        <div class="code-block">cd campus-help-web</div>
+                    </li>
+                    <li>安装依赖：
+                        <div class="code-block">npm install</div>
+                    </li>
+                    <li>配置API地址（编辑 <code>src/config/index.js</code>）：
+                        <div class="code-block">export default {
+  apiBaseURL: 'http://localhost:8081'  // 确保与后端端口一致
+}</div>
+                    </li>
+                    <li>启动开发服务器：
+                        <div class="code-block">npm run dev</div>
+                    </li>
+                    <li>访问应用：浏览器打开 <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                </ol>
+
+                <div class="info-card">
+                    <strong>💡 提示</strong>：
+                    <ul>
+                        <li>前端服务默认运行在 <strong>3000</strong> 端口</li>
+                        <li>开发模式下支持热更新，修改代码后自动刷新</li>
+                        <li>生产环境构建：<code>npm run build</code></li>
+                    </ul>
+                </div>
+
+                <h3>Docker启动（可选）</h3>
+                <div class="warning-card">
+                    <strong>⚠️ 注意</strong>：Docker启动方式需要先创建Dockerfile和docker-compose.yml配置文件。
+                </div>
+                <p>如果项目已配置Docker，可以使用以下命令启动：</p>
+                <div class="code-block"># 构建镜像
+docker-compose build
+
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down</div>
+
+                <h3>验证安装</h3>
+                <p>启动成功后，可以通过以下方式验证：</p>
+                <ol>
+                    <li>访问前端首页：<a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                    <li>访问后端API文档：<a href="http://localhost:8081/swagger-ui.html" target="_blank">http://localhost:8081/swagger-ui.html</a></li>
+                    <li>测试用户注册/登录功能</li>
+                    <li>检查Redis连接（验证码功能）</li>
+                    <li>检查数据库连接（查看数据表）</li>
+                </ol>
+
+                <h3>启动验证清单</h3>
+                <div class="success-card">
+                    <h4>启动前检查</h4>
+                    <ul>
+                        <li>✅ MySQL服务已启动，数据库已创建并导入SQL脚本</li>
+                        <li>✅ Redis服务已启动，可以正常连接</li>
+                        <li>✅ 后端配置文件已正确设置（数据库、Redis、邮件等）</li>
+                        <li>✅ 前端配置文件已正确设置（API地址等）</li>
+                        <li>✅ 所有依赖已正确安装（Maven依赖、npm依赖）</li>
+                    </ul>
+                </div>
+
+                <h3>常见问题与解决方案</h3>
+                
+                <h4>1. 端口被占用</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：启动后端或前端时提示端口被占用</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>查找占用端口的进程</strong>：
+                            <div class="code-block"># Windows
+netstat -ano | findstr :8081
+taskkill /PID [进程ID] /F
+
+# Linux/Mac
+lsof -i :8081
+kill -9 [进程ID]</div>
+                        </li>
+                        <li><strong>修改端口号</strong>：
+                            <ul>
+                                <li>后端端口：修改 <code>application-dev.yml</code> 中的 <code>server.port</code></li>
+                                <li>前端端口：修改 <code>package.json</code> 中的 <code>dev</code> 脚本或 <code>vite.config.js</code> 中的 <code>server.port</code></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <h4>2. 数据库连接失败</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：启动后端时提示数据库连接失败</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>检查MySQL服务</strong>：确认MySQL服务已启动
+                            <div class="code-block"># Windows
+net start mysql
+
+# Linux
+systemctl status mysql
+systemctl start mysql
+
+# Mac
+brew services start mysql</div>
+                        </li>
+                        <li><strong>检查数据库配置</strong>：
+                            <ul>
+                                <li>确认数据库名称、用户名、密码是否正确</li>
+                                <li>确认数据库已创建：<code>SHOW DATABASES;</code></li>
+                                <li>确认数据表已导入：<code>USE campus_help; SHOW TABLES;</code></li>
+                            </ul>
+                        </li>
+                        <li><strong>检查连接权限</strong>：
+                            <ul>
+                                <li>如果不在本机，检查MySQL是否允许远程连接</li>
+                                <li>检查防火墙是否开放3306端口</li>
+                                <li>检查MySQL用户是否有远程连接权限</li>
+                            </ul>
+                        </li>
+                        <li><strong>检查时区设置</strong>：确认MySQL时区设置正确，建议使用 <code>Asia/Shanghai</code></li>
+                    </ul>
+                </div>
+
+                <h4>3. Redis连接失败</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：启动后端时提示Redis连接失败</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>检查Redis服务</strong>：确认Redis服务已启动
+                            <div class="code-block"># Windows
+redis-server
+
+# Linux
+systemctl status redis
+systemctl start redis
+
+# Mac
+brew services start redis</div>
+                        </li>
+                        <li><strong>检查Redis配置</strong>：
+                            <ul>
+                                <li>确认host和port配置正确（默认localhost:6379）</li>
+                                <li>如果设置了密码，确认密码配置正确</li>
+                                <li>测试连接：<code>redis-cli ping</code>（应返回PONG）</li>
+                            </ul>
+                        </li>
+                        <li><strong>检查防火墙</strong>：确认防火墙是否开放6379端口</li>
+                    </ul>
+                </div>
+
+                <h4>4. 邮件发送失败</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：发送验证码时提示邮件发送失败</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>检查邮箱配置</strong>：
+                            <ul>
+                                <li>确认使用的是邮箱授权码而非登录密码</li>
+                                <li>QQ邮箱需要在设置中开启SMTP服务并生成授权码</li>
+                                <li>确认SMTP服务器地址和端口正确（QQ邮箱：smtp.qq.com:587）</li>
+                            </ul>
+                        </li>
+                        <li><strong>QQ邮箱授权码获取步骤</strong>：
+                            <ol>
+                                <li>登录QQ邮箱，进入"设置" → "账户"</li>
+                                <li>找到"POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务"</li>
+                                <li>开启"POP3/SMTP服务"或"IMAP/SMTP服务"</li>
+                                <li>点击"生成授权码"，按提示发送短信</li>
+                                <li>将生成的授权码配置到 <code>application-dev.yml</code> 中</li>
+                            </ol>
+                        </li>
+                        <li><strong>测试邮件发送</strong>：可以使用Spring Boot的邮件测试功能验证配置</li>
+                    </ul>
+                </div>
+
+                <h4>5. 前端依赖安装失败</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：执行 <code>npm install</code> 时失败</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>清除缓存</strong>：
+                            <div class="code-block">npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install</div>
+                        </li>
+                        <li><strong>使用国内镜像</strong>：
+                            <div class="code-block"># 使用淘宝镜像
+npm config set registry https://registry.npmmirror.com
+
+# 或使用cnpm
+npm install -g cnpm --registry=https://registry.npmmirror.com
+cnpm install</div>
+                        </li>
+                        <li><strong>检查Node.js版本</strong>：确认Node.js版本 >= 16.0</li>
+                        <li><strong>检查网络连接</strong>：确认网络连接正常，可以访问npm仓库</li>
+                    </ul>
+                </div>
+
+                <h4>6. 后端依赖下载失败</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：Maven下载依赖失败</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>使用国内镜像</strong>：配置Maven使用阿里云镜像
+                            <div class="code-block"># 编辑 ~/.m2/settings.xml 或 conf/settings.xml
+&lt;mirror&gt;
+    &lt;id&gt;aliyun&lt;/id&gt;
+    &lt;mirrorOf&gt;central&lt;/mirrorOf&gt;
+    &lt;name&gt;Aliyun Maven&lt;/name&gt;
+    &lt;url&gt;https://maven.aliyun.com/repository/public&lt;/url&gt;
+&lt;/mirror&gt;</div>
+                        </li>
+                        <li><strong>清除本地仓库</strong>：删除 <code>~/.m2/repository</code> 后重新下载</li>
+                        <li><strong>检查网络连接</strong>：确认网络连接正常，可以访问Maven中央仓库</li>
+                    </ul>
+                </div>
+
+                <h4>7. 跨域问题</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：前端访问后端API时出现CORS跨域错误</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>检查后端CORS配置</strong>：确认 <code>SecurityConfig</code> 中已配置CORS</li>
+                        <li><strong>检查前端API地址</strong>：确认前端配置的API地址正确</li>
+                        <li><strong>开发环境代理</strong>：可以在 <code>vite.config.js</code> 中配置代理</li>
+                    </ul>
+                </div>
+
+                <h4>8. 文件上传失败</h4>
+                <div class="warning-card">
+                    <p><strong>问题描述</strong>：上传文件时提示失败</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li><strong>检查文件大小</strong>：确认文件大小不超过配置的限制（默认10MB）</li>
+                        <li><strong>检查文件类型</strong>：确认文件类型在允许的范围内（图片：jpg、jpeg、png、gif）</li>
+                        <li><strong>检查上传目录权限</strong>：确认 <code>uploads</code> 目录存在且有写入权限</li>
+                        <li><strong>检查磁盘空间</strong>：确认服务器磁盘空间充足</li>
+                    </ul>
+                </div>
+
+                <h3>性能优化建议</h3>
+                <div class="info-card">
+                    <h4>开发环境优化</h4>
+                    <ul>
+                        <li>使用热更新功能，减少重启次数</li>
+                        <li>合理使用日志级别，避免过多日志输出</li>
+                        <li>使用开发工具的性能分析功能，定位性能瓶颈</li>
+                    </ul>
+                    <h4>生产环境优化</h4>
+                    <ul>
+                        <li>启用数据库连接池，合理配置连接数</li>
+                        <li>配置Redis缓存，减少数据库查询</li>
+                        <li>使用Nginx反向代理，提升并发处理能力</li>
+                        <li>启用Gzip压缩，减少网络传输量</li>
+                        <li>配置CDN加速，提升静态资源加载速度</li>
+                    </ul>
+                </div>
+
+                <h3>部署检查清单</h3>
+                <div class="success-card">
+                    <h4>部署前检查</h4>
+                    <ol>
+                        <li>✅ 所有环境变量已正确配置</li>
+                        <li>✅ 数据库已备份（如有生产数据）</li>
+                        <li>✅ 静态资源已构建（前端执行 <code>npm run build</code>）</li>
+                        <li>✅ 后端已打包（执行 <code>mvn clean package</code>）</li>
+                        <li>✅ 服务器资源充足（CPU、内存、磁盘）</li>
+                        <li>✅ 防火墙规则已配置</li>
+                        <li>✅ 域名和SSL证书已配置（如需要）</li>
+                        <li>✅ 监控和日志系统已配置</li>
+                    </ol>
+                </div>
+            `);
+            mainContent.appendChild(quickStartSection);
+
+            // 第四章：系统架构
+            const architectureSection = createSection('architecture', '系统架构', `
+                <h3>整体架构</h3>
+                <p>校园帮系统采用前后端分离架构，前端与后端通过RESTful API进行通信，同时使用WebSocket实现实时消息推送。</p>
+                
+                <div class="info-card">
+                    <h4>架构图</h4>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;">
+┌─────────────────────────────────────────────────────────────┐
+│                        用户浏览器                              │
+│                    (Vue 3 + Element Plus)                    │
+└───────────────────────┬───────────────────────────────────────┘
+                        │ HTTP/WebSocket
+                        │
+┌───────────────────────▼───────────────────────────────────────┐
+│                      Nginx (反向代理)                          │
+│                  (可选，生产环境使用)                            │
+└───────────────────────┬───────────────────────────────────────┘
+                        │
+        ┌───────────────┴───────────────┐
+        │                               │
+┌───────▼────────┐            ┌────────▼────────┐
+│   前端服务器     │            │   后端服务器      │
+│   (Vite Dev)    │            │  (Spring Boot)   │
+│   Port: 3000    │            │   Port: 8081     │
+└─────────────────┘            └────────┬────────┘
+                                        │
+                        ┌───────────────┴───────────────┐
+                        │                               │
+                ┌───────▼────────┐            ┌─────────▼────────┐
+                │    MySQL       │            │     Redis       │
+                │   (数据库)      │            │    (缓存)        │
+                │   Port: 3306   │            │   Port: 6379    │
+                └────────────────┘            └─────────────────┘
+                    </pre>
+                </div>
+
+                <h3>请求流程</h3>
+                <ol>
+                    <li><strong>用户请求</strong>：用户在浏览器中操作，触发前端Vue组件事件</li>
+                    <li><strong>API调用</strong>：前端通过Axios发送HTTP请求到后端API</li>
+                    <li><strong>请求拦截</strong>：Spring Security拦截请求，验证JWT Token</li>
+                    <li><strong>业务处理</strong>：Controller接收请求，调用Service层处理业务逻辑</li>
+                    <li><strong>数据访问</strong>：Service层通过MyBatis-Plus访问MySQL数据库</li>
+                    <li><strong>缓存操作</strong>：需要时访问Redis缓存（验证码、会话信息等）</li>
+                    <li><strong>响应返回</strong>：处理结果通过JSON格式返回给前端</li>
+                    <li><strong>界面更新</strong>：前端接收响应，更新Vue组件状态，刷新界面</li>
+                </ol>
+
+                <h3>后端结构</h3>
+                <div class="code-block">campus-help-server/
+├── src/
+│   ├── main/
+│   │   ├── java/com/server/campushelpserver/
+│   │   │   ├── CampusHelpServerApplication.java  # 启动类
+│   │   │   ├── common/          # 通用组件
+│   │   │   │   ├── config/      # 配置类（Security、WebSocket、Redis等）
+│   │   │   │   ├── exception/   # 异常处理
+│   │   │   │   ├── result/      # 统一响应结果
+│   │   │   │   └── util/        # 工具类
+│   │   │   ├── controller/      # 控制器层（RESTful API）
+│   │   │   ├── service/         # 业务逻辑层
+│   │   │   ├── mapper/          # 数据访问层（MyBatis）
+│   │   │   └── entity/          # 实体类（对应数据库表）
+│   │   └── resources/
+│   │       ├── application.yml           # 主配置文件
+│   │       └── application-dev.yml      # 开发环境配置
+│   └── test/                    # 测试代码
+├── sql/
+│   └── campus_help.sql          # 数据库初始化脚本
+└── pom.xml                      # Maven依赖配置</div>
+
+                <h4>分层架构说明</h4>
+                <ul>
+                    <li><strong>Controller层</strong>：接收HTTP请求，参数验证，调用Service，返回响应</li>
+                    <li><strong>Service层</strong>：业务逻辑处理，事务管理，调用Mapper</li>
+                    <li><strong>Mapper层</strong>：数据库操作，SQL映射，使用MyBatis-Plus简化CRUD</li>
+                    <li><strong>Entity层</strong>：数据模型，对应数据库表结构</li>
+                    <li><strong>Common层</strong>：通用组件，配置类，工具类，异常处理</li>
+                </ul>
+
+                <h3>前端结构</h3>
+                <div class="code-block">campus-help-web/
+├── src/
+│   ├── api/              # API接口定义
+│   ├── assets/           # 静态资源（样式、图片等）
+│   ├── components/      # 公共组件
+│   ├── config/           # 配置文件（API地址等）
+│   ├── layouts/          # 布局组件（MainLayout、AdminLayout）
+│   ├── router/           # 路由配置
+│   ├── stores/           # Pinia状态管理
+│   ├── utils/            # 工具函数
+│   ├── views/            # 页面组件
+│   │   ├── admin/        # 管理员页面
+│   │   ├── chat/         # 聊天页面
+│   │   ├── goods/        # 商品相关页面
+│   │   ├── lost-found/   # 失物招领页面
+│   │   ├── order/        # 订单相关页面
+│   │   ├── study/        # 学习互助页面
+│   │   └── ...          # 其他页面
+│   ├── App.vue           # 根组件
+│   └── main.js           # 入口文件
+├── index.html            # HTML模板
+├── package.json          # 项目配置
+└── vite.config.js        # Vite配置</div>
+
+                <h4>前端架构说明</h4>
+                <ul>
+                    <li><strong>Views层</strong>：页面组件，用户交互界面</li>
+                    <li><strong>Components层</strong>：可复用组件，提高代码复用性</li>
+                    <li><strong>API层</strong>：封装HTTP请求，统一接口调用</li>
+                    <li><strong>Stores层</strong>：Pinia状态管理，全局状态共享</li>
+                    <li><strong>Router层</strong>：Vue Router路由管理，页面导航</li>
+                    <li><strong>Utils层</strong>：工具函数，通用方法封装</li>
+                </ul>
+
+                <h3>数据流</h3>
+                <h4>1. 用户认证流程</h4>
+                <ol>
+                    <li>用户输入邮箱和密码，前端发送登录请求</li>
+                    <li>后端验证用户信息，生成JWT Token</li>
+                    <li>Token返回前端，存储在localStorage或Pinia中</li>
+                    <li>后续请求在Header中携带Token</li>
+                    <li>Spring Security验证Token有效性</li>
+                </ol>
+
+                <h4>2. 实时消息流程</h4>
+                <ol>
+                    <li>前端建立WebSocket连接（SockJS + STOMP）</li>
+                    <li>后端WebSocket配置处理连接和消息</li>
+                    <li>用户发送消息时，前端通过WebSocket发送</li>
+                    <li>后端接收消息，保存到数据库</li>
+                    <li>后端通过WebSocket推送消息给接收者</li>
+                    <li>前端接收消息，更新聊天界面</li>
+                </ol>
+
+                <h3>安全机制</h3>
+                <ul>
+                    <li><strong>JWT认证</strong>：无状态认证，Token包含用户信息</li>
+                    <li><strong>密码加密</strong>：使用BCrypt加密存储密码</li>
+                    <li><strong>验证码机制</strong>：防止暴力破解，限制请求频率</li>
+                    <li><strong>敏感词过滤</strong>：自动检测和过滤敏感内容</li>
+                    <li><strong>内容审核</strong>：管理员审核用户发布的内容</li>
+                    <li><strong>权限控制</strong>：基于角色的访问控制（USER/ADMIN）</li>
+                </ul>
+            `);
+            mainContent.appendChild(architectureSection);
+
+            // 第五章：功能模块
+            const featuresSection = createSection('features', '功能模块', `
+                <h3>模块概览</h3>
+                <p>校园帮系统包含以下核心功能模块：</p>
+                <table>
+                    <tr>
+                        <th>模块名称</th>
+                        <th>功能描述</th>
+                        <th>状态</th>
+                    </tr>
+                    <tr>
+                        <td>用户认证与管理</td>
+                        <td>用户注册、登录、密码管理、个人信息管理、实名认证</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>失物招领</td>
+                        <td>发布失物/招领信息、搜索浏览、认领申请、认领确认</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>闲置交易</td>
+                        <td>商品发布、搜索浏览、下单购买、订单管理、支付结算</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>学习互助</td>
+                        <td>问题发布、回答、采纳、悬赏机制、分类管理</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>实时聊天</td>
+                        <td>私信功能、文字消息、图片消息、商品卡片、订单卡片</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>订单管理</td>
+                        <td>订单创建、状态流转、支付、发货、收货、取消</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>地址管理</td>
+                        <td>收货地址添加、编辑、删除、默认地址设置</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>搜索历史</td>
+                        <td>搜索关键词记录、历史查询、快速搜索</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>管理员后台</td>
+                        <td>用户管理、内容审核、数据统计、敏感词配置、系统消息</td>
+                        <td><span class="badge badge-success">已完成</span></td>
+                    </tr>
+                </table>
+
+                <h3>移动端页面列表</h3>
+                <div class="info-card">
+                    <p><strong>说明</strong>：系统采用响应式设计，支持PC端和移动端访问。以下是主要页面列表：</p>
+                </div>
+
+                <h4>1. 用户认证模块</h4>
+                <ul>
+                    <li><strong>登录页面</strong> (<code>Login.vue</code>)：支持密码登录和验证码登录</li>
+                    <li><strong>注册页面</strong> (<code>Register.vue</code>)：邮箱注册，验证码验证</li>
+                    <li><strong>忘记密码</strong> (<code>ForgotPassword.vue</code>)：通过邮箱验证码重置密码</li>
+                </ul>
+
+                <h4>2. 首页模块</h4>
+                <ul>
+                    <li><strong>首页</strong> (<code>Home.vue</code>)：欢迎横幅、功能模块导航、个性化欢迎信息</li>
+                </ul>
+
+                <h4>3. 失物招领模块</h4>
+                <ul>
+                    <li><strong>失物列表</strong> (<code>lost-found/List.vue</code>)：搜索、筛选、分页展示</li>
+                    <li><strong>失物详情</strong> (<code>lost-found/Detail.vue</code>)：查看详细信息、认领记录</li>
+                    <li><strong>发布失物</strong> (<code>lost-found/Publish.vue</code>)：发布失物/招领信息，支持多图片上传</li>
+                    <li><strong>编辑失物</strong> (<code>lost-found/Edit.vue</code>)：编辑已发布的失物信息</li>
+                </ul>
+
+                <h4>4. 闲置交易模块</h4>
+                <ul>
+                    <li><strong>商品列表</strong> (<code>goods/List.vue</code>)：搜索、筛选、分页展示</li>
+                    <li><strong>商品详情</strong> (<code>goods/Detail.vue</code>)：查看商品信息、发起聊天、下单购买</li>
+                    <li><strong>发布商品</strong> (<code>goods/Publish.vue</code>)：发布闲置商品，支持多图片上传</li>
+                    <li><strong>编辑商品</strong> (<code>goods/Edit.vue</code>)：编辑已发布的商品信息</li>
+                </ul>
+
+                <h4>5. 学习互助模块</h4>
+                <ul>
+                    <li><strong>问题列表</strong> (<code>study/List.vue</code>)：搜索、筛选、分页展示</li>
+                    <li><strong>问题详情</strong> (<code>study/Detail.vue</code>)：查看问题、回答列表、提交回答</li>
+                    <li><strong>发布问题</strong> (<code>study/Publish.vue</code>)：发布学习问题，支持悬赏</li>
+                    <li><strong>编辑问题</strong> (<code>study/Edit.vue</code>)：编辑已发布的问题</li>
+                    <li><strong>我的问题</strong> (<code>study/MyQuestions.vue</code>)：查看我发布的问题列表</li>
+                    <li><strong>我的回答</strong> (<code>study/MyAnswers.vue</code>)：查看我回答的问题列表</li>
+                </ul>
+
+                <h4>6. 订单管理模块</h4>
+                <ul>
+                    <li><strong>订单列表</strong> (<code>order/List.vue</code>)：查看我的订单（买家/卖家视角）</li>
+                    <li><strong>订单详情</strong> (<code>order/Detail.vue</code>)：查看订单详细信息、操作订单</li>
+                    <li><strong>支付页面</strong> (<code>order/Pay.vue</code>)：订单支付（模拟支付）</li>
+                </ul>
+
+                <h4>7. 聊天模块</h4>
+                <ul>
+                    <li><strong>聊天页面</strong> (<code>chat/Chat.vue</code>)：私信聊天，支持文字、图片、商品卡片、订单卡片</li>
+                </ul>
+
+                <h4>8. 个人中心模块</h4>
+                <ul>
+                    <li><strong>个人资料</strong> (<code>profile/Profile.vue</code>)：查看和编辑个人信息、头像上传</li>
+                    <li><strong>实名认证</strong> (<code>verification/Verification.vue</code>)：提交实名认证申请</li>
+                    <li><strong>地址管理</strong> (<code>address/List.vue</code>)：管理收货地址</li>
+                    <li><strong>消息中心</strong> (<code>message/Messages.vue</code>)：查看系统消息</li>
+                </ul>
+
+                <h4>9. 管理员后台模块</h4>
+                <ul>
+                    <li><strong>数据概览</strong> (<code>admin/Dashboard.vue</code>)：统计信息、数据图表、趋势分析</li>
+                    <li><strong>用户管理</strong> (<code>admin/Users.vue</code>)：用户列表、封禁/解封、新增/编辑/删除用户</li>
+                    <li><strong>实名认证审核</strong> (<code>admin/Verification.vue</code>)：审核实名认证申请</li>
+                    <li><strong>失物招领审核</strong> (<code>admin/LostFoundAudit.vue</code>)：审核失物招领内容</li>
+                    <li><strong>商品审核</strong> (<code>admin/GoodsAudit.vue</code>)：审核闲置商品</li>
+                    <li><strong>问题审核</strong> (<code>admin/QuestionAudit.vue</code>)：审核学习问题</li>
+                    <li><strong>内容管理</strong> (<code>admin/content/*.vue</code>)：失物招领管理、商品管理、学习互助管理</li>
+                    <li><strong>敏感词配置</strong> (<code>admin/SensitiveWord.vue</code>)：敏感词列表、添加、删除、编辑</li>
+                </ul>
+
+                <h3>功能特性说明</h3>
+                <h4>1. 用户认证体系</h4>
+                <ul>
+                    <li>支持邮箱注册，验证码验证</li>
+                    <li>支持密码登录和验证码登录</li>
+                    <li>JWT Token认证，自动记住登录状态</li>
+                    <li>忘记密码功能，通过邮箱验证码重置</li>
+                    <li>密码强度要求，BCrypt加密存储</li>
+                </ul>
+
+                <h4>2. 实名认证机制</h4>
+                <ul>
+                    <li>用户可提交实名认证申请（真实姓名、身份证号、学号、证明文件）</li>
+                    <li>管理员审核认证申请（通过/拒绝）</li>
+                    <li>认证状态展示（未认证、待审核、已认证、已拒绝）</li>
+                    <li>认证用户获得认证标识，提升信任度</li>
+                </ul>
+
+                <h4>3. 内容审核机制</h4>
+                <ul>
+                    <li>敏感词自动检测，发布时实时过滤</li>
+                    <li>内容自动审核，通过后直接发布</li>
+                    <li>人工审核机制，管理员可审核内容</li>
+                    <li>审核状态管理（待审核、已通过、已拒绝）</li>
+                    <li>审核结果通知，实时推送消息</li>
+                </ul>
+
+                <h4>4. 实时通信功能</h4>
+                <ul>
+                    <li>基于WebSocket的实时消息推送</li>
+                    <li>支持文字消息、图片消息</li>
+                    <li>支持商品卡片消息（快速分享商品）</li>
+                    <li>支持订单卡片消息（快速分享订单）</li>
+                    <li>消息已读/未读状态管理</li>
+                    <li>会话列表管理，最近聊天记录</li>
+                </ul>
+
+                <h4>5. 订单管理功能</h4>
+                <ul>
+                    <li>订单状态流转：待付款 → 已付款 → 已发货/待自提 → 已完成</li>
+                    <li>支持自提和邮寄两种交易方式</li>
+                    <li>收货地址管理，支持多个地址</li>
+                    <li>订单价格修改记录，保障交易透明</li>
+                    <li>库存检查和乐观锁机制，防止超卖</li>
+                    <li>订单取消功能（待付款状态）</li>
+                </ul>
+
+                <h4>6. 搜索功能</h4>
+                <ul>
+                    <li>关键词搜索，支持失物、商品、问题搜索</li>
+                    <li>多条件筛选（类型、类别、状态、地点等）</li>
+                    <li>搜索历史记录，快速重复搜索</li>
+                    <li>搜索历史去重，避免重复记录</li>
+                    <li>搜索历史数量限制，自动清理旧记录</li>
+                </ul>
+            `);
+            mainContent.appendChild(featuresSection);
+
+            // 第六章：核心业务流程
+            const businessFlowSection = createSection('business-flow', '核心业务流程', `
+                <h3>1. 用户注册与认证流程</h3>
+                <div class="info-card">
+                    <h4>注册流程</h4>
+                    <ol>
+                        <li>用户填写邮箱、密码等信息</li>
+                        <li>系统检查邮箱是否已注册</li>
+                        <li>发送邮箱验证码（存储在Redis，5分钟过期）</li>
+                        <li>用户输入验证码，系统验证</li>
+                        <li>验证通过后，密码使用BCrypt加密存储</li>
+                        <li>创建用户账户，默认角色为USER</li>
+                        <li>返回注册成功，跳转登录页</li>
+                    </ol>
+                </div>
+
+                <div class="info-card">
+                    <h4>登录流程</h4>
+                    <ol>
+                        <li>用户输入邮箱和密码（或验证码）</li>
+                        <li>系统验证用户信息</li>
+                        <li>验证通过后，生成JWT Token（包含用户ID、角色等信息）</li>
+                        <li>Token返回前端，存储在localStorage或Pinia中</li>
+                        <li>后续请求在Header中携带Token</li>
+                        <li>Spring Security验证Token有效性</li>
+                    </ol>
+                </div>
+
+                <h3>2. 失物招领流程</h3>
+                <h4>发布失物信息</h4>
+                <ol>
+                    <li>用户选择失物类型（丢失物品/招领物品）</li>
+                    <li>填写物品信息（标题、描述、类别、地点、时间等）</li>
+                    <li>上传物品图片（支持多张）</li>
+                    <li>系统进行敏感词检测</li>
+                    <li>检测通过后，内容进入审核状态</li>
+                    <li>自动审核通过或等待管理员审核</li>
+                    <li>审核通过后，失物信息发布成功</li>
+                </ol>
+
+                <h4>认领流程</h4>
+                <ol>
+                    <li>用户浏览失物列表，找到匹配的失物信息</li>
+                    <li>点击"申请认领"，填写认领信息（描述、证明图片）</li>
+                    <li>系统创建认领申请记录，状态为"待处理"</li>
+                    <li>发布者收到认领申请通知</li>
+                    <li>发布者查看认领申请，可以确认或拒绝</li>
+                    <li>如果确认认领：
+                        <ul>
+                            <li>该申请状态变为"已确认"</li>
+                            <li>其他待处理的申请自动变为"已拒绝"</li>
+                            <li>失物信息状态变为"已认领"</li>
+                            <li>发送通知给申请者和发布者</li>
+                        </ul>
+                    </li>
+                    <li>如果拒绝认领：申请状态变为"已拒绝"，发送通知</li>
+                </ol>
+
+                <h3>3. 闲置交易流程</h3>
+                <h4>商品发布流程</h4>
+                <ol>
+                    <li>用户填写商品信息（标题、描述、价格、类别、库存等）</li>
+                    <li>上传商品图片（支持多张）</li>
+                    <li>选择交易方式（自提/邮寄）</li>
+                    <li>系统进行敏感词检测</li>
+                    <li>检测通过后，内容进入审核状态</li>
+                    <li>自动审核通过或等待管理员审核</li>
+                    <li>审核通过后，商品发布成功，库存扣减</li>
+                </ol>
+
+                <h4>下单购买流程</h4>
+                <ol>
+                    <li>用户浏览商品列表，查看商品详情</li>
+                    <li>选择购买数量，检查库存是否充足</li>
+                    <li>选择交易方式（自提/邮寄）</li>
+                    <li>如果选择邮寄，选择或添加收货地址</li>
+                    <li>确认订单信息（商品、数量、价格、运费、总价）</li>
+                    <li>创建订单，状态为"待付款"</li>
+                    <li>使用乐观锁机制，防止库存超卖</li>
+                    <li>跳转支付页面，进行支付（模拟支付）</li>
+                    <li>支付成功后，订单状态变为"已付款"</li>
+                    <li>卖家收到订单通知，准备发货</li>
+                </ol>
+
+                <h4>订单处理流程</h4>
+                <ol>
+                    <li><strong>待付款</strong>：买家可以取消订单，取消后库存恢复</li>
+                    <li><strong>已付款</strong>：卖家可以发货
+                        <ul>
+                            <li>如果选择邮寄：填写物流信息，订单状态变为"已发货"</li>
+                            <li>如果选择自提：订单状态变为"待自提"</li>
+                        </ul>
+                    </li>
+                    <li><strong>已发货/待自提</strong>：买家可以确认收货</li>
+                    <li><strong>已完成</strong>：订单完成，交易结束</li>
+                </ol>
+
+                <h3>4. 学习互助流程</h3>
+                <h4>问题发布流程</h4>
+                <ol>
+                    <li>用户选择问题分类（数学、物理、化学、计算机等）</li>
+                    <li>填写问题信息（标题、描述、可选悬赏金额）</li>
+                    <li>上传问题图片（可选）</li>
+                    <li>系统进行敏感词检测</li>
+                    <li>检测通过后，内容进入审核状态</li>
+                    <li>自动审核通过或等待管理员审核</li>
+                    <li>审核通过后，问题发布成功，状态为"待解答"</li>
+                </ol>
+
+                <h4>回答与采纳流程</h4>
+                <ol>
+                    <li>用户浏览问题列表，查看问题详情</li>
+                    <li>查看已有回答列表</li>
+                    <li>提交回答（文字、图片）</li>
+                    <li>系统创建回答记录，问题状态变为"已回答"</li>
+                    <li>问题发布者收到回答通知</li>
+                    <li>发布者查看回答，可以选择采纳最佳答案</li>
+                    <li>采纳答案后：
+                        <ul>
+                            <li>问题状态变为"已解决"</li>
+                            <li>被采纳的回答标记为"已采纳"</li>
+                            <li>如果有悬赏，悬赏金额转移给回答者</li>
+                            <li>发送通知给回答者</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>5. 实时聊天流程</h3>
+                <ol>
+                    <li>用户在商品详情页或订单详情页点击"联系卖家/买家"</li>
+                    <li>系统创建或获取会话（如果会话已存在，直接打开）</li>
+                    <li>前端建立WebSocket连接（SockJS + STOMP）</li>
+                    <li>用户发送消息（文字、图片、商品卡片、订单卡片）</li>
+                    <li>前端通过WebSocket发送消息到后端</li>
+                    <li>后端接收消息，保存到数据库</li>
+                    <li>后端通过WebSocket推送消息给接收者</li>
+                    <li>接收者前端接收消息，更新聊天界面</li>
+                    <li>接收者标记消息为已读，后端更新数据库</li>
+                </ol>
+
+                <h3>6. 实名认证流程</h3>
+                <ol>
+                    <li>用户进入实名认证页面</li>
+                    <li>填写认证信息（真实姓名、身份证号、学号）</li>
+                    <li>上传证明文件（身份证照片、学生证照片等）</li>
+                    <li>提交认证申请，状态变为"待审核"</li>
+                    <li>管理员在后台查看待审核的认证申请</li>
+                    <li>管理员审核（通过/拒绝）</li>
+                    <li>审核结果通知用户</li>
+                    <li>如果通过：用户获得认证标识，可以享受更多功能</li>
+                    <li>如果拒绝：用户可以重新提交认证申请</li>
+                </ol>
+
+                <h3>7. 内容审核流程</h3>
+                <ol>
+                    <li>用户发布内容（失物、商品、问题）</li>
+                    <li>系统进行敏感词检测</li>
+                    <li>如果包含敏感词：
+                        <ul>
+                            <li>内容状态变为"待审核"</li>
+                            <li>发送通知给管理员</li>
+                            <li>等待管理员人工审核</li>
+                        </ul>
+                    </li>
+                    <li>如果不包含敏感词：
+                        <ul>
+                            <li>内容状态自动变为"已通过"</li>
+                            <li>内容直接发布</li>
+                        </ul>
+                    </li>
+                    <li>管理员在后台查看待审核内容</li>
+                    <li>管理员审核（通过/拒绝）</li>
+                    <li>审核结果通知用户</li>
+                    <li>如果通过：内容发布成功</li>
+                    <li>如果拒绝：内容不发布，用户可以修改后重新提交</li>
+                </ol>
+
+                <h3>8. 会员体系（扩展功能）</h3>
+                <div class="warning-card">
+                    <strong>⚠️ 说明</strong>：当前版本暂未实现会员体系，以下为设计思路。
+                </div>
+                <ul>
+                    <li><strong>普通用户</strong>：基础功能，发布内容需要审核</li>
+                    <li><strong>认证用户</strong>：通过实名认证，发布内容优先审核</li>
+                    <li><strong>VIP用户</strong>：付费会员，享受更多特权（待实现）</li>
+                </ul>
+            `);
+            mainContent.appendChild(businessFlowSection);
+
+            // 第七章：答辩准备
+            const defenseSection = createSection('defense', '答辩准备', `
+                <h3>常见问题</h3>
+                
+                <h4>1. 项目背景与意义</h4>
+                <div class="info-card">
+                    <p><strong>问题</strong>：为什么选择开发这个项目？</p>
+                    <p><strong>回答要点</strong>：</p>
+                    <ul>
+                        <li>校园生活中，学生经常遇到失物招领、闲置物品交易、学习问题求助等需求</li>
+                        <li>现有的解决方案分散，缺乏统一的平台</li>
+                        <li>希望通过技术手段，构建一个便捷、安全、高效的校园互助平台</li>
+                        <li>提升校园生活便利性，促进资源循环利用，构建学习互助社区</li>
+                    </ul>
+                </div>
+
+                <h4>2. 技术选型</h4>
+                <div class="info-card">
+                    <p><strong>问题</strong>：为什么选择这些技术栈？</p>
+                    <p><strong>回答要点</strong>：</p>
+                    <ul>
+                        <li><strong>Vue 3</strong>：组合式API更灵活，性能更好，生态成熟</li>
+                        <li><strong>Spring Boot</strong>：快速开发，自动配置，生态丰富</li>
+                        <li><strong>MyBatis-Plus</strong>：简化CRUD操作，提高开发效率</li>
+                        <li><strong>JWT</strong>：无状态认证，适合前后端分离架构</li>
+                        <li><strong>WebSocket</strong>：实现实时通信，提升用户体验</li>
+                        <li><strong>Redis</strong>：缓存验证码和会话信息，提升性能</li>
+                    </ul>
+                </div>
+
+                <h4>3. 系统架构</h4>
+                <div class="info-card">
+                    <p><strong>问题</strong>：系统采用什么架构？为什么？</p>
+                    <p><strong>回答要点</strong>：</p>
+                    <ul>
+                        <li>采用前后端分离架构，便于开发和维护</li>
+                        <li>前端使用Vue 3 + Vite，后端使用Spring Boot</li>
+                        <li>通过RESTful API进行通信，使用WebSocket实现实时消息推送</li>
+                        <li>分层架构：Controller → Service → Mapper → Database</li>
+                        <li>使用Redis缓存，提升系统性能</li>
+                    </ul>
+                </div>
+
+                <h4>4. 数据库设计</h4>
+                <div class="info-card">
+                    <p><strong>问题</strong>：数据库是如何设计的？</p>
+                    <p><strong>回答要点</strong>：</p>
+                    <ul>
+                        <li>共设计13张数据表，涵盖用户、失物、商品、订单、聊天、学习等模块</li>
+                        <li>使用外键约束保证数据完整性</li>
+                        <li>使用逻辑删除，保留历史数据</li>
+                        <li>合理使用索引，提升查询性能</li>
+                        <li>使用时间戳字段记录创建和更新时间</li>
+                    </ul>
+                </div>
+
+                <h4>5. 安全性设计</h4>
+                <div class="info-card">
+                    <p><strong>问题</strong>：系统如何保证安全性？</p>
+                    <p><strong>回答要点</strong>：</p>
+                    <ul>
+                        <li>使用JWT Token进行身份认证，Token包含用户信息和过期时间</li>
+                        <li>密码使用BCrypt加密存储，不可逆</li>
+                        <li>验证码机制防止暴力破解，限制请求频率</li>
+                        <li>敏感词过滤，自动检测和过滤敏感内容</li>
+                        <li>内容审核机制，管理员审核用户发布的内容</li>
+                        <li>基于角色的访问控制（USER/ADMIN）</li>
+                    </ul>
+                </div>
+
+                <h3>技术亮点</h3>
+                
+                <h4>1. 前后端分离架构</h4>
+                <ul>
+                    <li>前端和后端独立开发、部署，提高开发效率</li>
+                    <li>使用RESTful API规范，接口清晰易用</li>
+                    <li>使用Swagger自动生成API文档，便于接口测试和对接</li>
+                </ul>
+
+                <h4>2. JWT无状态认证</h4>
+                <ul>
+                    <li>使用JWT Token实现无状态认证，不需要服务器存储会话</li>
+                    <li>Token包含用户信息和过期时间，减少数据库查询</li>
+                    <li>支持Token刷新机制，提升用户体验</li>
+                </ul>
+
+                <h4>3. WebSocket实时通信</h4>
+                <ul>
+                    <li>基于WebSocket实现实时消息推送，无需轮询</li>
+                    <li>支持文字、图片、商品卡片、订单卡片等多种消息类型</li>
+                    <li>消息已读/未读状态管理，提升用户体验</li>
+                </ul>
+
+                <h4>4. 敏感词过滤与内容审核</h4>
+                <ul>
+                    <li>实现敏感词自动检测，发布时实时过滤</li>
+                    <li>支持自动审核和人工审核两种模式</li>
+                    <li>管理员可配置敏感词库，灵活管理</li>
+                </ul>
+
+                <h4>5. 乐观锁机制</h4>
+                <ul>
+                    <li>使用乐观锁防止库存超卖</li>
+                    <li>在订单创建时检查库存，使用版本号控制并发</li>
+                    <li>保证数据一致性，提升系统性能</li>
+                </ul>
+
+                <h4>6. Redis缓存优化</h4>
+                <ul>
+                    <li>验证码存储在Redis，设置过期时间</li>
+                    <li>减少数据库查询，提升系统响应速度</li>
+                    <li>支持分布式部署，共享缓存数据</li>
+                </ul>
+
+                <h3>难点解决</h3>
+                
+                <h4>1. WebSocket连接管理</h4>
+                <div class="warning-card">
+                    <p><strong>难点</strong>：如何管理WebSocket连接，处理断线重连？</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li>使用SockJS作为WebSocket封装，自动处理降级和重连</li>
+                        <li>在WebSocket拦截器中验证用户身份，建立用户与连接的映射</li>
+                        <li>前端监听连接状态，自动重连</li>
+                        <li>使用心跳机制，保持连接活跃</li>
+                    </ul>
+                </div>
+
+                <h4>2. 订单并发控制</h4>
+                <div class="warning-card">
+                    <p><strong>难点</strong>：如何防止库存超卖？</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li>使用乐观锁机制，在订单创建时检查库存</li>
+                        <li>使用数据库版本号字段，控制并发更新</li>
+                        <li>如果库存不足，返回错误信息，提示用户</li>
+                        <li>在Service层使用事务，保证数据一致性</li>
+                    </ul>
+                </div>
+
+                <h4>3. 文件上传与存储</h4>
+                <div class="warning-card">
+                    <p><strong>难点</strong>：如何管理文件上传，防止文件过大或类型错误？</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li>配置文件大小限制（10MB）</li>
+                        <li>验证文件类型，只允许图片格式</li>
+                        <li>使用UUID生成唯一文件名，避免文件名冲突</li>
+                        <li>按日期组织文件目录，便于管理</li>
+                        <li>配置静态资源访问路径，支持文件访问</li>
+                    </ul>
+                </div>
+
+                <h4>4. 敏感词过滤性能</h4>
+                <div class="warning-card">
+                    <p><strong>难点</strong>：如何高效检测敏感词？</p>
+                    <p><strong>解决方案</strong>：</p>
+                    <ul>
+                        <li>使用Trie树（前缀树）数据结构存储敏感词</li>
+                        <li>支持多模式匹配，一次扫描检测所有敏感词</li>
+                        <li>将敏感词库加载到内存，提升检测速度</li>
+                        <li>支持敏感词替换或标记，灵活处理</li>
+                    </ul>
+                </div>
+
+                <h3>答辩技巧</h3>
+                
+                <h4>1. 演示准备</h4>
+                <ul>
+                    <li>提前准备好演示环境，确保系统正常运行</li>
+                    <li>准备测试账号，方便快速演示功能</li>
+                    <li>准备演示脚本，按照功能模块顺序演示</li>
+                    <li>准备常见问题的回答，做到心中有数</li>
+                </ul>
+
+                <h4>2. 演示流程建议</h4>
+                <ol>
+                    <li><strong>项目介绍</strong>（2-3分钟）：项目背景、目标、功能概述</li>
+                    <li><strong>技术架构</strong>（2-3分钟）：技术选型、系统架构、设计思路</li>
+                    <li><strong>功能演示</strong>（10-15分钟）：
+                        <ul>
+                            <li>用户注册登录</li>
+                            <li>失物招领功能</li>
+                            <li>闲置交易功能</li>
+                            <li>学习互助功能</li>
+                            <li>实时聊天功能</li>
+                            <li>管理员后台</li>
+                        </ul>
+                    </li>
+                    <li><strong>技术亮点</strong>（3-5分钟）：重点介绍技术难点和解决方案</li>
+                    <li><strong>总结与展望</strong>（2-3分钟）：项目总结、未来改进方向</li>
+                </ol>
+
+                <h4>3. 回答问题技巧</h4>
+                <ul>
+                    <li>认真听取问题，理解问题的核心</li>
+                    <li>回答要有条理，先说结论，再说原因</li>
+                    <li>如果不知道答案，诚实承认，不要编造</li>
+                    <li>可以结合代码或演示来说明问题</li>
+                    <li>保持自信，展示对项目的深入理解</li>
+                </ul>
+
+                <h4>4. 注意事项</h4>
+                <ul>
+                    <li>控制演示时间，不要超时</li>
+                    <li>重点演示核心功能，次要功能可以简单带过</li>
+                    <li>准备备用方案，如果演示出现问题，可以展示截图或视频</li>
+                    <li>保持冷静，遇到问题不要慌张</li>
+                    <li>注意语言表达，使用专业术语但要通俗易懂</li>
+                </ul>
+
+                <h3>演示指南</h3>
+                
+                <h4>推荐演示路径</h4>
+                <ol>
+                    <li><strong>用户注册登录</strong>
+                        <ul>
+                            <li>演示邮箱注册，验证码验证</li>
+                            <li>演示密码登录和验证码登录</li>
+                            <li>说明JWT Token认证机制</li>
+                        </ul>
+                    </li>
+                    <li><strong>失物招领功能</strong>
+                        <ul>
+                            <li>演示发布失物信息，敏感词检测</li>
+                            <li>演示搜索和筛选功能</li>
+                            <li>演示认领申请和确认流程</li>
+                        </ul>
+                    </li>
+                    <li><strong>闲置交易功能</strong>
+                        <ul>
+                            <li>演示发布商品，内容审核</li>
+                            <li>演示商品搜索和详情查看</li>
+                            <li>演示下单购买，订单管理</li>
+                            <li>演示支付流程（模拟支付）</li>
+                        </ul>
+                    </li>
+                    <li><strong>学习互助功能</strong>
+                        <ul>
+                            <li>演示发布问题，悬赏机制</li>
+                            <li>演示回答问题和采纳答案</li>
+                            <li>演示问题分类和状态管理</li>
+                        </ul>
+                    </li>
+                    <li><strong>实时聊天功能</strong>
+                        <ul>
+                            <li>演示建立聊天会话</li>
+                            <li>演示发送文字、图片消息</li>
+                            <li>演示商品卡片和订单卡片分享</li>
+                            <li>说明WebSocket实时通信机制</li>
+                        </ul>
+                    </li>
+                    <li><strong>管理员后台</strong>
+                        <ul>
+                            <li>演示数据统计和图表展示</li>
+                            <li>演示用户管理和内容审核</li>
+                            <li>演示敏感词配置</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h4>关键演示点</h4>
+                <ul>
+                    <li><strong>实时性</strong>：重点演示WebSocket实时消息推送</li>
+                    <li><strong>安全性</strong>：说明JWT认证、密码加密、内容审核等安全机制</li>
+                    <li><strong>用户体验</strong>：展示界面美观、操作流畅、功能完善</li>
+                    <li><strong>技术深度</strong>：结合代码说明技术实现细节</li>
+                </ul>
+            `);
+            mainContent.appendChild(defenseSection);
+
+            // 第八章：API & 数据库
+            const apiDatabaseSection = createSection('api-database', 'API & 数据库', `
+                <h3>API接口列表</h3>
+                <div class="info-card">
+                    <p><strong>API文档地址</strong>：<a href="http://localhost:8081/swagger-ui.html" target="_blank">http://localhost:8081/swagger-ui.html</a></p>
+                    <p>所有API接口都遵循RESTful规范，使用JSON格式进行数据交换。</p>
+                </div>
+
+                <h4>1. 用户认证模块 (AuthController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/auth/register</td>
+                        <td>POST</td>
+                        <td>用户注册（邮箱注册，验证码验证）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/auth/login</td>
+                        <td>POST</td>
+                        <td>用户登录（支持密码登录和验证码登录）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/auth/send-code</td>
+                        <td>POST</td>
+                        <td>发送验证码（注册、登录、重置密码）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/auth/reset-password</td>
+                        <td>POST</td>
+                        <td>重置密码（通过验证码）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/auth/check-email</td>
+                        <td>GET</td>
+                        <td>检查邮箱是否已注册</td>
+                    </tr>
+                </table>
+
+                <h4>2. 用户管理模块 (UserController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/user/me</td>
+                        <td>GET</td>
+                        <td>获取当前用户信息</td>
+                    </tr>
+                    <tr>
+                        <td>/api/user/update</td>
+                        <td>PUT</td>
+                        <td>更新用户信息</td>
+                    </tr>
+                    <tr>
+                        <td>/api/user/change-password</td>
+                        <td>POST</td>
+                        <td>修改密码</td>
+                    </tr>
+                    <tr>
+                        <td>/api/user/verification</td>
+                        <td>POST</td>
+                        <td>提交实名认证</td>
+                    </tr>
+                    <tr>
+                        <td>/api/user/list</td>
+                        <td>GET</td>
+                        <td>分页查询用户列表（管理员）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/user/{id}</td>
+                        <td>GET</td>
+                        <td>根据ID获取用户信息（管理员）</td>
+                    </tr>
+                </table>
+
+                <h4>3. 失物招领模块 (LostFoundController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/publish</td>
+                        <td>POST</td>
+                        <td>发布失物信息</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/search</td>
+                        <td>GET</td>
+                        <td>搜索失物列表（支持多条件筛选）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/{id}</td>
+                        <td>GET</td>
+                        <td>获取失物详情</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/{id}/claim</td>
+                        <td>POST</td>
+                        <td>申请认领失物</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/claim/{claimId}/confirm</td>
+                        <td>POST</td>
+                        <td>确认认领申请</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/claim/{claimId}/reject</td>
+                        <td>POST</td>
+                        <td>拒绝认领申请</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/my-publish</td>
+                        <td>GET</td>
+                        <td>获取我的发布列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/lost-found/my-claims</td>
+                        <td>GET</td>
+                        <td>获取认领记录列表</td>
+                    </tr>
+                </table>
+
+                <h4>4. 闲置交易模块 (GoodsController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/goods/publish</td>
+                        <td>POST</td>
+                        <td>发布商品</td>
+                    </tr>
+                    <tr>
+                        <td>/api/goods/search</td>
+                        <td>GET</td>
+                        <td>搜索商品列表（支持多条件筛选）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/goods/{id}</td>
+                        <td>GET</td>
+                        <td>获取商品详情</td>
+                    </tr>
+                    <tr>
+                        <td>/api/goods/{id}</td>
+                        <td>PUT</td>
+                        <td>更新商品信息</td>
+                    </tr>
+                    <tr>
+                        <td>/api/goods/{id}</td>
+                        <td>DELETE</td>
+                        <td>删除商品（逻辑删除）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/goods/my-publish</td>
+                        <td>GET</td>
+                        <td>获取我的发布列表</td>
+                    </tr>
+                </table>
+
+                <h4>5. 订单管理模块 (OrderController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/order/create</td>
+                        <td>POST</td>
+                        <td>创建订单</td>
+                    </tr>
+                    <tr>
+                        <td>/api/order/list</td>
+                        <td>GET</td>
+                        <td>获取订单列表（买家/卖家视角）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/order/{id}</td>
+                        <td>GET</td>
+                        <td>获取订单详情</td>
+                    </tr>
+                    <tr>
+                        <td>/api/order/{id}/pay</td>
+                        <td>POST</td>
+                        <td>支付订单（模拟支付）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/order/{id}/ship</td>
+                        <td>POST</td>
+                        <td>发货（卖家操作）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/order/{id}/confirm</td>
+                        <td>POST</td>
+                        <td>确认收货（买家操作）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/order/{id}/cancel</td>
+                        <td>POST</td>
+                        <td>取消订单（待付款状态）</td>
+                    </tr>
+                </table>
+
+                <h4>6. 学习互助模块 (QuestionController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/question/publish</td>
+                        <td>POST</td>
+                        <td>发布问题</td>
+                    </tr>
+                    <tr>
+                        <td>/api/question/search</td>
+                        <td>GET</td>
+                        <td>搜索问题列表（支持多条件筛选）</td>
+                    </tr>
+                    <tr>
+                        <td>/api/question/{id}</td>
+                        <td>GET</td>
+                        <td>获取问题详情</td>
+                    </tr>
+                    <tr>
+                        <td>/api/question/{id}/answer</td>
+                        <td>POST</td>
+                        <td>回答问题</td>
+                    </tr>
+                    <tr>
+                        <td>/api/question/answer/{answerId}/adopt</td>
+                        <td>POST</td>
+                        <td>采纳答案</td>
+                    </tr>
+                    <tr>
+                        <td>/api/question/my-questions</td>
+                        <td>GET</td>
+                        <td>获取我的问题列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/question/my-answers</td>
+                        <td>GET</td>
+                        <td>获取我的回答列表</td>
+                    </tr>
+                </table>
+
+                <h4>7. 聊天模块 (ChatController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/chat/session</td>
+                        <td>POST</td>
+                        <td>创建或获取会话</td>
+                    </tr>
+                    <tr>
+                        <td>/api/chat/sessions</td>
+                        <td>GET</td>
+                        <td>获取会话列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/chat/messages</td>
+                        <td>GET</td>
+                        <td>获取消息列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/chat/messages/read</td>
+                        <td>POST</td>
+                        <td>标记消息为已读</td>
+                    </tr>
+                </table>
+
+                <h4>8. 管理员模块 (AdminController)</h4>
+                <table>
+                    <tr>
+                        <th>接口</th>
+                        <th>方法</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/dashboard</td>
+                        <td>GET</td>
+                        <td>获取数据概览</td>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/verification/pending</td>
+                        <td>GET</td>
+                        <td>获取待审核的实名认证列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/verification/{id}/approve</td>
+                        <td>POST</td>
+                        <td>审核通过实名认证</td>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/verification/{id}/reject</td>
+                        <td>POST</td>
+                        <td>审核拒绝实名认证</td>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/lost-found/pending</td>
+                        <td>GET</td>
+                        <td>获取待审核的失物招领列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/goods/pending</td>
+                        <td>GET</td>
+                        <td>获取待审核的商品列表</td>
+                    </tr>
+                    <tr>
+                        <td>/api/admin/question/pending</td>
+                        <td>GET</td>
+                        <td>获取待审核的问题列表</td>
+                    </tr>
+                </table>
+
+                <h3>数据库设计</h3>
+                <div class="info-card">
+                    <p><strong>数据库名称</strong>：<code>campus_help</code></p>
+                    <p><strong>字符集</strong>：utf8mb4</p>
+                    <p><strong>排序规则</strong>：utf8mb4_0900_ai_ci</p>
+                    <p><strong>数据表数量</strong>：<span class="badge badge-primary">13</span> 张表</p>
+                </div>
+
+                <h4>数据表列表</h4>
+                <table>
+                    <tr>
+                        <th>表名</th>
+                        <th>说明</th>
+                        <th>主要字段</th>
+                    </tr>
+                    <tr>
+                        <td>user</td>
+                        <td>用户表</td>
+                        <td>id, email, password, nickname, avatar, role, verification_status</td>
+                    </tr>
+                    <tr>
+                        <td>address</td>
+                        <td>收货地址表</td>
+                        <td>id, user_id, receiver_name, receiver_phone, full_address, is_default</td>
+                    </tr>
+                    <tr>
+                        <td>lost_found</td>
+                        <td>失物招领表</td>
+                        <td>id, user_id, type, title, description, images, status, audit_status</td>
+                    </tr>
+                    <tr>
+                        <td>claim_record</td>
+                        <td>认领记录表</td>
+                        <td>id, lost_found_id, user_id, status, description, images</td>
+                    </tr>
+                    <tr>
+                        <td>goods</td>
+                        <td>商品表</td>
+                        <td>id, user_id, title, description, price, stock, images, status, audit_status</td>
+                    </tr>
+                    <tr>
+                        <td>order</td>
+                        <td>订单表</td>
+                        <td>id, order_no, buyer_id, seller_id, goods_id, quantity, price, status, trade_method</td>
+                    </tr>
+                    <tr>
+                        <td>study_question</td>
+                        <td>学习问题表</td>
+                        <td>id, user_id, category, title, description, reward, status, audit_status</td>
+                    </tr>
+                    <tr>
+                        <td>study_answer</td>
+                        <td>学习回答表</td>
+                        <td>id, question_id, user_id, content, images, is_adopted</td>
+                    </tr>
+                    <tr>
+                        <td>chat_session</td>
+                        <td>聊天会话表</td>
+                        <td>id, user1_id, user2_id, last_message_time</td>
+                    </tr>
+                    <tr>
+                        <td>chat_message</td>
+                        <td>聊天消息表</td>
+                        <td>id, session_id, sender_id, receiver_id, message_type, content, images, is_read</td>
+                    </tr>
+                    <tr>
+                        <td>search_history</td>
+                        <td>搜索历史表</td>
+                        <td>id, user_id, keyword, search_type, create_time</td>
+                    </tr>
+                    <tr>
+                        <td>sensitive_word</td>
+                        <td>敏感词表</td>
+                        <td>id, word, create_time</td>
+                    </tr>
+                    <tr>
+                        <td>system_message</td>
+                        <td>系统消息表</td>
+                        <td>id, user_id, type, title, content, is_read, create_time</td>
+                    </tr>
+                </table>
+
+                <h3>数据字典</h3>
+                
+                <h4>用户角色 (user.role)</h4>
+                <ul>
+                    <li><code>USER</code>：普通用户</li>
+                    <li><code>ADMIN</code>：管理员</li>
+                </ul>
+
+                <h4>实名认证状态 (user.verification_status)</h4>
+                <ul>
+                    <li><code>NOT_VERIFIED</code>：未认证</li>
+                    <li><code>PENDING</code>：待审核</li>
+                    <li><code>VERIFIED</code>：已认证</li>
+                    <li><code>REJECTED</code>：已拒绝</li>
+                </ul>
+
+                <h4>失物类型 (lost_found.type)</h4>
+                <ul>
+                    <li><code>LOST</code>：丢失物品</li>
+                    <li><code>FOUND</code>：招领物品</li>
+                </ul>
+
+                <h4>审核状态 (audit_status)</h4>
+                <ul>
+                    <li><code>PENDING</code>：待审核</li>
+                    <li><code>APPROVED</code>：已通过</li>
+                    <li><code>REJECTED</code>：已拒绝</li>
+                </ul>
+
+                <h4>订单状态 (order.status)</h4>
+                <ul>
+                    <li><code>PENDING_PAYMENT</code>：待付款</li>
+                    <li><code>PAID</code>：已付款</li>
+                    <li><code>SHIPPED</code>：已发货</li>
+                    <li><code>PENDING_PICKUP</code>：待自提</li>
+                    <li><code>COMPLETED</code>：已完成</li>
+                    <li><code>CANCELLED</code>：已取消</li>
+                </ul>
+
+                <h4>交易方式 (order.trade_method)</h4>
+                <ul>
+                    <li><code>PICKUP</code>：自提</li>
+                    <li><code>MAIL</code>：邮寄</li>
+                </ul>
+
+                <h4>消息类型 (chat_message.message_type)</h4>
+                <ul>
+                    <li><code>TEXT</code>：文字消息</li>
+                    <li><code>IMAGE</code>：图片消息</li>
+                    <li><code>GOODS_CARD</code>：商品卡片</li>
+                    <li><code>ORDER_CARD</code>：订单卡片</li>
+                </ul>
+
+                <h4>问题状态 (study_question.status)</h4>
+                <ul>
+                    <li><code>PENDING</code>：待解答</li>
+                    <li><code>ANSWERED</code>：已回答</li>
+                    <li><code>SOLVED</code>：已解决</li>
+                </ul>
+
+                <h3>数据库设计原则</h3>
+                <ul>
+                    <li><strong>规范化设计</strong>：遵循数据库第三范式，减少数据冗余</li>
+                    <li><strong>外键约束</strong>：使用外键保证数据完整性</li>
+                    <li><strong>逻辑删除</strong>：使用delete_flag字段实现逻辑删除，保留历史数据</li>
+                    <li><strong>时间戳</strong>：使用create_time和update_time记录创建和更新时间</li>
+                    <li><strong>索引优化</strong>：在常用查询字段上建立索引，提升查询性能</li>
+                    <li><strong>字符集</strong>：使用utf8mb4支持emoji等特殊字符</li>
+                </ul>
+            `);
+            mainContent.appendChild(apiDatabaseSection);
+
+            // 第九章：论文相关
+            const thesisSection = createSection('thesis', '论文相关', `
+                <h3>论文结构建议</h3>
+                
+                <h4>1. 摘要 (Abstract)</h4>
+                <ul>
+                    <li>项目背景和意义</li>
+                    <li>主要功能和技术特点</li>
+                    <li>系统架构和技术选型</li>
+                    <li>实现成果和预期效果</li>
+                </ul>
+
+                <h4>2. 绪论</h4>
+                <ul>
+                    <li><strong>研究背景</strong>：校园生活需求分析，现有解决方案的不足</li>
+                    <li><strong>研究意义</strong>：提升校园生活便利性，促进资源循环利用，构建学习互助社区</li>
+                    <li><strong>研究内容</strong>：系统功能模块、技术实现、系统测试</li>
+                    <li><strong>论文结构</strong>：各章节内容概述</li>
+                </ul>
+
+                <h4>3. 需求分析</h4>
+                <ul>
+                    <li><strong>功能需求</strong>：
+                        <ul>
+                            <li>用户认证与管理需求</li>
+                            <li>失物招领功能需求</li>
+                            <li>闲置交易功能需求</li>
+                            <li>学习互助功能需求</li>
+                            <li>实时聊天功能需求</li>
+                            <li>管理员后台需求</li>
+                        </ul>
+                    </li>
+                    <li><strong>非功能需求</strong>：
+                        <ul>
+                            <li>性能需求：响应时间、并发用户数</li>
+                            <li>安全需求：数据安全、用户隐私保护</li>
+                            <li>可用性需求：系统稳定性、易用性</li>
+                            <li>可扩展性需求：系统架构可扩展</li>
+                        </ul>
+                    </li>
+                    <li><strong>用例分析</strong>：绘制用例图，描述主要用例</li>
+                </ul>
+
+                <h4>4. 系统设计</h4>
+                <ul>
+                    <li><strong>系统架构设计</strong>：
+                        <ul>
+                            <li>整体架构设计（前后端分离）</li>
+                            <li>技术选型说明</li>
+                            <li>系统分层架构</li>
+                        </ul>
+                    </li>
+                    <li><strong>功能模块设计</strong>：
+                        <ul>
+                            <li>各功能模块的详细设计</li>
+                            <li>模块间的关系和交互</li>
+                            <li>核心业务流程设计</li>
+                        </ul>
+                    </li>
+                    <li><strong>数据库设计</strong>：
+                        <ul>
+                            <li>E-R图设计</li>
+                            <li>数据表结构设计</li>
+                            <li>数据字典</li>
+                            <li>数据库设计原则</li>
+                        </ul>
+                    </li>
+                    <li><strong>接口设计</strong>：
+                        <ul>
+                            <li>RESTful API设计规范</li>
+                            <li>主要接口设计</li>
+                            <li>接口文档说明</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4>5. 系统实现</h4>
+                <ul>
+                    <li><strong>开发环境搭建</strong>：开发工具、环境配置</li>
+                    <li><strong>后端实现</strong>：
+                        <ul>
+                            <li>用户认证模块实现</li>
+                            <li>业务模块实现（失物招领、闲置交易、学习互助等）</li>
+                            <li>实时通信模块实现</li>
+                            <li>管理员后台实现</li>
+                        </ul>
+                    </li>
+                    <li><strong>前端实现</strong>：
+                        <ul>
+                            <li>页面组件实现</li>
+                            <li>状态管理实现</li>
+                            <li>路由配置实现</li>
+                            <li>API调用实现</li>
+                        </ul>
+                    </li>
+                    <li><strong>关键技术实现</strong>：
+                        <ul>
+                            <li>JWT认证实现</li>
+                            <li>WebSocket实时通信实现</li>
+                            <li>敏感词过滤实现</li>
+                            <li>乐观锁机制实现</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4>6. 系统测试</h4>
+                <ul>
+                    <li><strong>测试环境</strong>：测试环境配置</li>
+                    <li><strong>功能测试</strong>：
+                        <ul>
+                            <li>各功能模块的功能测试</li>
+                            <li>测试用例设计</li>
+                            <li>测试结果分析</li>
+                        </ul>
+                    </li>
+                    <li><strong>性能测试</strong>：
+                        <ul>
+                            <li>响应时间测试</li>
+                            <li>并发测试</li>
+                            <li>数据库性能测试</li>
+                        </ul>
+                    </li>
+                    <li><strong>安全测试</strong>：
+                        <ul>
+                            <li>认证授权测试</li>
+                            <li>数据安全测试</li>
+                            <li>敏感信息保护测试</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4>7. 总结与展望</h4>
+                <ul>
+                    <li><strong>工作总结</strong>：项目完成情况、实现成果</li>
+                    <li><strong>创新点</strong>：技术亮点、设计创新</li>
+                    <li><strong>不足与改进</strong>：存在的问题、改进方向</li>
+                    <li><strong>未来展望</strong>：功能扩展、技术优化</li>
+                </ul>
+
+                <h3>创新点</h3>
+                
+                <h4>1. 技术架构创新</h4>
+                <ul>
+                    <li>采用前后端分离架构，提高开发效率和系统可维护性</li>
+                    <li>使用JWT无状态认证，提升系统性能和可扩展性</li>
+                    <li>基于WebSocket实现实时通信，提升用户体验</li>
+                    <li>使用Redis缓存优化，提升系统响应速度</li>
+                </ul>
+
+                <h4>2. 业务功能创新</h4>
+                <ul>
+                    <li>整合失物招领、闲置交易、学习互助三大功能模块，构建综合性校园互助平台</li>
+                    <li>实现智能认领匹配机制，提高失物找回效率</li>
+                    <li>支持商品卡片和订单卡片分享，简化交易沟通流程</li>
+                    <li>实现悬赏机制，激励学习互助积极性</li>
+                </ul>
+
+                <h4>3. 安全机制创新</h4>
+                <ul>
+                    <li>实现敏感词自动检测和过滤，保障内容质量</li>
+                    <li>采用自动审核和人工审核相结合的方式，提高审核效率</li>
+                    <li>实现实名认证机制，提升平台信任度</li>
+                    <li>使用乐观锁机制，防止库存超卖，保证数据一致性</li>
+                </ul>
+
+                <h4>4. 用户体验创新</h4>
+                <ul>
+                    <li>响应式设计，支持PC端和移动端访问</li>
+                    <li>实时消息推送，提升用户交互体验</li>
+                    <li>搜索历史记录，方便用户快速重复搜索</li>
+                    <li>多条件筛选和排序，提升内容查找效率</li>
+                </ul>
+
+                <h3>总结与展望</h3>
+                
+                <h4>项目总结</h4>
+                <div class="success-card">
+                    <p>校园帮系统成功实现了以下目标：</p>
+                    <ul>
+                        <li>✅ 完成了用户认证、失物招领、闲置交易、学习互助等核心功能模块</li>
+                        <li>✅ 实现了实时聊天、内容审核、订单管理等辅助功能</li>
+                        <li>✅ 构建了完善的管理员后台，支持内容审核和用户管理</li>
+                        <li>✅ 采用前后端分离架构，使用现代化的技术栈</li>
+                        <li>✅ 实现了安全机制，保障用户数据和交易安全</li>
+                        <li>✅ 系统功能完善，用户体验良好，可以投入使用</li>
+                    </ul>
+                </div>
+
+                <h4>技术成果</h4>
+                <ul>
+                    <li>掌握了前后端分离开发技术，熟悉Vue 3和Spring Boot框架</li>
+                    <li>实现了JWT认证、WebSocket实时通信等核心技术</li>
+                    <li>掌握了数据库设计、API设计、系统架构设计等技能</li>
+                    <li>积累了项目开发经验，提升了问题解决能力</li>
+                </ul>
+
+                <h4>存在的不足</h4>
+                <ul>
+                    <li>系统性能优化还有提升空间，可以进一步优化数据库查询和缓存策略</li>
+                    <li>测试覆盖不够全面，需要增加单元测试和集成测试</li>
+                    <li>移动端适配还可以进一步优化，提升移动端用户体验</li>
+                    <li>支付功能目前是模拟支付，可以接入真实的支付接口</li>
+                    <li>缺少数据统计分析功能，可以增加更详细的数据报表</li>
+                </ul>
+
+                <h4>未来改进方向</h4>
+                <ul>
+                    <li><strong>功能扩展</strong>：
+                        <ul>
+                            <li>增加跑腿服务功能，扩展平台服务范围</li>
+                            <li>增加评价系统，提升交易信任度</li>
+                            <li>增加推荐算法，个性化推荐内容</li>
+                            <li>增加消息推送功能，及时通知用户</li>
+                        </ul>
+                    </li>
+                    <li><strong>技术优化</strong>：
+                        <ul>
+                            <li>引入微服务架构，提高系统可扩展性</li>
+                            <li>使用消息队列，处理异步任务</li>
+                            <li>引入搜索引擎（Elasticsearch），提升搜索性能</li>
+                            <li>使用CDN加速，提升静态资源加载速度</li>
+                        </ul>
+                    </li>
+                    <li><strong>性能优化</strong>：
+                        <ul>
+                            <li>数据库读写分离，提升数据库性能</li>
+                            <li>增加缓存层，减少数据库查询</li>
+                            <li>优化前端代码，减少资源加载时间</li>
+                            <li>使用负载均衡，提高系统并发能力</li>
+                        </ul>
+                    </li>
+                    <li><strong>安全增强</strong>：
+                        <ul>
+                            <li>增加HTTPS支持，保障数据传输安全</li>
+                            <li>增加防刷机制，防止恶意请求</li>
+                            <li>增加日志审计功能，记录操作日志</li>
+                            <li>增加数据备份和恢复机制</li>
+                        </ul>
+                    </li>
+                    <li><strong>用户体验</strong>：
+                        <ul>
+                            <li>优化界面设计，提升视觉效果</li>
+                            <li>增加操作引导，降低学习成本</li>
+                            <li>增加帮助文档，方便用户使用</li>
+                            <li>增加反馈功能，收集用户意见</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4>应用前景</h4>
+                <p>
+                    校园帮系统具有广阔的应用前景：
+                </p>
+                <ul>
+                    <li>可以在高校中推广使用，服务广大学生群体</li>
+                    <li>可以扩展功能，增加更多校园服务</li>
+                    <li>可以商业化运营，提供增值服务</li>
+                    <li>可以作为技术积累，为后续项目开发提供参考</li>
+                </ul>
+
+                <div class="info-card">
+                    <h4>论文写作建议</h4>
+                    <ul>
+                        <li>论文要结构清晰，逻辑严密，重点突出</li>
+                        <li>技术实现部分要有代码示例和架构图</li>
+                        <li>测试部分要有测试数据和测试结果</li>
+                        <li>创新点要明确，与现有方案对比</li>
+                        <li>总结要客观，既要肯定成果，也要指出不足</li>
+                        <li>展望要具体，提出可行的改进方向</li>
+                    </ul>
+                </div>
+            `);
+            mainContent.appendChild(thesisSection);
+        }
+
+        // 创建章节元素
+        function createSection(id, title, content) {
+            const section = document.createElement('div');
+            section.id = id;
+            section.className = 'section';
+            section.innerHTML = `<h2>${title}</h2>${content}`;
+            return section;
+        }
+
+        // 返回顶部功能
+        function initBackToTop() {
+            const backToTop = document.getElementById('backToTop');
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    backToTop.classList.add('show');
+                } else {
+                    backToTop.classList.remove('show');
+                }
+            });
+            backToTop.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // 滚动监听，自动高亮当前章节
+        function initScrollSpy() {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-menu a');
+            
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            generateNavMenu();
+            generateContent();
+            initBackToTop();
+            initScrollSpy();
+        });
+    </script>
+</body>
+</html>
+

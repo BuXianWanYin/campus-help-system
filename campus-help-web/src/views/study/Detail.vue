@@ -59,11 +59,6 @@
           <div class="description-content" v-html="formatContent(questionDetail.question.description)"></div>
         </div>
         
-        <div v-if="questionDetail.question.reward && questionDetail.question.reward > 0" class="reward-section">
-          <el-icon><Money /></el-icon>
-          <span class="reward-text">悬赏金额：¥{{ questionDetail.question.reward }}</span>
-        </div>
-        
         <!-- 发布者信息 -->
         <div class="publisher-section">
           <div class="publisher-info">
@@ -666,19 +661,6 @@ onMounted(() => {
   color: #606266;
   line-height: 1.8;
   white-space: pre-wrap;
-}
-
-.reward-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background-color: #FDF6EC;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #E6A23C;
 }
 
 .publisher-section {

@@ -320,7 +320,6 @@
             <div class="study-content">
               <div class="study-header">
                 <h3 class="study-title">{{ question.title }}</h3>
-                <span class="study-reward" v-if="question.reward">¥{{ question.reward }}</span>
               </div>
                   <p class="study-desc">{{ truncateText(question.description, 100) }}</p>
               <div class="study-meta">
@@ -549,7 +548,6 @@ const studyForm = ref({
   category: '',
   title: '',
   description: '',
-  reward: 0,
   images: []
 })
 
@@ -1277,7 +1275,6 @@ const fetchStudyList = async () => {
           ...item,
           category: getStudyCategoryName(item.category),
           createTime: formatTime(item.createTime),
-          reward: item.reward || 0,
           icon: categoryIcon,
           colorClass: categoryColor,
           userAvatar: item.user?.avatar || null,
@@ -1472,7 +1469,6 @@ const handleSubmitQuestion = () => {
     category: '',
     title: '',
     description: '',
-    reward: 0,
     images: []
   }
 }
@@ -2553,12 +2549,6 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--color-text-primary);
   margin: 0;
-}
-
-.study-reward {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--color-secondary);
 }
 
 .study-desc {

@@ -94,9 +94,6 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         }
         
         // 设置默认值
-        if (lostFound.getReward() == null) {
-            lostFound.setReward(java.math.BigDecimal.ZERO);
-        }
         if (lostFound.getViewCount() == null) {
             lostFound.setViewCount(0);
         }
@@ -222,16 +219,9 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
             wrapper.like(LostFound::getLostLocation, searchDTO.getLocation());
         }
         
-        // 悬赏筛选
-        if (searchDTO.getHasReward() != null && searchDTO.getHasReward()) {
-            wrapper.gt(LostFound::getReward, 0);
-        }
-        
         // 排序
         if ("view".equals(searchDTO.getSortBy())) {
             wrapper.orderByDesc(LostFound::getViewCount);
-        } else if ("reward".equals(searchDTO.getSortBy())) {
-            wrapper.orderByDesc(LostFound::getReward);
         } else {
             // 默认按创建时间倒序（latest）
             wrapper.orderByDesc(LostFound::getCreateTime);
@@ -595,8 +585,6 @@ public class LostFoundServiceImpl extends ServiceImpl<LostFoundMapper, LostFound
         // 排序
         if ("view".equals(searchDTO.getSortBy())) {
             wrapper.orderByDesc(LostFound::getViewCount);
-        } else if ("reward".equals(searchDTO.getSortBy())) {
-            wrapper.orderByDesc(LostFound::getReward);
         } else {
             // 默认按创建时间倒序（latest）
             wrapper.orderByDesc(LostFound::getCreateTime);

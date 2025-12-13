@@ -108,19 +108,6 @@
           <div class="form-tip">最多上传9张图片，支持jpg、png格式，单张图片不超过5MB</div>
         </el-form-item>
 
-        <!-- 悬赏金额 -->
-        <el-form-item label="悬赏金额（元）" prop="reward" class="form-item-block">
-          <el-input-number
-            v-model="form.reward"
-            :min="0"
-            :max="10000"
-            :precision="2"
-            placeholder="选填，如愿意支付悬赏可填写金额"
-            style="width: 200px"
-          />
-          <div class="form-tip">选填，范围为0-10000元</div>
-        </el-form-item>
-
         <!-- 提交按钮 -->
         <el-form-item class="form-item-block">
           <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting">
@@ -166,8 +153,7 @@ const form = reactive({
   description: '',
   lostTime: null,
   lostLocation: '',
-  contactInfo: '',
-  reward: null
+  contactInfo: ''
 })
 
 const rules = {
@@ -296,8 +282,7 @@ const handleSubmit = async () => {
       lostTime: form.lostTime,
       lostLocation: form.lostLocation,
       contactInfo: form.contactInfo || null,
-      images: imageUrls.length > 0 ? imageUrls : null,
-      reward: form.reward && form.reward > 0 ? form.reward : null
+      images: imageUrls.length > 0 ? imageUrls : null
     }
     
     // 提交到后端
@@ -333,7 +318,6 @@ const handleReset = () => {
   }).then(() => {
     formRef.value?.resetFields()
     imageList.value = []
-    form.reward = null
   }).catch(() => {})
 }
 

@@ -78,17 +78,9 @@
             <el-option label="已解决" value="SOLVED" />
           </el-select>
         </el-form-item>
-        <el-form-item label="酬劳：">
-          <el-select v-model="filters.hasReward" placeholder="全部" style="width: 120px" clearable @change="handleSearch">
-            <el-option label="全部" value="" />
-            <el-option label="有酬劳" :value="true" />
-            <el-option label="无酬劳" :value="false" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="排序：">
           <el-select v-model="filters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
             <el-option label="最新发布" value="latest" />
-            <el-option label="酬劳最高" value="reward" />
             <el-option label="回答最多" value="popular" />
             <el-option label="最新回答" value="recent_answer" />
           </el-select>
@@ -141,10 +133,6 @@
           <div class="card-user">
             <el-avatar :size="24" :src="getAvatarUrl(item.userAvatar)">{{ item.userName?.charAt(0) || 'U' }}</el-avatar>
             <span>{{ item.userName || '未知用户' }}</span>
-          </div>
-          <div class="card-reward" v-if="item.reward && item.reward > 0">
-            <el-icon><Money /></el-icon>
-            <span class="reward-text">悬赏 ¥{{ item.reward }}</span>
           </div>
         </div>
       </div>
@@ -200,7 +188,6 @@ const searchHistoryList = ref([])
 const filters = reactive({
   category: '',
   status: '',
-  hasReward: '',
   sortBy: 'latest',
   keyword: ''
 })
@@ -225,7 +212,6 @@ const fetchQuestionList = async () => {
       pageSize: pagination.pageSize,
       category: filters.category || undefined,
       status: filters.status || undefined,
-      hasReward: filters.hasReward !== '' ? filters.hasReward : undefined,
       sortBy: filters.sortBy || 'latest',
       keyword: filters.keyword || undefined
     }
@@ -695,19 +681,6 @@ onMounted(() => {
   gap: 8px;
   font-size: 14px;
   color: #606266;
-}
-
-.card-reward {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #E6A23C;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.reward-text {
-  color: #E6A23C;
 }
 
 .pagination-wrapper {

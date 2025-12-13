@@ -201,6 +201,11 @@ const messagePanelVisible = ref(false)
 const unreadCount = ref(0)
 const recentMessages = ref([])
 
+// 组件挂载状态标志，用于防止卸载后的更新
+const isMounted = ref(false)
+let watchStopHandle = null
+let connectTimeoutId = null
+
 /**
  * 处理下拉菜单命令
  * @param {string} command - 命令类型
@@ -231,24 +236,30 @@ const handleCommand = (command) => {
 
 // 获取未读消息数量
 const fetchUnreadCount = async () => {
+  // 如果组件已卸载，不执行更新
+  if (!isMounted.value) return
   try {
     const response = await messageApi.getUnreadCount()
-    if (response.code === 200) {
+    if (response.code === 200 && isMounted.value) {
       unreadCount.value = response.data || 0
     }
   } catch (error) {
-    console.error('获取未读数量失败:', error)
+    if (isMounted.value) {
+      console.error('获取未读数量失败:', error)
+    }
   }
 }
 
 // 获取最新消息列表
 const fetchRecentMessages = async () => {
+  // 如果组件已卸载，不执行更新
+  if (!isMounted.value) return
   try {
     const response = await messageApi.getMessagePage({
       current: 1,
       size: 5
     })
-    if (response.code === 200) {
+    if (response.code === 200 && isMounted.value) {
       const messages = response.data.records || []
       recentMessages.value = messages.map(msg => ({
         id: msg.id,
@@ -263,7 +274,9 @@ const fetchRecentMessages = async () => {
       }))
     }
   } catch (error) {
-    console.error('获取消息列表失败:', error)
+    if (isMounted.value) {
+      console.error('获取消息列表失败:', error)
+    }
   }
 }
 
@@ -385,6 +398,8 @@ const handleMessageClick = async (item) => {
 
 // WebSocket消息处理
 const handleWebSocketMessage = (message) => {
+  // 如果组件已卸载，不处理消息
+  if (!isMounted.value) return
   if (message && message.id) {
     ElMessage.success('您有新的消息')
     fetchUnreadCount()
@@ -398,6 +413,8 @@ const handleWebSocketMessage = (message) => {
 }
 
 onMounted(async () => {
+  isMounted.value = true
+  
   if (userStore.isLoggedIn) {
     await fetchUnreadCount()
     await fetchRecentMessages()
@@ -409,16 +426,16 @@ onMounted(async () => {
       // connect 方法不返回 Promise，需要在连接成功回调中处理
       wsManager.connect(userStore.token)
       // 延迟添加消息处理器，等待连接建立
-      setTimeout(() => {
-        if (wsManager.isConnected) {
+      connectTimeoutId = setTimeout(() => {
+        if (isMounted.value && wsManager.isConnected) {
           wsManager.addMessageHandler(handleWebSocketMessage)
         }
       }, 500)
     }
     
     // 监听通知面板显示，自动刷新消息
-    watch(messagePanelVisible, (visible) => {
-      if (visible) {
+    watchStopHandle = watch(messagePanelVisible, (visible) => {
+      if (visible && isMounted.value) {
         fetchRecentMessages()
       }
     })
@@ -426,6 +443,25 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // 标记组件已卸载
+  isMounted.value = false
+  
+  // 关闭消息面板，避免 popover 在卸载时访问已销毁的 DOM
+  messagePanelVisible.value = false
+  
+  // 停止 watch 监听器
+  if (watchStopHandle) {
+    watchStopHandle()
+    watchStopHandle = null
+  }
+  
+  // 清理 setTimeout
+  if (connectTimeoutId) {
+    clearTimeout(connectTimeoutId)
+    connectTimeoutId = null
+  }
+  
+  // 移除 WebSocket 消息处理器
   wsManager.removeMessageHandler(handleWebSocketMessage)
 })
 </script>

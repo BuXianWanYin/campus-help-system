@@ -69,14 +69,6 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="reward" label="悬赏" min-width="100" sortable>
-        <template #default="{ row }">
-          <span v-if="row.reward && row.reward > 0" style="color: #E6A23C; font-weight: bold">
-            ¥{{ row.reward }}
-          </span>
-          <span v-else style="color: #909399">无</span>
-        </template>
-      </el-table-column>
       <el-table-column prop="status" label="状态" min-width="100">
         <template #default="{ row }">
           <el-tag v-if="row.status === 'PENDING_ANSWER'" type="info" size="small">待回答</el-tag>
@@ -147,12 +139,6 @@
         <el-descriptions :column="2" border class="item-descriptions">
           <el-descriptions-item label="问题标题">{{ currentItem.title }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ getCategoryName(currentItem.category) }}</el-descriptions-item>
-          <el-descriptions-item label="悬赏">
-            <span v-if="currentItem.reward && currentItem.reward > 0" style="color: #E6A23C; font-weight: bold">
-              ¥{{ currentItem.reward }}
-            </span>
-            <span v-else style="color: #909399">无</span>
-          </el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag v-if="currentItem.status === 'PENDING_ANSWER'" type="info">待回答</el-tag>
             <el-tag v-else-if="currentItem.status === 'ANSWERED'" type="warning">已回答</el-tag>

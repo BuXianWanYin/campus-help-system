@@ -78,7 +78,6 @@
           <el-select v-model="filters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
             <el-option label="最新" value="latest" />
             <el-option label="浏览最多" value="view" />
-            <el-option label="悬赏最高" value="reward" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -123,7 +122,6 @@
               <span>{{ item.userName || '未知用户' }}</span>
             </div>
             <div class="card-actions">
-              <span v-if="item.reward > 0" class="reward-text">悬赏 ¥{{ item.reward }}</span>
               <el-button 
                 v-if="item.userId && item.userId !== userStore.userInfo?.id" 
                 type="primary" 
@@ -658,10 +656,6 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
 }
-
-.reward-text {
-  font-size: 14px;
-  color: #F56C6C;
   font-weight: 500;
 }
 

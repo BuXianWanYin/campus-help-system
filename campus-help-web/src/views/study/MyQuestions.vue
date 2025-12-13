@@ -45,10 +45,6 @@
               <el-icon><Collection /></el-icon>
               {{ getCategoryName(item.category) }}
             </span>
-            <span class="meta-item" v-if="item.reward && item.reward > 0">
-              <el-icon><Money /></el-icon>
-              悬赏 ¥{{ item.reward }}
-            </span>
             <span class="meta-item">
               <el-icon><ChatDotRound /></el-icon>
               {{ item.answerCount || 0 }} 个回答

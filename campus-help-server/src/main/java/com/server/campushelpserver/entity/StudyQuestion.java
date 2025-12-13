@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -45,10 +44,6 @@ public class StudyQuestion implements Serializable {
     @TableField("images")
     @Schema(description = "问题图片（JSON数组，最多3张）")
     private String images;
-    
-    @TableField("reward")
-    @Schema(description = "悬赏金额（可选，0表示无酬劳）")
-    private BigDecimal reward;
     
     @TableField("status")
     @Schema(description = "状态：PENDING_REVIEW-待审核，PENDING_ANSWER-待解答，ANSWERED-已回答，SOLVED-已解决，CANCELLED-已取消，REJECTED-已拒绝，ADMIN_OFFSHELF-已下架")

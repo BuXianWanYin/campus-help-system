@@ -95,19 +95,6 @@
           <div class="form-tip">最多上传3张图片，支持jpg、png格式，单张图片不超过10MB</div>
         </el-form-item>
 
-        <!-- 悬赏金额 -->
-        <el-form-item label="悬赏金额（元）" prop="reward" class="form-item-block">
-          <el-input-number
-            v-model="form.reward"
-            :min="0"
-            :max="10000"
-            :precision="2"
-            placeholder="选填，如愿意支付悬赏可填写金额"
-            style="width: 200px"
-          />
-          <div class="form-tip">选填，范围为0-10000元。设置悬赏可以吸引更多人回答您的问题</div>
-        </el-form-item>
-
         <!-- 提交按钮 -->
         <el-form-item class="form-item-block">
           <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting">
@@ -154,8 +141,7 @@ const previewImageUrl = ref('')
 const form = reactive({
   category: '',
   title: '',
-  description: '',
-  reward: null
+  description: ''
 })
 
 const imageList = ref([])
@@ -171,9 +157,6 @@ const rules = {
   description: [
     { required: true, message: '请输入问题描述', trigger: 'blur' },
     { min: 10, max: 2000, message: '描述长度在10到2000个字符之间', trigger: 'blur' }
-  ],
-  reward: [
-    { type: 'number', min: 0, max: 10000, message: '悬赏金额范围为0-10000元', trigger: 'blur' }
   ]
 }
 
@@ -198,7 +181,6 @@ const loadQuestionDetail = async () => {
       form.category = data.question?.category || ''
       form.title = data.question?.title || ''
       form.description = data.question?.description || ''
-      form.reward = data.question?.reward || null
       
       // 加载图片
       if (data.question?.images) {
@@ -337,8 +319,7 @@ const handleSubmit = async () => {
       category: form.category,
       title: form.title,
       description: form.description,
-      images: imageUrls.length > 0 ? imageUrls : null,
-      reward: form.reward && form.reward > 0 ? form.reward : null
+      images: imageUrls.length > 0 ? imageUrls : null
     }
     
     // 提交到后端

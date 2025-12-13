@@ -67,14 +67,6 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="reward" label="悬赏" min-width="100">
-        <template #default="{ row }">
-          <span v-if="row.reward && row.reward > 0" style="color: #E6A23C; font-weight: bold">
-            ¥{{ row.reward }}
-          </span>
-          <span v-else style="color: #909399">无</span>
-        </template>
-      </el-table-column>
       <el-table-column prop="auditStatus" label="审核状态" min-width="100">
         <template #default="{ row }">
           <el-tag v-if="row.auditStatus === 'PENDING'" type="warning" size="small">待审核</el-tag>
@@ -156,12 +148,6 @@
           <el-descriptions-item label="标题">{{ currentItem.title }}</el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
-          <el-descriptions-item label="悬赏金额">
-            <span v-if="currentItem.reward && currentItem.reward > 0" style="color: #E6A23C; font-weight: bold">
-              ¥{{ currentItem.reward }}
-            </span>
-            <span v-else>无</span>
-          </el-descriptions-item>
           <el-descriptions-item label="触发原因">
             {{ currentItem.auditTriggerReason || '-' }}
           </el-descriptions-item>
@@ -245,12 +231,6 @@
           </el-descriptions-item>
           <el-descriptions-item label="发布时间">{{ formatDate(currentItem.createTime) }}</el-descriptions-item>
           <el-descriptions-item label="发布者">{{ currentItem.user?.nickname || '未知用户' }}</el-descriptions-item>
-          <el-descriptions-item label="悬赏金额">
-            <span v-if="currentItem.reward && currentItem.reward > 0" style="color: #E6A23C; font-weight: bold">
-              ¥{{ currentItem.reward }}
-            </span>
-            <span v-else>无</span>
-          </el-descriptions-item>
           <el-descriptions-item label="审核时间">
             {{ currentItem.auditTime ? formatDate(currentItem.auditTime) : '-' }}
           </el-descriptions-item>

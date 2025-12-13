@@ -279,9 +279,6 @@
           <el-descriptions-item label="联系方式" v-if="currentItem.contactInfo">
             {{ currentItem.contactInfo }}
           </el-descriptions-item>
-          <el-descriptions-item label="悬赏金额" v-if="currentItem.reward">
-            ¥{{ currentItem.reward }}
-          </el-descriptions-item>
           <el-descriptions-item label="物品图片" :span="2" v-if="itemImages && itemImages.length > 0">
             <div class="proof-images">
               <el-image

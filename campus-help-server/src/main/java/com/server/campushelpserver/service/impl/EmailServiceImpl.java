@@ -197,7 +197,6 @@ public class EmailServiceImpl implements EmailService {
             "尊敬的%s，\n\n" +
             "恭喜您！您对学习问题《%s》的回答已被提问者采纳。\n\n" +
             "您的回答帮助了其他同学，感谢您的贡献！\n\n" +
-            "如果问题设置了悬赏，相应的奖励将会发放到您的账户。\n\n" +
             "感谢您使用校园帮系统，继续为校园学习互助贡献力量！\n\n" +
             "此邮件由系统自动发送，请勿回复。",
             nickname, questionTitle

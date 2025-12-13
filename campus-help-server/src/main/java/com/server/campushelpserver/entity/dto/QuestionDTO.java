@@ -5,7 +5,6 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -31,8 +30,5 @@ public class QuestionDTO {
     
     @Schema(description = "问题图片URL列表（最多3张）")
     private List<String> images;
-    
-    @Schema(description = "悬赏金额（可选，0.01-9999.99元，0表示无酬劳）")
-    private BigDecimal reward;
 }
 

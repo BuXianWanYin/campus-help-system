@@ -70,11 +70,6 @@
             <p>{{ lostFound.description }}</p>
           </div>
           
-          <div v-if="lostFound.reward > 0" class="reward-section">
-            <span class="reward-label">悬赏金额：</span>
-            <span class="reward-value">¥{{ lostFound.reward }}</span>
-          </div>
-          
           <!-- 联系方式 -->
           <div v-if="lostFound.contactInfo" class="contact-section">
             <div class="contact-label">
@@ -1235,25 +1230,6 @@ onMounted(() => {
   color: #606266;
   line-height: 1.8;
   margin: 0;
-}
-
-.reward-section {
-  padding: 16px;
-  background-color: #FFF7E6;
-  border-radius: 8px;
-  margin-bottom: 24px;
-}
-
-.reward-label {
-  font-size: 14px;
-  color: #606266;
-}
-
-.reward-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #F56C6C;
-  margin-left: 8px;
 }
 
 .contact-section {

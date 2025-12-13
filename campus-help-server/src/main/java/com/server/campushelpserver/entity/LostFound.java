@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -62,10 +61,6 @@ public class LostFound implements Serializable {
     @TableField("images")
     @Schema(description = "物品图片（JSON数组）")
     private String images;
-    
-    @TableField("reward")
-    @Schema(description = "悬赏金额")
-    private BigDecimal reward;
     
     @TableField("status")
     @Schema(description = "状态：PENDING_REVIEW-待审核，PENDING_CLAIM-待认领，CLAIMING-认领中，CLAIMED-已认领，CLOSED-已关闭，REJECTED-已拒绝，ADMIN_OFFSHELF-已下架")
