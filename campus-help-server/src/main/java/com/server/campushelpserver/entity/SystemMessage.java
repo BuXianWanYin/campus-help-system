@@ -3,6 +3,7 @@ package com.server.campushelpserver.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -52,6 +53,7 @@ public class SystemMessage implements Serializable {
     @Schema(description = "关联ID")
     private Long relatedId;
     
+    @TableLogic(value = "0", delval = "1")
     @TableField("delete_flag")
     @Schema(description = "逻辑删除：0-未删除，1-已删除")
     private Integer deleteFlag;
