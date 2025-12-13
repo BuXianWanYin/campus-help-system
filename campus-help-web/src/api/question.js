@@ -88,6 +88,15 @@ export const questionApi = {
    */
   getMyAnswered(params) {
     return request.get('/question/my-answered', { params })
+  },
+  
+  /**
+   * 删除问题
+   * @param {number} questionId - 问题ID
+   * @returns {Promise} 删除结果
+   */
+  delete(questionId) {
+    return request.delete(`/question/${questionId}`)
   }
 }
 

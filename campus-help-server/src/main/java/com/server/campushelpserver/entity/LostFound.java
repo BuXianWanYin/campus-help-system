@@ -3,6 +3,7 @@ package com.server.campushelpserver.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -112,6 +113,7 @@ public class LostFound implements Serializable {
     @Schema(description = "乐观锁版本号")
     private Integer version;
     
+    @TableLogic(value = "0", delval = "1")
     @TableField("delete_flag")
     @Schema(description = "逻辑删除标志：0-未删除，1-已删除")
     private Integer deleteFlag;

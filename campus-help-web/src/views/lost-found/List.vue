@@ -656,8 +656,6 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
 }
-  font-weight: 500;
-}
 
 .pagination-wrapper {
   display: flex;

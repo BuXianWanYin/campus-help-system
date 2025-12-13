@@ -1059,5 +1059,29 @@ public class QuestionServiceImpl extends ServiceImpl<StudyQuestionMapper, StudyQ
             System.err.println("发送邮件失败: " + e.getMessage());
         }
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteQuestion(Long questionId, Long userId) {
+        // 1. 查询问题
+        StudyQuestion question = studyQuestionMapper.selectById(questionId);
+        if (question == null || question.getDeleteFlag() == 1) {
+            throw new BusinessException("问题不存在");
+        }
+        
+        // 2. 验证权限（只有发布者可以删除）
+        if (!question.getUserId().equals(userId)) {
+            throw new BusinessException("无权删除此问题");
+        }
+        
+        // 3. 验证状态（只有已解决、已取消、已拒绝的问题可以删除）
+        String status = question.getStatus();
+        if (!"SOLVED".equals(status) && !"CANCELLED".equals(status) && !"REJECTED".equals(status)) {
+            throw new BusinessException("只有已解决、已取消或已拒绝的问题可以删除");
+        }
+        
+        // 4. 使用MyBatis Plus逻辑删除
+        this.removeById(questionId);
+    }
 }
 

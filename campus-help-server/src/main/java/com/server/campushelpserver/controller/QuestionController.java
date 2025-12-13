@@ -172,5 +172,17 @@ public class QuestionController {
         Page<StudyQuestion> page = questionService.getMyAnsweredQuestions(userId, status, pageNum, pageSize);
         return Result.success("查询成功", page);
     }
+    
+    @Operation(summary = "删除问题", description = "删除问题（逻辑删除，仅发布者可删除，仅已解决、已取消或已拒绝的问题可删除）")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @DeleteMapping("/{questionId}")
+    public Result<Void> deleteQuestion(@Parameter(description = "问题ID") @PathVariable Long questionId) {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException("未登录");
+        }
+        questionService.deleteQuestion(questionId, userId);
+        return Result.success("删除成功", null);
+    }
 }
 

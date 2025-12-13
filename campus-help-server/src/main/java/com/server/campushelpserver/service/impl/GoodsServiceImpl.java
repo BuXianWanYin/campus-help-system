@@ -28,6 +28,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 /**
  * 商品服务实现类
@@ -429,6 +430,19 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         
         if (!goods.getUserId().equals(userId)) {
             throw new BusinessException("无权删除此商品");
+        }
+        
+        // 检查是否有未完成的订单关联该商品
+        // 已完成（COMPLETED）、已取消（CANCELLED）、已退款（REFUNDED）的订单不影响删除
+        LambdaQueryWrapper<Order> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.eq(Order::getGoodsId, id)
+                    .eq(Order::getDeleteFlag, 0)
+                    .notIn(Order::getStatus, 
+                           Arrays.asList("COMPLETED", "CANCELLED", "REFUNDED"));
+        long activeOrderCount = orderMapper.selectCount(orderWrapper);
+        
+        if (activeOrderCount > 0) {
+            throw new BusinessException("该商品存在未完成的订单，无法删除。请等待订单完成后再删除。");
         }
         
         // 使用MyBatis Plus逻辑删除

@@ -70,9 +70,21 @@
           </el-select>
         </el-form-item>
         <el-form-item label="价格：">
-          <el-input-number v-model="filters.minPrice" :min="0" :precision="2" placeholder="最低" style="width: 100px" />
+          <el-input-number 
+            v-model="filters.minPrice" 
+            :min="0" 
+            :precision="2" 
+            placeholder="最低" 
+            class="price-input" 
+          />
           <span style="margin: 0 8px">-</span>
-          <el-input-number v-model="filters.maxPrice" :min="0" :precision="2" placeholder="最高" style="width: 100px" />
+          <el-input-number 
+            v-model="filters.maxPrice" 
+            :min="0" 
+            :precision="2" 
+            placeholder="最高" 
+            class="price-input" 
+          />
         </el-form-item>
         <el-form-item label="排序：">
           <el-select v-model="filters.sortBy" placeholder="最新" style="width: 120px" @change="handleSearch">
@@ -511,6 +523,14 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 16px;
   align-items: flex-end;
+}
+
+.price-input {
+  width: 150px !important;
+}
+
+.price-input :deep(.el-input__wrapper) {
+  border-radius: 5px;
 }
 
 .card-grid {

@@ -274,6 +274,14 @@
                 @click.stop="handleCancelStudy(item)">
                 取消
               </el-button>
+              <el-button 
+                v-if="canDeleteStudy(item.status)" 
+                size="small" 
+                type="danger" 
+                text 
+                @click.stop="handleDeleteStudy(item)">
+                删除
+              </el-button>
             </div>
           </div>
         </div>
@@ -688,22 +696,26 @@ const handleSearch = () => {
  * 失物招领相关判断
  */
 const canEditLostFound = (status) => {
+  // 已认领和已关闭的不允许编辑
   return status !== 'CLAIMED' && status !== 'CLOSED'
 }
 
 const canCloseLostFound = (status) => {
-  return status !== 'CLOSED' && status !== 'CLAIMED'
+  // 只有未关闭的可以关闭（包括已认领的也可以关闭）
+  return status !== 'CLOSED'
 }
 
 const canDeleteLostFound = (status) => {
-  return status !== 'CLAIMING' && status !== 'CLAIMED'
+  // 认领中的不允许删除，其他状态都可以删除（包括已认领的也可以删除）
+  return status !== 'CLAIMING'
 }
 
 /**
  * 商品相关判断
  */
 const canEditGoods = (status) => {
-  return status === 'ON_SALE' || status === 'OFFSHELF' || status === 'REJECTED'
+  // 已售完的商品也可以编辑
+  return status === 'ON_SALE' || status === 'OFFSHELF' || status === 'REJECTED' || status === 'SOLD_OUT'
 }
 
 const canOffshelfGoods = (status) => {
@@ -715,7 +727,8 @@ const canReshelfGoods = (status) => {
 }
 
 const canDeleteGoods = (status) => {
-  return status !== 'SOLD_OUT'
+  // 所有状态都可以删除（包括已售完）
+  return true
 }
 
 /**
@@ -866,7 +879,13 @@ const handleDeleteGoods = async (item) => {
     
     await goodsApi.delete(item.id)
     ElMessage.success('删除成功')
-    fetchMyGoodsPosts()
+    // 确保在"我的发布"页面，刷新列表
+    if (activeTab.value === 'goods') {
+      fetchMyGoodsPosts()
+    } else {
+      // 如果不在"我的发布"页面，跳转回去
+      router.push('/post?tab=goods')
+    }
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除商品失败:', error)
@@ -892,6 +911,11 @@ const canCancelStudy = (status) => {
   return status === 'PENDING_ANSWER' || status === 'ANSWERED'
 }
 
+const canDeleteStudy = (status) => {
+  // 已解决、已取消、已拒绝的问题可以删除
+  return status === 'SOLVED' || status === 'CANCELLED' || status === 'REJECTED'
+}
+
 const handleEditStudy = (item) => {
   router.push(`/study/edit/${item.id}`)
 }
@@ -915,6 +939,30 @@ const handleCancelStudy = async (item) => {
     if (error !== 'cancel') {
       console.error('取消失败:', error)
       ElMessage.error(error.response?.data?.message || '取消失败')
+    }
+  }
+}
+
+const handleDeleteStudy = async (item) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除问题《${item.title}》吗？删除后无法恢复。`,
+      '删除问题',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    await questionApi.delete(item.id)
+    ElMessage.success('删除成功')
+    fetchMyStudyPosts()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除问题失败:', error)
+      ElMessage.error(error.response?.data?.message || '删除失败')
     }
   }
 }

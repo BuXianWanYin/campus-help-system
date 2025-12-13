@@ -137,5 +137,12 @@ public interface QuestionService extends IService<StudyQuestion> {
      */
     void deleteAnswer(Long answerId, String reason, Long adminId);
     
+    /**
+     * 删除问题（用户删除自己发布的问题）
+     * @param questionId 问题ID
+     * @param userId 用户ID（发布者）
+     */
+    void deleteQuestion(Long questionId, Long userId);
+    
 }
 
