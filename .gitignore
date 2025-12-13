@@ -35,7 +35,7 @@ campus-help-server/logs/
 # 上传文件
 campus-help-server/uploads/
 campus-help-server/upload/
-
+/doc
 
 # 依赖
 campus-help-web/node_modules/

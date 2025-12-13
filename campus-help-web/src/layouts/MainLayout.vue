@@ -454,7 +454,7 @@ import {
 } from '@element-plus/icons-vue'
 import appConfig from '@/config'
 import { getAvatarUrl } from '@/utils/image'
-import { messageApi, chatApi, lostFoundApi, goodsApi, questionApi } from '@/api'
+import { messageApi, chatApi, lostFoundApi, goodsApi, questionApi, statisticsApi } from '@/api'
 import wsManager from '@/utils/websocket'
 import { getToken } from '@/utils/auth'
 
@@ -1353,44 +1353,16 @@ watch(() => studyActiveCategory.value, () => {
 
 /**
  * 获取首页统计数据
+ * 使用统计API获取所有历史数据（包括所有状态，只要审核通过）
  */
 const fetchHomeStats = async () => {
   try {
-    // 通过调用各个模块的API获取统计数据（只获取总数）
-    const [lostFoundRes, goodsRes, studyRes] = await Promise.allSettled([
-      lostFoundApi.getList({ pageNum: 1, pageSize: 1 }),
-      goodsApi.getList({ pageNum: 1, pageSize: 1 }),
-      questionApi.getList({ pageNum: 1, pageSize: 1 })
-    ])
-    
-    // 获取失物招领总数
-    if (lostFoundRes.status === 'fulfilled' && lostFoundRes.value.code === 200) {
-      const data = lostFoundRes.value.data
-      if (data && typeof data.total === 'number') {
-        homeStats.value.lostFoundCount = data.total
-      } else if (data && data.total !== undefined) {
-        homeStats.value.lostFoundCount = parseInt(data.total) || 0
-      }
-    }
-    
-    // 获取商品总数
-    if (goodsRes.status === 'fulfilled' && goodsRes.value.code === 200) {
-      const data = goodsRes.value.data
-      if (data && typeof data.total === 'number') {
-        homeStats.value.goodsCount = data.total
-      } else if (data && data.total !== undefined) {
-        homeStats.value.goodsCount = parseInt(data.total) || 0
-      }
-    }
-    
-    // 获取学习问题总数
-    if (studyRes.status === 'fulfilled' && studyRes.value.code === 200) {
-      const data = studyRes.value.data
-      if (data && typeof data.total === 'number') {
-        homeStats.value.studyCount = data.total
-      } else if (data && data.total !== undefined) {
-        homeStats.value.studyCount = parseInt(data.total) || 0
-      }
+    const response = await statisticsApi.getHomeStatistics()
+    if (response.code === 200 && response.data) {
+      const data = response.data
+      homeStats.value.lostFoundCount = data.lostFoundCount || 0
+      homeStats.value.goodsCount = data.goodsCount || 0
+      homeStats.value.studyCount = data.studyQuestionCount || 0
     }
   } catch (error) {
     console.error('获取首页统计数据失败:', error)

@@ -35,3 +35,6 @@ export { orderApi } from './order'
 
 // 收货地址相关API
 export { addressApi } from './address'
+
+// 统计相关API
+export { statisticsApi } from './statistics'
